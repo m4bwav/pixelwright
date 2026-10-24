@@ -39,7 +39,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.6.2"
+VERSION = "0.6.3"
 
 try:
     import numpy as np
@@ -2407,12 +2407,19 @@ def review_page(root, extraPath, picksPath):
         if it.get("heading"):
             rows.append(f"<h1>{html.escape(it['heading'])}</h1>")
         texts = "".join(f"<p class=motion>{html.escape(t)}</p>" for t in it.get("text", []) if t)
+        # "display": "full" shows paintings (loading screens, illustrations) at their own resolution, smoothly
+        # scaled to the page width, instead of a sprite's 3x pixel zoom
+        full = " full" if it.get("display") == "full" else ""
         if it.get("kind") == "choose":
-            buttons = "".join(f'<button class=cand data-v="{html.escape(c["value"])}"><img src="{html.escape(c["src"])}" '
+            buttons = "".join(f'<button class="cand{full}" data-v="{html.escape(c["value"])}"><img src="{html.escape(c["src"])}" '
                               f'alt="{html.escape(c["value"])}"></button>' for c in it["choices"])
             body = f'<div class=btns>{buttons}<button data-v=redo>None fit</button>'
+        elif it.get("kind") == "info":
+            imgs = "".join(f'<img class="anim{full}" src="{html.escape(p)}" alt="{html.escape(it["title"])}">'
+                           for p in it.get("images", []))
+            body = f'{imgs}<div class=btns>'
         else:
-            imgs = "".join(f'<img class=anim src="{html.escape(p)}" alt="{html.escape(it["title"])}">'
+            imgs = "".join(f'<img class="anim{full}" src="{html.escape(p)}" alt="{html.escape(it["title"])}">'
                            for p in it.get("images", []))
             yes = "Approve" if it.get("kind") == "approve" else "Keep"
             body = (f'{imgs}<p class=gate>{html.escape(it.get("gate", ""))}</p><div class=btns>'
@@ -2432,6 +2439,8 @@ h1{{font-size:20px}} h2{{font-size:17px;margin:0 0 4px}} h2 span{{color:#9ab;fon
 .motion,.gate{{color:#aaa;font-size:13px}} .btns{{display:flex;gap:8px;align-items:center;flex-wrap:wrap}}
 button{{background:#333;color:#eee;border:1px solid #555;border-radius:5px;padding:6px 14px;cursor:pointer;font-size:14px}}
 .cand img{{image-rendering:pixelated;zoom:3;display:block}} .cand{{padding:4px}}
+.cand.full img{{image-rendering:auto;zoom:1;max-width:100%}} .cand.full{{flex-basis:100%}}
+.anim.full{{image-rendering:auto}}
 button.on{{background:#4a7;border-color:#4a7;color:#000}}
 .note{{flex:1;min-width:200px;background:#111;color:#eee;border:1px solid #555;padding:6px}}
 #status{{position:sticky;top:0;background:#1b1b22;padding:6px 0;color:#9c9}}

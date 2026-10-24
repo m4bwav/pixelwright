@@ -4,6 +4,15 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261024-5 · 2026-10-24 · 0.6.3: review items for paintings (`display: full`) and context cards (`kind: info`); L-052, L-053
+- because: L-052 (ported from spritewright 0.5.1, which shipped after the fork), L-053
+- files: skills/pixelwright/scripts/pxw.py (review_page, VERSION), skills/pixelwright-animate/references/brief.md
+  (Review extra), tests/test_pxw.py (test_review_full_size_and_info_items), LEARNINGS.md (L-052, L-053),
+  .claude-plugin/plugin.json
+- A review item with `"display": "full"` shows its images at their own resolution, smoothly scaled, instead of the
+  sprite's 3x pixel zoom; `"kind": "info"` shows text and images with a note and no buttons. Sprite items are
+  unchanged.
+
 ### C-20261024-4 · 2026-10-24 · Eval case outcome-make-2 (fractional scale, palette from a set); no version change
 - because: T-20261024-2 (outcome-make-1 too easy), T-20261024-3, L-049
 - files: evals/evals.json (outcome-make-2), evals/fixtures/make_render_hard.py (builder, holds the truth),
