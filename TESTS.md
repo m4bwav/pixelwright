@@ -8,6 +8,22 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261024-3 · 2026-10-24 · evergreen 0.17.1 worth --ab (claude -p), outcome-make-2 · Windows 11, Opus · outcome 3/3 with vs 3/3 without, twice
+- New case outcome-make-2: the 16x16 potion at a fractional 5.5x on a 3 px offset, blurred and noised, with the
+  palette spread over three reference sprites. The checker passes `pxw.py make` (scale found 5.507, 0 pixels wrong)
+  and fails nearest sampling at 5 or 6, corner sampling at 5.5, and image width / 16.
+- First A/B (6 runs, about $1.95): 3/3 vs 3/3. Two baseline runs read the checker, copied in through `files`, whose
+  header named the 5.5x scale; the fixture's source held the true sprite (L-049).
+- Second A/B with only the input copied (`outcome2_fixture.py` writes it from embedded bytes; the checker is found in
+  the suite's home): 3/3 vs 3/3 again, about $1.97; with the plugin cost x0.89, turns x0.87, time x0.64. The baseline
+  finds the grid itself ("about 5.53 screen pixels per art pixel" from colour edges). Verdict CUT for this case.
+- The `command` evidence graded correctly in every run: the L-040 fix shipped in evergreen 0.17.1 works. The with arm
+  wrote nothing into the clone (L-043 not seen).
+- Reading: on clean synthetic fixtures the make skill buys speed, not correctness. A case it exists for needs what a
+  model cannot see from a clean grid: a real model render (T-20261024-1's Z-Image potion), a grid that wanders across
+  the image, or a background close to a sprite colour.
+- led to: L-049
+
 ### T-20261024-2 · 2026-10-24 · evergreen worth --ab (claude -p), make cases · Windows 11, Opus · action 3/3 with (re-graded) vs 0/3 without; outcome 3/3 vs 3/3 (re-graded)
 - 12 runs, about $5.60; cost x1.42, turns x1.21, time x0.6 with the plugin. `pixelwright-make` fired in 6/6 with-arm
   runs and never without. The harness printed "the skill never fired" because the cases are filed under the hub
