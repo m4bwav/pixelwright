@@ -84,6 +84,26 @@ class Base(unittest.TestCase):
         return np.array(Image.open(self.dir / name).convert("RGBA"))
 
 
+
+class TestErrors(Base):
+    def test_missing_input_prints_one_json_object(self):
+        code, res = self.run_pxw("snap", "nowhere.png", "s.png")
+        self.assertEqual(code, 1)
+        self.assertFalse(res["ok"])
+        self.assertIn("nowhere.png", res["error"])
+
+    def test_find_aw_looks_in_claude_config_dir_first(self):
+        aw = self.dir / "cfg" / "plugins" / "cache" / "artwright" / "scripts" / "aw.py"
+        aw.parent.mkdir(parents=True)
+        aw.write_text("")
+        old = {k: pxw.os.environ.pop(k, None) for k in ("PIXELWRIGHT_AW", "SPRITEWRIGHT_AW", "CLAUDE_CONFIG_DIR")}
+        try:
+            pxw.os.environ["CLAUDE_CONFIG_DIR"] = str(self.dir / "cfg")
+            self.assertEqual(pxw.find_aw(), aw)
+        finally:
+            pxw.os.environ.pop("CLAUDE_CONFIG_DIR", None)
+            pxw.os.environ.update({k: v for k, v in old.items() if v is not None})
+
 class TestSnap(Base):
     def test_clean_integer_upscale_comes_back_exactly(self):
         save(upscale(self.sprite, 4), self.dir / "big.png")

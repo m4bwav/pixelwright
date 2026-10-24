@@ -14,7 +14,7 @@ MAINTENANCE and `evergreen.json`.
   `contradiction` is set, say so and refresh after the task. Every edit to a SKILL.md or a reference gets a
   CHANGELOG entry with its reason (`R-`, `L-`, `T-` ids, or "user request").
 - `pxw.py` stays Python 3.9+ with numpy and Pillow only, prints one JSON object per command (except `review`,
-  which serves), exits 1 on a failed check and 2 on a usage error, makes no network calls, and runs on Windows,
+  which serves), exits 1 on a failed check or a missing input and 2 on a usage error (argparse's text; `--version` prints plain text), makes no network calls, and runs on Windows,
   macOS and Linux.
 - Every new effect, command or gate gets an offline test (`tests/test_pxw.py` for animation, `tests/test_make.py`
   for make) with its fixture drawn in code, and the test must fail when the behaviour breaks. A change to an
