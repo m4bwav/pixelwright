@@ -1,8 +1,8 @@
 ## installed
-pixelwright 0.6.0 from --plugin
+pixelwright 0.6.1 from --plugin
 Claude Code not used (--plugin)
 Python 3.9.25, numpy 2.0.2, Pillow 11.3.0 on Windows
-artwright aw.py 0.4.0
+artwright aw.py 0.4.1
 
 ## fixtures
 render.png: 132x132, 10103 colours
@@ -32,7 +32,7 @@ Columns: 4
 
 ## version
 $ python pxw.py --version
-0.6.0
+0.6.1
 $ echo $?
 0
 
@@ -75,7 +75,7 @@ $ echo $?
 $ python pxw.py doctor
 {
   "ok": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "python": "3.9.25",
   "numpy": "2.0.2",
   "pillow": "11.3.0",
@@ -112,7 +112,7 @@ $ echo $?
 $ python pxw.py doctor
 {
   "ok": false,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "python": "3.9.25",
   "numpy": null,
   "pillow": null,
@@ -1275,7 +1275,7 @@ $ echo $?
 $ python pxw.py doctor
 {
   "ok": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "python": "3.9.25",
   "numpy": "2.0.2",
   "pillow": "11.3.0",
@@ -1311,7 +1311,7 @@ $ echo $?
 ## make with artwright
 $ python pxw.py make recipe.json out-aw
 {
-  "ok": false,
+  "ok": true,
   "id": "mushroom",
   "out": "out-aw/mushroom.png",
   "preview": "out-aw/mushroom.x4.png",
@@ -1385,10 +1385,8 @@ $ python pxw.py make recipe.json out-aw
     "within_budget": true,
     "size_ok": true,
     "aw_pixel": {
-      "clean_pixel_art": false,
-      "problems": [
-        "transitional (blend) pixels 1.76%"
-      ],
+      "clean_pixel_art": true,
+      "problems": [],
       "near_duplicate_colour_pairs": 0,
       "orphans": {
         "count": 0,
@@ -1402,12 +1400,12 @@ $ python pxw.py make recipe.json out-aw
 <plugin>\skills\pixelwright\scripts\pxw.py:2163: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
 $ echo $?
-1
+0
 
 ## make full with artwright
 $ python pxw.py make recipe-full.json out-full-aw
 {
-  "ok": false,
+  "ok": true,
   "id": "mushroom",
   "out": "out-full-aw/mushroom.png",
   "preview": "out-full-aw/mushroom.x4.png",
@@ -1483,10 +1481,8 @@ $ python pxw.py make recipe-full.json out-full-aw
     "within_budget": true,
     "size_ok": true,
     "aw_pixel": {
-      "clean_pixel_art": false,
-      "problems": [
-        "transitional (blend) pixels 3.12%"
-      ],
+      "clean_pixel_art": true,
+      "problems": [],
       "near_duplicate_colour_pairs": 0,
       "orphans": {
         "count": 6,
@@ -1525,7 +1521,7 @@ $ python pxw.py make recipe-full.json out-full-aw
 <plugin>\skills\pixelwright\scripts\pxw.py:2163: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
 $ echo $?
-1
+0
 
 ## make painting with artwright
 $ python pxw.py make recipe-painting.json out-painting-aw
@@ -1607,6 +1603,9 @@ box-black.png: transparent pixels stored as [0, 0, 0, 0], transitional_pixels 11
 
 ## artwright: box-white.png
 box-white.png: transparent pixels stored as [255, 255, 255, 0], transitional_pixels 0.0, problems []
+
+## artwright: box-black.png --scale 1
+box-black.png with --scale 1: transitional_pixels 11.11, clean_pixel_art True, problems []
 
 ## file: brief.json
 {
@@ -1949,7 +1948,7 @@ $ echo $?
 
 ## shim version
 $ python sw.py --version
-0.6.0
+0.6.1
 $ echo $?
 0
 
@@ -1957,7 +1956,7 @@ $ echo $?
 $ python sw.py doctor
 {
   "ok": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "python": "3.9.25",
   "numpy": "2.0.2",
   "pillow": "11.3.0",
@@ -2335,11 +2334,11 @@ $ echo $?
 ## snap missing file
 $ python pxw.py snap nothing.png x.png
 Traceback (most recent call last):
-  File "<plugin>\skills\pixelwright\scripts\pxw.py", line 2636, in <module>
+  File "<plugin>\skills\pixelwright\scripts\pxw.py", line 2637, in <module>
     main()
-  File "<plugin>\skills\pixelwright\scripts\pxw.py", line 2632, in main
+  File "<plugin>\skills\pixelwright\scripts\pxw.py", line 2633, in main
     a.fn(a)
-  File "<plugin>\skills\pixelwright\scripts\pxw.py", line 2282, in cmd_snap
+  File "<plugin>\skills\pixelwright\scripts\pxw.py", line 2283, in cmd_snap
     img, info = snap_grid(load_u8(a.input), a.scale, off, a.max)
   File "<plugin>\skills\pixelwright\scripts\pxw.py", line 1754, in load_u8
     return np.array(Image.open(path).convert("RGBA"))
@@ -2416,7 +2415,7 @@ $ echo $?
 
 ## review
 $ python pxw.py review batch --port 8799
-{"ok": true, "url": "http://127.0.0.1:8799/", "picks": "<tmp>/run/batch/picks.json"}
+{"ok": true, "url": "http://127.0.0.1:<port>/", "picks": "<tmp>/run/batch/picks.json"}
 section: forge, use (10 frames)
 section: forge, idle (8 frames)
 section: forge, place (8 frames)
@@ -2468,7 +2467,7 @@ $ echo $?
 
 ## tests: make
 $ python tests/test_make.py
-Ran 23 tests in <s>s
+Ran 24 tests in <s>s
 OK
 $ echo $?
 0
@@ -2478,4 +2477,3 @@ $ python tests/check_skills.py
 ok
 $ echo $?
 0
-

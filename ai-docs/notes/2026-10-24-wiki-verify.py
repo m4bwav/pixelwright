@@ -402,6 +402,12 @@ if AW:
         item = json.loads(p.stdout)["items"][0]
         show("artwright: " + name, "%s: transparent pixels stored as %s, transitional_pixels %s, problems %s" % (
             name, [int(v) for v in load(name)[0, 0]], item["transitional_pixels"], item["problems"]))
+    # 0.6.1 calls aw.py pixel with --scale 1; artwright 0.4.1 no longer fails blend pixels at a stated scale 1
+    p = subprocess.run([sys.executable, AW, "pixel", "box-black.png", "--scale", "1"], cwd=RUN, capture_output=True,
+                       text=True, encoding="utf-8", env=env_for())
+    item = json.loads(p.stdout)["items"][0]
+    show("artwright: box-black.png --scale 1", "box-black.png with --scale 1: transitional_pixels %s, "
+         "clean_pixel_art %s, problems %s" % (item["transitional_pixels"], item["clean_pixel_art"], item["problems"]))
 
 # ---- Animating a sprite
 BRIEF = write_file("brief.json", """

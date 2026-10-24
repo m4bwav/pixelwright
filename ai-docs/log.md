@@ -27,3 +27,11 @@ found no strong tells. The maintainer publishes (the wiki repository exists); ho
   nine inaccuracies in the shipped docs (listed in the note), the first being project and personal names in public
   files.
 - Next: publish the draft and run `wikiwright.py live`; re-run the Gates page's artwright cases when 0.6.1 ships.
+
+## 2026-10-24: wiki updated to 0.6.1 and published
+
+The verification program was re-run against 0.6.1 with artwright 0.4.1 on Windows (Python 3.14 and 3.9) and
+Linux; the three saved outputs were replaced. The artwright verdict now passes the outlined sprites `make` writes
+(0.6.1 calls `aw.py pixel --scale 1`), so the Gates, Home and FAQ pages say which versions that needs. Published as
+wiki commit `59f76a3`; `wikiwright.py live` found 10 pages and 0 failures, and the three images answered 200.
+Details in `ai-docs/notes/2026-10-24-github-wiki.md`.
