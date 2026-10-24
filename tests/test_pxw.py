@@ -687,6 +687,23 @@ class TestCommands(Base):
         code, page = self.run_sw("review", ".", "--print-page")
         self.assertIn('data-key="still/x"', page)
 
+    def test_review_full_size_and_info_items(self):
+        # paintings must not get the sprite's 3x pixel zoom, and an info card has a note but no pick buttons
+        (self.dir / "review-extra.json").write_text(json.dumps([
+            {"key": "scene/pick", "title": "pick", "kind": "choose", "display": "full",
+             "choices": [{"value": "A", "src": "a.jpg"}]},
+            {"key": "scene/why", "title": "why", "kind": "info", "display": "full", "text": ["context"],
+             "images": ["b.jpg"]},
+            {"key": "still/x", "title": "x", "kind": "choose", "choices": [{"value": "s1", "src": "m.png"}]}]))
+        code, page = self.run_sw("review", ".", "--print-page")
+        self.assertIn('class="cand full" data-v="A"', page)
+        self.assertIn('class="cand" data-v="s1"', page)
+        self.assertIn(".cand.full img{image-rendering:auto;zoom:1", page)
+        why = page.split('data-key="scene/why"')[1].split("</section>")[0]
+        self.assertIn('class="anim full" src="b.jpg"', why)
+        self.assertNotIn("data-v=keep", why)
+        self.assertIn('class=note', why)
+
     def test_review_refuses_a_busy_port(self):
         import socket
         # the holder reuses its address the way http.server does, so a careless second bind would succeed

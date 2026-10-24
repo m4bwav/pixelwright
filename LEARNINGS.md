@@ -612,3 +612,26 @@ house style, 128 px stills).
 - Evidence: T-20261024-3; evergreen_ab.py `localize` (resolves a script the run folder lacks against the suite home).
 - Scope: skill (and artwright)
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+
+### L-052 · 2026-10-24 · A painting on the review page needs its own size, not the sprite's 3x pixel zoom
+- Trigger: 1920x1080 paintings (a game's loading screen, candidates side by side) went on the click-to-pick page,
+  whose `choose` buttons zoom every image 3x with pixelated rendering for 96 px sprites; context-only cards (the old
+  screen, the game's other screens) also got Keep, Redo and Drop buttons.
+- Hypothesis: the page was built for sprites only; a painting needs natural size scaled smoothly to the page width,
+  and some cards are information, not decisions.
+- Rule: give a review item `"display": "full"` for paintings and illustrations, and `"kind": "info"` for a card that
+  shows context with a note field but no pick buttons.
+- Evidence: tests/test_pxw.py test_review_full_size_and_info_items (first made in spritewright 0.5.1)
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+
+### L-053 · 2026-10-24 · A frame built from zeros fails the rest gate on a painted still: transparent pixels carry colour bytes
+- Trigger: a generated construction strip's last frame (every built pixel copied from a painted still onto a zeroed
+  canvas) failed `rest_frame_identical` with 0 new colours and a visually identical result.
+- Hypothesis: painted stills often keep RGB values in fully transparent pixels (alpha 0), and the gate compares
+  exact RGBA, so a canvas that starts at (0, 0, 0, 0) differs in thousands of invisible pixels.
+- Rule: start every generated frame from a copy of the still and clear only its opaque pixels; draw temporary
+  elements over that. Never start from `np.zeros_like(still)`.
+- Evidence: a 96x96 house strip, 30 frames: rest_frame_identical false before the change, true after
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
