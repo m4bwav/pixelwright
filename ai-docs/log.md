@@ -45,3 +45,13 @@ artwright 0.4.2 (its PR #18, tag `v0.4.2`) leaves fully transparent pixels out o
 evergreen 0.17.1 (evergreen-protocol PR #33, tag `v0.17.1`) ships the `worth --ab` command-evidence fix; all three
 are installed locally. Wiki commit `76c84de`, `live` 0 failures; details in `ai-docs/notes/2026-10-24-github-wiki.md`.
 spritewright was not retired: its sessions were still committing on 2026-10-24 and port 8765 was held.
+
+## 2026-10-24: outcome-make-3, a real model render; make's measured value is speed
+
+A Z-Image Turbo img2img render of the eval potion (Mac host, denoise 0.75) became outcome-make-3: off-grid model
+shading, no stated size, only the input copied (`outcome3_fixture.py`, embedded bytes, since the repository allows
+no images but the banner). `pxw.py make` recovers it exactly, and so does a plain centre-sampling script, so no A/B
+was spent on it (T-20261024-4, L-054). outcome-make-1 now copies only its input too. `evergreen.json`'s `tests`
+block is filled in. Across three tries, nothing separates the arms on a single sprite; the open question for the
+owner is whether speed and one tested pipeline are enough for make. 0.6.3 (PR #4, from another session) is merged
+but not tagged. spritewright was not retired: its sessions committed again at 16:14 and port 8765 was held.

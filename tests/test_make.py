@@ -129,6 +129,19 @@ class TestSnap(Base):
         self.assertAlmostEqual(res["steps"]["snap"]["scale"][0], 5, places=1)
         self.assertTrue(np.array_equal(self.load("out/potion.png"), tight(self.sprite)))
 
+    def test_real_model_render_comes_back_exactly(self):
+        """outcome-make-3's input: a Z-Image img2img render with the model's own off-grid shading at about 29.25 px
+        per art pixel. make must return the sprite check_make_real.py holds, pixel for pixel."""
+        subprocess.run([sys.executable, str(ROOT / "evals" / "fixtures" / "outcome3_fixture.py"), str(self.dir)],
+                       check=True, capture_output=True)
+        rec = {"id": "potion-clean", "input": "render.png", "palette": "from:ref.png", "crop": {"pad": 0}}
+        (self.dir / "r.json").write_text(json.dumps(rec))
+        code, res = self.run_pxw("make", "r.json", ".", "--no-aw")
+        self.assertEqual(code, 0, res)
+        r = subprocess.run([sys.executable, str(ROOT / "evals" / "check_make_real.py"), str(self.dir)],
+                           capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout)
+
     def test_fractional_scale_is_found(self):
         n = int(round(16 * 5.35))
         big = np.array(Image.fromarray(self.sprite, "RGBA").resize((n, n), Image.NEAREST))

@@ -170,10 +170,9 @@
       "id": "outcome-make-1",
       "skill": "pixelwright-make",
       "kind": "outcome",
-      "prompt": "First run python evals/fixtures/make_render.py . to create render.png and ref.png. render.png is an image model's attempt at a 16x16 pixel art potion: blurred, noisy, on a flat blue background, drawn at about 5x. Recover the real sprite as potion-clean.png: one pixel per art pixel, transparent background, cropped to the sprite, using only ref.png's colours.",
+      "prompt": "First run python evals/fixtures/outcome1_fixture.py . to create render.png and ref.png. render.png is an image model's attempt at a 16x16 pixel art potion: blurred, noisy, on a flat blue background, drawn at about 5x. Recover the real sprite as potion-clean.png: one pixel per art pixel, transparent background, cropped to the sprite, using only ref.png's colours.",
       "files": [
-        "evals/fixtures/make_render.py",
-        "evals/check_make_outcome.py"
+        "evals/fixtures/outcome1_fixture.py"
       ],
       "expectations": [
         "potion-clean.png exists under the folder",
@@ -215,6 +214,36 @@
       "evidence": {
         "type": "command",
         "run": "python evals/check_make_hard.py ."
+      },
+      "tools": [
+        "Bash",
+        "Read",
+        "Write",
+        "Edit",
+        "Glob",
+        "Grep",
+        "Skill"
+      ],
+      "max_turns": 30
+    },
+    {
+      "id": "outcome-make-3",
+      "skill": "pixelwright-make",
+      "kind": "outcome",
+      "prompt": "First run python evals/fixtures/outcome3_fixture.py . to create render.png and ref.png. render.png came out of an image model asked for a pixel art potion: the art pixels are drawn large, at a size nobody wrote down, with the model's own shading on top. Recover the sprite at its native resolution as potion-clean.png: one pixel per art pixel, transparent background, cropped to the sprite, using only ref.png's colours.",
+      "files": [
+        "evals/fixtures/outcome3_fixture.py"
+      ],
+      "expectations": [
+        "potion-clean.png exists under the folder",
+        "its alpha is 0 or 255 everywhere",
+        "it uses only ref.png's colours",
+        "cropped to its opaque pixels it equals the sprite the render shows, art pixel for art pixel (check_make_real.py holds it)"
+      ],
+      "runs": 3,
+      "evidence": {
+        "type": "command",
+        "run": "python evals/check_make_real.py ."
       },
       "tools": [
         "Bash",

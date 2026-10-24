@@ -47,14 +47,14 @@
   },
   "consolidate_every": 25,
   "tests": {
-    "last_run": null,
-    "harness": null,
-    "env": null,
-    "cases": 0,
-    "passed": 0,
-    "failed": 0,
-    "failing": [],
-    "last_failure": null,
+    "last_run": "2026-10-24T17:30",
+    "harness": "evergreen worth --ab (claude -p), Opus, with-arm results; unittest for outcome-make-3; trigger cases not yet run by a harness",
+    "env": "windows",
+    "cases": 13,
+    "passed": 5,
+    "failed": 1,
+    "failing": ["action-1 (2/3, evidence regex missed one sheet build, T-20261023-2)"],
+    "last_failure": "2026-10-23",
     "research_after_days": null
   }
 }

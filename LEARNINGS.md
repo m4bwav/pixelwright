@@ -635,3 +635,15 @@ house style, 128 px stills).
 - Evidence: a 96x96 house strip, 30 frames: rest_frame_identical false before the change, true after
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+
+### L-054 · 2026-10-24 · Before an A/B, score a plain ten-line script on the case; if it passes, the baseline will too
+- Trigger: outcome-make-3, a real Z-Image render with off-grid shading. A plain script (sprite height / 16, sample
+  block centres, nearest palette colour) recovered it exactly once halved for the repository, as did `pxw.py make`.
+- Hypothesis: the baseline arm is a model with numpy; anything the obvious script solves, it solves in a turn or two.
+  Fractional scales, palettes spread over a set and model shading inside blocks are all within that script's reach.
+- Rule: write the obvious plain solution first and run the checker on it (minutes, no cost). Spend an A/B only on a
+  case where it fails by more than a pixel the model could fix by looking. Re-check the shipped bytes, not the
+  original: resizing a render to fit the repository can make it easier.
+- Evidence: T-20261024-4 (plain 3 pixels off at 1024 px, 0 off at the shipped 512 px crop)
+- Scope: skill (eval design)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
