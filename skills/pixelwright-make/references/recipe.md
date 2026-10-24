@@ -4,8 +4,8 @@ Back to [SKILL.md](../SKILL.md).
 
 ## Recipe
 
-A JSON object per sprite, a list of them, or `{"sprites": [...]}`. Paths are relative to `--root`, then to the
-current folder. Steps run in this order and each is optional.
+A JSON object per sprite, a list of them, or `{"sprites": [...]}`. Paths are relative to `--root` (default: the
+current folder). Steps run in this order and each is optional.
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -15,7 +15,7 @@ current folder. Steps run in this order and each is optional.
 | `background` | `"auto"` | the most common border colour, flood-filled from the border within `tol` 40 (OKLab x 255); `"R,G,B"`, `{"colour": ..., "tol": N}`, or `"none"`. Skipped when the border is already transparent |
 | `palette` | none | `"pico-8"`, a `.hex`/`.txt`/`.gpl` file, `"from:a.png,b.png"`, an integer N, or `{"name": ...}` / `{"colours": N}` |
 | `dither` | none | `"bayer2"`, `"bayer4"` or `"bayer8"`, applied while quantising |
-| `clean` | `{"alpha": 128, "orphans": true}` | `alpha` threshold (always applied unless `clean` is `false`), `orphans`, `thin`, `outline` (`auto`, `selective`, `"R,G,B"`), `light` (`top-left`, `top-right`, `top`, `none`) |
+| `clean` | `{"alpha": 128, "orphans": true}` | an object you write replaces the default, so list `"orphans": true` to keep that step; `alpha` threshold (always applied unless `clean` is `false`), `orphans`, `thin`, `outline` (`auto`, `selective`, `"R,G,B"`), `light` (`top-left`, `top-right`, `top`, `none`) |
 | `crop` | none | `{"pad": 1, "size": "pow2" or "WxH", "anchor": "bottom" or "centre"}` |
 | `tile` | none | `true` or `{"band": N}` (default band: a quarter of the shorter side) |
 | `budget` | the palette's size | unique colour cap for the gate |

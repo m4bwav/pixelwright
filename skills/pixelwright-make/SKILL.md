@@ -10,7 +10,7 @@ edges, a background. This skill makes it real: one pixel per block, a locked pal
 size the engine wants. It fixes; artwright-pixel judges. Never copy artwright's checks here.
 
 Script: `../pixelwright/scripts/pxw.py` (Python 3.9+, numpy, Pillow). Every command prints one JSON object and exits
-1 when its gates fail. Recipe schema and command details: [references/recipe.md](references/recipe.md).
+1 when its gates fail (a usage error prints argparse's text and exits 2). Recipe schema and command details: [references/recipe.md](references/recipe.md).
 
 ## Step 0: ready
 

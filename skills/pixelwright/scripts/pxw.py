@@ -6,7 +6,7 @@ palette, its outline and stray pixels cleaned, cropped to an engine size, and ga
 Animate: every pixel outside a brief's regions stays identical to the still, and colours are snapped to the
 still's own palette plus the brief's declared extra colours, so a frame can never drift from the art it animates.
 
-Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error):
+Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, which prints argparse's usage text):
   make    <recipe.json> <outdir> [--root DIR] [--no-aw]      the whole make pipeline from one recipe, then gates
   snap    <in.png> <out.png> [--scale S] [--offset X,Y]      detect the pixel grid; one pixel per block (mode)
   bg      <in.png> <out.png> [--colour auto|R,G,B] [--tol 40]  background flood-filled from the border to clear
@@ -39,7 +39,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.6.1"
+VERSION = "0.6.2"
 
 try:
     import numpy as np
@@ -1533,8 +1533,13 @@ def find_aw():
     env = os.environ.get("PIXELWRIGHT_AW") or os.environ.get("SPRITEWRIGHT_AW")
     if env and Path(env).is_file():
         return Path(env)
-    home = Path.home() / ".claude" / "plugins"
-    found = sorted(home.glob("**/artwright/scripts/aw.py"), key=lambda p: p.stat().st_mtime) if home.is_dir() else []
+    found = []
+    for base in (os.environ.get("CLAUDE_CONFIG_DIR"), Path.home() / ".claude"):
+        home = Path(base) / "plugins" if base else None
+        if home and home.is_dir():
+            found = sorted(home.glob("**/artwright/scripts/aw.py"), key=lambda p: p.stat().st_mtime)
+            if found:
+                break
     return found[-1] if found else None
 
 
@@ -2630,7 +2635,10 @@ def main(argv=None):
     c = sub.add_parser("doctor")
     c.set_defaults(fn=cmd_doctor)
     a = p.parse_args(argv)
-    a.fn(a)
+    try:
+        a.fn(a)
+    except OSError as e:  # a missing or unreadable input: one JSON object, not a traceback
+        fail(f"{type(e).__name__}: {e}")
 
 
 if __name__ == "__main__":

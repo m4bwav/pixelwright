@@ -8,7 +8,7 @@ description: "Start here for pixel art and 2D sprite work an agent should make o
 Pixel art an agent can trust: code makes the pixels, gates prove them, a human picks. Two jobs, one script.
 
 Script: `scripts/pxw.py` (Python 3.9+, numpy and Pillow only; Windows, macOS, Linux). Every command prints one
-JSON object; exit 1 means a check failed, 2 a usage error. `pxw.py doctor` first: it must say `ok: true`
+JSON object; exit 1 means a check failed, 2 a usage error (argparse's usage text, not JSON). `pxw.py doctor` first: it must say `ok: true`
 (missing packages: `python -m pip install numpy pillow`). `aw` in its output is artwright's `aw.py`, the judge.
 
 ## Route

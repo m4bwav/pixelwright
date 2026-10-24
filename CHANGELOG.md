@@ -4,6 +4,17 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261024-3 · 2026-10-24 · 0.6.2: a missing input prints a JSON error; `find_aw` reads `CLAUDE_CONFIG_DIR`; wiki-survey doc fixes
+- because: user request (the wiki survey's open items 3, 4, 7 and 8 and the `find_aw` finding in
+  ai-docs/notes/2026-10-24-github-wiki.md)
+- files: skills/pixelwright/scripts/pxw.py (main, find_aw, VERSION, docstring), tests/test_make.py (TestErrors),
+  skills/*/SKILL.md and AGENTS.md (the JSON-output sentence names argparse's usage text), pixelwright-make
+  references/recipe.md (`--root` has no fallback; a written `clean` replaces the default), CHANGELOG (the 0.4.4
+  entry's duplicate ID is now C-20261023-12), .claude-plugin/plugin.json
+- A missing or unreadable input printed a traceback; it now prints `ok: false` with the error and exits 1. The make
+  gate finds artwright in a `CLAUDE_CONFIG_DIR` install before `~/.claude`. Needs artwright 0.4.2 for an outlined
+  sprite on transparent black to pass without `--scale`.
+
 ### C-20261024-2 · 2026-10-24 · 0.6.1: the make gate tells artwright the output is native (`--scale 1`)
 - because: L-048, T-20261024-2
 - files: skills/pixelwright/scripts/pxw.py (aw_pixel, VERSION), tests/test_make.py
@@ -53,7 +64,7 @@ Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (ID
 - Two Guards lines from the batch 2 drafts: cut a solid object with a polygon minus the background, and read
   a 12x mask overlay before choosing rotate, shift or bend for a small part.
 
-### C-20261024-1 · 2026-10-24 · 0.4.4: `external` keeps soft alpha with `soft: "keep"`; L-034, L-035
+### C-20261023-12 · 2026-10-24 · 0.4.4: `external` keeps soft alpha with `soft: "keep"`; L-034, L-035
 - because: L-034, L-035, user request (the art lead's batch 1 note on the Smoking Hut: "smoke still looks
   crappy")
 - files: skills/spritewright/scripts/sw.py (fx_external, VERSION), references/effects.md (External),

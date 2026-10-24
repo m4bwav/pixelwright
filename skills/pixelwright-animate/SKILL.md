@@ -10,7 +10,7 @@ a code effect inside a mask cannot. The still is the truth: the rest frame is th
 nothing outside the brief's regions ever changes.
 
 Script: `../pixelwright/scripts/pxw.py` (Python 3.9+, numpy, Pillow; Windows, macOS, Linux). Every command prints one
-JSON object. Call it as `python <plugin>/skills/pixelwright/scripts/pxw.py <command> ...`. `scripts/sw.py` here is the
+JSON object (usage errors: argparse text, exit 2). Call it as `python <plugin>/skills/pixelwright/scripts/pxw.py <command> ...`. `scripts/sw.py` here is the
 old spritewright name, kept for one release; it runs `pxw.py`.
 
 ## Step 0: ready

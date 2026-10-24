@@ -62,14 +62,14 @@ Images (`check` and `live` do not look at them): each answered 200 with its imag
 - A painted gradient quantised to 8 colours passes every make gate, artwright's included (0.4.0 and 0.4.1).
 - artwright 0.4.0 fails outlined sprites from `make`: `pxw.py` stores transparent pixels as RGBA 0,0,0,0 and artwright's blend test reads their RGB, so a dark outline between transparency and a bright fill counts as a blend pixel (a 12x12 box: 11.11% blend with black transparency, 0% with white). Resolved for `make` by the pair pixelwright 0.6.1 (calls `--scale 1`) and artwright 0.4.1 (no blend failure at a stated scale 1); `aw.py pixel` without `--scale` still counts and fails these pixels.
 - A missing input file ends in a Python traceback (exit 1, stderr) in most commands; argparse errors print usage on stderr, exit 2; `palette` with both or neither source prints JSON with exit 2. `<command> --help` lists arguments without descriptions.
-- `find_aw` looks under `~/.claude/plugins` only, not under `CLAUDE_CONFIG_DIR`.
+- `find_aw` looked under `~/.claude/plugins` only, not under `CLAUDE_CONFIG_DIR` (fixed in 0.6.2).
 - `review` binds 127.0.0.1, has a `--print-page` option, and an item picked anything but `redo` leaves the page.
 - `make` and `frames` write their files even when a gate fails; `frames` writes every animation's sheet when one fails.
 - The 4 `model_rotate` tests skip without `tifffile`; CI installs only numpy and Pillow, so CI skips them.
 
 ## Inaccuracies found in the shipped docs
 
-Status after 0.6.1 (the maintainer's fixes): 2, 5, 6 and 9 fixed; 1 partly (the project name generalised and added to `.private-names.txt`; the maintainer's first name stays in CHANGELOG.md, LEARNINGS.md and effects.md); 3, 4, 7 and 8 not fixed. Line numbers below are as found in 0.6.0.
+Status after 0.6.2: 2, 5, 6 and 9 fixed in 0.6.1; 3, 4, 7 and 8 fixed in 0.6.2 (4 by making a missing input print JSON and naming argparse's usage text as the exception; `find_aw` now reads `CLAUDE_CONFIG_DIR` too); 1 partly, by decision (the project name generalised and added to `.private-names.txt`; the maintainer's first name stays in CHANGELOG.md, LEARNINGS.md and effects.md). Line numbers below are as found in 0.6.0.
 
 1. Project and personal names in public files, against AGENTS.md's "No project names" rule: a game project's name and the maintainer's first name in CHANGELOG.md:100 and :109, LEARNINGS.md (16 lines between 68 and 167), skills/pixelwright-animate/references/effects.md:46 and :51 (`git grep -n -w` for the name finds them all; the names are not repeated here). CHANGELOG.md also quotes "the art lead" five times (:55, :63, :71, :81, :90) with sprite names from that work. `.private-names.txt` does not list these, so `check_skills.py` passes.
 2. CHANGELOG.md:21: "tests/test_make.py (new, 21 tests)"; it runs 23.
