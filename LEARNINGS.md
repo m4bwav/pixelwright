@@ -599,5 +599,16 @@ house style, 128 px stills).
   blend problem remains: check the pixels and say so, never loosen the budget.
 - Evidence: C-20261024-2; tests/test_make.py `test_artwright_is_told_the_output_is_native`; the eval potion passes
   with both fixes and fails with either alone.
+
+### L-049 · 2026-10-24 · An outcome case that copies its checker and the fixture's source hands the baseline the answer
+- Trigger: the first outcome-make-2 A/B passed 3/3 without the plugin. Two of the three runs read
+  `evals/check_make_hard.py` (copied in through the case's `files`), whose header named "the 5.5x render", and the
+  fixture script copied with it held the true sprite as code.
+- Hypothesis: any file in `files` is part of the task; a model checks its work with the checker it finds and reads
+  the source that drew the input.
+- Rule: copy only the input. Ship a fixture that writes the input from embedded bytes (`outcome2_fixture.py`) and
+  keep the builder with the truth and the checker out of `files`; the A/B harness finds a checker missing from the
+  run folder in the suite's home. outcome-make-1 still copies both, so its baseline result proves little.
+- Evidence: T-20261024-3; evergreen_ab.py `localize` (resolves a script the run folder lacks against the suite home).
 - Scope: skill (and artwright)
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24

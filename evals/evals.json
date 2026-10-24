@@ -196,6 +196,36 @@
         "Skill"
       ],
       "max_turns": 30
+    },
+    {
+      "id": "outcome-make-2",
+      "skill": "pixelwright-make",
+      "kind": "outcome",
+      "prompt": "First run python evals/fixtures/outcome2_fixture.py . to create render.png and refs/. render.png is an image model's attempt at a 16x16 pixel art potion: blurred, noisy, on a flat blue background, drawn at an unknown scale that is not a whole number of screen pixels per art pixel. The three sprites in refs/ come from the same set; together they hold its palette. Recover the real sprite as potion-clean.png: one pixel per art pixel, transparent background, cropped to the sprite, using only the set's colours.",
+      "files": [
+        "evals/fixtures/outcome2_fixture.py"
+      ],
+      "expectations": [
+        "potion-clean.png exists under the folder",
+        "its alpha is 0 or 255 everywhere",
+        "it uses only colours found in the refs/ sprites",
+        "cropped to its opaque pixels it equals the 16x16 potion the 5.5x render was made from, exactly"
+      ],
+      "runs": 3,
+      "evidence": {
+        "type": "command",
+        "run": "python evals/check_make_hard.py ."
+      },
+      "tools": [
+        "Bash",
+        "Read",
+        "Write",
+        "Edit",
+        "Glob",
+        "Grep",
+        "Skill"
+      ],
+      "max_turns": 30
     }
   ]
 }

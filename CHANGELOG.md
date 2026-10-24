@@ -4,6 +4,14 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261024-4 · 2026-10-24 · Eval case outcome-make-2 (fractional scale, palette from a set); no version change
+- because: T-20261024-2 (outcome-make-1 too easy), T-20261024-3, L-049
+- files: evals/evals.json (outcome-make-2), evals/fixtures/make_render_hard.py (builder, holds the truth),
+  evals/fixtures/outcome2_fixture.py (the only file copied into a run), evals/check_make_hard.py, LEARNINGS.md
+  (L-049), TESTS.md (T-20261024-3)
+- A harder outcome case with a checker drawn in code. It still does not separate the arms (3/3 both); recorded as
+  such, and the next case should use a real render.
+
 ### C-20261024-3 · 2026-10-24 · 0.6.2: a missing input prints a JSON error; `find_aw` reads `CLAUDE_CONFIG_DIR`; wiki-survey doc fixes
 - because: user request (the wiki survey's open items 3, 4, 7 and 8 and the `find_aw` finding in
   ai-docs/notes/2026-10-24-github-wiki.md)
