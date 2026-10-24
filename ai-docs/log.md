@@ -54,4 +54,5 @@ no images but the banner). `pxw.py make` recovers it exactly, and so does a plai
 was spent on it (T-20261024-4, L-054). outcome-make-1 now copies only its input too. `evergreen.json`'s `tests`
 block is filled in. Across three tries, nothing separates the arms on a single sprite; the open question for the
 owner is whether speed and one tested pipeline are enough for make. 0.6.3 (PR #4, from another session) is merged
-but not tagged. spritewright was not retired: its sessions committed again at 16:14 and port 8765 was held.
+but not tagged. The old spritewright repository was retired the same evening by another session (archived
+privately, its plugin entry and evergreen unit removed); nothing from it is owed here.
