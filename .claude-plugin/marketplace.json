@@ -1,0 +1,8 @@
+{
+  "name": "pixelwright",
+  "owner": { "name": "Mark Rogers" },
+  "metadata": { "description": "Pixel art for AI agents: make real pixel art from renders and animate stills in code, gated" },
+  "plugins": [
+    { "name": "pixelwright", "source": "./", "description": "Three evergreen skills (hub, make, animate) with the pxw.py CLI: grid snap, palette lock, outlines, tiles, masked animation, sheets and a review page" }
+  ]
+}

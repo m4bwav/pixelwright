@@ -1,0 +1,196 @@
+{
+  "skill": "pixelwright",
+  "_format": "skill-creator evals.json plus evergreen fields (kind, decoy, evidence, baseline); extra fields are ignored by skill-creator's runner. Rules: protocol/TESTING.md.",
+  "evals": [
+    {
+      "id": "trigger-1",
+      "kind": "trigger",
+      "prompt": "I've got a pixel art building, machine.png. Can you animate it so the furnace glows up when the player uses it? Keep the rest of the building exactly as it is.",
+      "expectations": [
+        "the pixelwright-animate skill (or the pixelwright hub routing to it) is invoked"
+      ],
+      "runs": 3
+    },
+    {
+      "id": "trigger-2",
+      "kind": "trigger",
+      "prompt": "make a placement animation for this sprite, like it powers on after being built, and give me a sprite sheet",
+      "expectations": [
+        "the pixelwright-animate skill (or the pixelwright hub routing to it) is invoked"
+      ],
+      "runs": 3
+    },
+    {
+      "id": "decoy-1",
+      "kind": "trigger",
+      "decoy": true,
+      "prompt": "Generate a new pixel art sprite of a space mining outpost with ComfyUI, 128x128, transparent background.",
+      "expectations": [
+        "no pixelwright skill is invoked before a render exists (rendering a new still is comfyui-gen's job; pixelwright-make may follow once there is a render)"
+      ],
+      "runs": 3
+    },
+    {
+      "id": "decoy-2",
+      "kind": "trigger",
+      "decoy": true,
+      "prompt": "Is this sprite clean pixel art? Check its grid scale, palette size and orphan pixels.",
+      "expectations": [
+        "no pixelwright skill is invoked (measuring pixel art is artwright-pixel's job)"
+      ],
+      "runs": 3
+    },
+    {
+      "id": "action-1",
+      "kind": "action",
+      "prompt": "First run python evals/fixtures/make_fixture.py machine.png to create the building image. machine.png in this folder is a 48x48 game building. Make a 10-frame 'use' animation where the furnace mouth (around x 16-28, y 30-38) flares bright and settles, as a horizontal sprite sheet. Nothing outside the furnace may change and frame 0 must be the original image.",
+      "expectations": [
+        "the action happened, proven by the evidence below, not by the reply saying so"
+      ],
+      "evidence": {
+        "type": "trace",
+        "tool": "Bash",
+        "input_match": "(pxw|sw)\\.py[\"']?\\s+frames",
+        "or": {
+          "type": "file",
+          "path": "out/machine.gates.json"
+        }
+      },
+      "baseline": "to be filled by the first baseline run",
+      "runs": 3,
+      "files": [
+        "evals/fixtures/make_fixture.py"
+      ],
+      "tools": [
+        "Bash",
+        "Read",
+        "Write",
+        "Edit",
+        "Glob",
+        "Grep",
+        "Skill"
+      ],
+      "max_turns": 30
+    },
+    {
+      "id": "outcome-1",
+      "kind": "outcome",
+      "prompt": "First run python evals/fixtures/make_fixture.py machine.png to create the building image. machine.png in this folder is a 48x48 game building. Make a 10-frame 'use' animation where the furnace mouth (around x 16-28, y 30-38) flares bright and settles, as a horizontal sprite sheet named machine-use-10f.png. Nothing outside the furnace may change, no new colours beyond a white-hot highlight, and frame 0 must be the original image.",
+      "files": [
+        "evals/fixtures/make_fixture.py",
+        "evals/check_outcome.py"
+      ],
+      "expectations": [
+        "a file machine-use-10f.png exists somewhere under the folder, 480x48",
+        "its first 48x48 frame equals machine.png exactly (RGBA)",
+        "no pixel outside x 16-28, y 30-38 differs from machine.png in any frame",
+        "at least one frame differs from machine.png inside the furnace"
+      ],
+      "runs": 3,
+      "evidence": {
+        "type": "command",
+        "run": "python evals/check_outcome.py ."
+      },
+      "tools": [
+        "Bash",
+        "Read",
+        "Write",
+        "Edit",
+        "Glob",
+        "Grep",
+        "Skill"
+      ],
+      "max_turns": 30
+    },
+    {
+      "id": "trigger-make-1",
+      "kind": "trigger",
+      "prompt": "This AI-generated sprite (render.png) is supposed to be pixel art but the pixels are blurry and uneven. Can you turn it into real pixel art at its native size with a transparent background?",
+      "expectations": [
+        "the pixelwright-make skill is invoked (directly or through the pixelwright hub)"
+      ],
+      "runs": 3
+    },
+    {
+      "id": "trigger-make-2",
+      "kind": "trigger",
+      "prompt": "reduce chest.png to the PICO-8 palette, add an outline and crop it to 32x32",
+      "expectations": [
+        "the pixelwright-make skill is invoked (directly or through the pixelwright hub)"
+      ],
+      "runs": 3
+    },
+    {
+      "id": "decoy-make-1",
+      "kind": "trigger",
+      "decoy": true,
+      "prompt": "Critique my pixel art knight: is the silhouette readable and are the colour ramps good?",
+      "expectations": [
+        "no pixelwright skill is invoked (critique is artwright-pixel's job)"
+      ],
+      "runs": 3
+    },
+    {
+      "id": "action-make-1",
+      "kind": "action",
+      "prompt": "First run python evals/fixtures/make_render.py . to create render.png and ref.png. render.png is an AI render of a small potion sprite. Make it into a clean pixel art sprite named potion-clean.png using only the colours in ref.png, with a transparent background.",
+      "expectations": [
+        "the action happened, proven by the evidence below, not by the reply saying so"
+      ],
+      "evidence": {
+        "type": "trace",
+        "tool": "Bash",
+        "input_match": "pxw\\.py[\"']?\\s+(make|snap)",
+        "or": {
+          "type": "file",
+          "path": "out/potion-clean.make.json"
+        }
+      },
+      "baseline": "to be filled by the first baseline run",
+      "runs": 3,
+      "files": [
+        "evals/fixtures/make_render.py"
+      ],
+      "tools": [
+        "Bash",
+        "Read",
+        "Write",
+        "Edit",
+        "Glob",
+        "Grep",
+        "Skill"
+      ],
+      "max_turns": 30
+    },
+    {
+      "id": "outcome-make-1",
+      "kind": "outcome",
+      "prompt": "First run python evals/fixtures/make_render.py . to create render.png and ref.png. render.png is an image model's attempt at a 16x16 pixel art potion: blurred, noisy, on a flat blue background, drawn at about 5x. Recover the real sprite as potion-clean.png: one pixel per art pixel, transparent background, cropped to the sprite, using only ref.png's colours.",
+      "files": [
+        "evals/fixtures/make_render.py",
+        "evals/check_make_outcome.py"
+      ],
+      "expectations": [
+        "potion-clean.png exists under the folder",
+        "its alpha is 0 or 255 everywhere",
+        "it uses only ref.png's colours",
+        "cropped to its opaque pixels it equals the 16x16 potion the render was made from, exactly"
+      ],
+      "runs": 3,
+      "evidence": {
+        "type": "command",
+        "run": "python evals/check_make_outcome.py ."
+      },
+      "tools": [
+        "Bash",
+        "Read",
+        "Write",
+        "Edit",
+        "Glob",
+        "Grep",
+        "Skill"
+      ],
+      "max_turns": 30
+    }
+  ]
+}
