@@ -1,8 +1,8 @@
 ## installed
-pixelwright 0.6.1 from --plugin
+pixelwright 0.6.2 from --plugin
 Claude Code not used (--plugin)
 Python 3.14.4, numpy 2.5.4, Pillow 13.0.0 on linux
-artwright aw.py 0.4.1
+artwright aw.py 0.4.2
 
 ## fixtures
 render.png: 132x132, 10103 colours
@@ -32,7 +32,7 @@ Columns: 4
 
 ## version
 $ python pxw.py --version
-0.6.1
+0.6.2
 $ echo $?
 0
 
@@ -74,7 +74,7 @@ $ echo $?
 $ python pxw.py doctor
 {
   "ok": true,
-  "version": "0.6.1",
+  "version": "0.6.2",
   "python": "3.14.4",
   "numpy": "2.5.4",
   "pillow": "13.0.0",
@@ -111,7 +111,7 @@ $ echo $?
 $ python pxw.py doctor
 {
   "ok": false,
-  "version": "0.6.1",
+  "version": "0.6.2",
   "python": "3.14.4",
   "numpy": null,
   "pillow": null,
@@ -1210,7 +1210,7 @@ $ echo $?
 $ python pxw.py doctor
 {
   "ok": true,
-  "version": "0.6.1",
+  "version": "0.6.2",
   "python": "3.14.4",
   "numpy": "2.5.4",
   "pillow": "13.0.0",
@@ -1522,13 +1522,13 @@ $ echo $?
 0
 
 ## artwright: box-black.png
-box-black.png: transparent pixels stored as [0, 0, 0, 0], transitional_pixels 11.11, problems ['transitional (blend) pixels 11.11%']
+box-black.png: transparent pixels stored as [0, 0, 0, 0], transitional_pixels 0.0, problems []
 
 ## artwright: box-white.png
 box-white.png: transparent pixels stored as [255, 255, 255, 0], transitional_pixels 0.0, problems []
 
 ## artwright: box-black.png --scale 1
-box-black.png with --scale 1: transitional_pixels 11.11, clean_pixel_art True, problems []
+box-black.png with --scale 1: transitional_pixels 0.0, clean_pixel_art True, problems []
 
 ## file: brief.json
 {
@@ -1827,7 +1827,7 @@ $ echo $?
 
 ## shim version
 $ python sw.py --version
-0.6.1
+0.6.2
 $ echo $?
 0
 
@@ -1835,7 +1835,7 @@ $ echo $?
 $ python sw.py doctor
 {
   "ok": true,
-  "version": "0.6.1",
+  "version": "0.6.2",
   "python": "3.14.4",
   "numpy": "2.5.4",
   "pillow": "13.0.0",
@@ -2156,22 +2156,10 @@ $ echo $?
 
 ## snap missing file
 $ python pxw.py snap nothing.png x.png
-Traceback (most recent call last):
-  File "<plugin>/skills/pixelwright/scripts/pxw.py", line 2637, in <module>
-    main()
-    ~~~~^^
-  File "<plugin>/skills/pixelwright/scripts/pxw.py", line 2633, in main
-    a.fn(a)
-    ~~~~^^^
-  File "<plugin>/skills/pixelwright/scripts/pxw.py", line 2283, in cmd_snap
-    img, info = snap_grid(load_u8(a.input), a.scale, off, a.max)
-                          ~~~~~~~^^^^^^^^^
-  File "<plugin>/skills/pixelwright/scripts/pxw.py", line 1754, in load_u8
-    return np.array(Image.open(path).convert("RGBA"))
-                    ~~~~~~~~~~^^^^^^
-  File "<site-packages>/PIL/Image.py", line 3654, in open
-    fp = builtins.open(filename, "rb")
-FileNotFoundError: [Errno 2] No such file or directory: 'nothing.png'
+{
+  "ok": false,
+  "error": "FileNotFoundError: [Errno 2] No such file or directory: 'nothing.png'"
+}
 $ echo $?
 1
 
@@ -2188,7 +2176,7 @@ python pxw.py: exit 2, stdout 0 lines, stderr 3 lines
 python pxw.py palette cleared.png x.png --palette pico-8 --dither floyd: exit 2, stdout 0 lines, stderr 4 lines
 python pxw.py palette cleared.png x.png --palette pico-8 --colours 6: exit 2, stdout 4 lines, stderr 0 lines
 python pxw.py crop clean.png tiny.png --size 16x16: exit 1, stdout 4 lines, stderr 0 lines
-python pxw.py snap nothing.png x.png: exit 1, stdout 0 lines, stderr 16 lines
+python pxw.py snap nothing.png x.png: exit 1, stdout 4 lines, stderr 0 lines
 
 ## frames for review
 $ python pxw.py frames batch/forge/brief.json batch/forge/out --root batch/forge
@@ -2283,7 +2271,7 @@ $ echo $?
 
 ## tests: make
 $ python tests/test_make.py
-Ran 24 tests in <s>s
+Ran 26 tests in <s>s
 OK
 $ echo $?
 0

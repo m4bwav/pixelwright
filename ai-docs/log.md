@@ -35,3 +35,13 @@ Linux; the three saved outputs were replaced. The artwright verdict now passes t
 (0.6.1 calls `aw.py pixel --scale 1`), so the Gates, Home and FAQ pages say which versions that needs. Published as
 wiki commit `59f76a3`; `wikiwright.py live` found 10 pages and 0 failures, and the three images answered 200.
 Details in `ai-docs/notes/2026-10-24-github-wiki.md`.
+
+## 2026-10-24: 0.6.2 released, wiki updated to 0.6.2
+
+The owner said to release everything. PR #1 (merge `49a8981`) fixed the wiki survey's open items 3, 4, 7 and 8: a
+missing input prints `ok: false` JSON, `find_aw` reads `CLAUDE_CONFIG_DIR`, recipe.md's `--root` and `clean`
+wording, a duplicate changelog ID. Tagged `v0.6.2` with a hand-written GitHub release (no release workflow here).
+artwright 0.4.2 (its PR #18, tag `v0.4.2`) leaves fully transparent pixels out of `transitional_pixels`, and
+evergreen 0.17.1 (evergreen-protocol PR #33, tag `v0.17.1`) ships the `worth --ab` command-evidence fix; all three
+are installed locally. Wiki commit `76c84de`, `live` 0 failures; details in `ai-docs/notes/2026-10-24-github-wiki.md`.
+spritewright was not retired: its sessions were still committing on 2026-10-24 and port 8765 was held.
