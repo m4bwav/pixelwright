@@ -8,6 +8,23 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261024-4 · 2026-10-24 · real model render (Z-Image img2img on the Mac) + unittest · Windows 11, Python 3.14 · unit 68/68; no A/B run
+- Renders: make_render's potion drawn at 58.5x on 1024 px, Z-Image Turbo img2img, seed 11, denoise 0.5, 0.65, 0.75,
+  0.85. At 0.5 and 0.65 the model only adds shade columns; 0.75 adds off-grid curved shading inside blocks and moves
+  the highlight up one art pixel; 0.85 redraws the sprite (26x16, no truth).
+- `pxw.py make` on the 1024 px takes: 0, 0 and 2 pixels off the original potion; the 2 at 0.75 are the highlight the
+  model really drew, so the case's truth is the potion with those two pixels pink (checked by eye).
+- A plain script (sprite height / 16, sample block centres, nearest palette colour): 0, 2 and 3 off at full size.
+  Halved and cropped to fit the repository (outcome3_fixture.py, about 29.25 px per art pixel), the plain script and
+  make both recover the 0.75 take exactly. A model with numpy writes that script in a turn or two, so an A/B would
+  tie; it was started and stopped before any run finished, to save the cost.
+- New case outcome-make-3 (real render, no size given, only the input copied) kept as a regression case for make;
+  `tests/test_make.py` `test_real_model_render_comes_back_exactly` runs it. outcome-make-1 now copies only
+  `outcome1_fixture.py` (L-049).
+- Reading: across fractional scale, a palette spread over a set, and a real model render, nothing yet separates the
+  arms on a single sprite. make's measured value is speed (time x0.64, T-20261024-3) and one tested pipeline.
+- led to: L-054, C-20261024-6
+
 ### T-20261024-3 · 2026-10-24 · evergreen 0.17.1 worth --ab (claude -p), outcome-make-2 · Windows 11, Opus · outcome 3/3 with vs 3/3 without, twice
 - New case outcome-make-2: the 16x16 potion at a fractional 5.5x on a 3 px offset, blurred and noised, with the
   palette spread over three reference sprites. The checker passes `pxw.py make` (scale found 5.507, 0 pixels wrong)

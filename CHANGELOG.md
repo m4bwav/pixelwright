@@ -4,6 +4,15 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261024-6 · 2026-10-24 · Eval case outcome-make-3 (a real model render); outcome-make-1 copies only its input; no version change
+- because: T-20261024-4, L-049, L-054
+- files: evals/evals.json (outcome-make-1 prompt and files, outcome-make-3), evals/fixtures/outcome1_fixture.py,
+  evals/fixtures/outcome3_fixture.py, evals/check_make_real.py, tests/test_make.py
+  (test_real_model_render_comes_back_exactly), TESTS.md (T-20261024-4), LEARNINGS.md (L-054)
+- outcome-make-3 is a Z-Image img2img render with the model's own shading and no stated size; make recovers it
+  exactly, and so does a plain script, so it serves as a regression case, not a value case. outcome-make-1 now
+  writes its input from embedded bytes instead of copying make_render.py and its checker into the run.
+
 ### C-20261024-5 · 2026-10-24 · 0.6.3: review items for paintings (`display: full`) and context cards (`kind: info`); L-052, L-053
 - because: L-052 (ported from spritewright 0.5.1, which shipped after the fork), L-053
 - files: skills/pixelwright/scripts/pxw.py (review_page, VERSION), skills/pixelwright-animate/references/brief.md
