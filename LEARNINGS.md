@@ -73,7 +73,7 @@ house style, 128 px stills).
   believable logistics: prefab modules delivered and set down, parts telescoping and unfolding, welding on site.
 - Rule: make placement construction with `assemble` (crane, drone, trolley, telescope, hinge, weld). Not `buildup`.
   Draw machines (cable, spreader bar, drones) light enough to read against a dark sky (cable grey 124, not black).
-- Evidence: SpaceDeckBuilder2 foundry and small_factory place sheets, 2026-10-23
+- Evidence: a game project's foundry and small_factory place sheets, 2026-10-23
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
 
@@ -86,7 +86,7 @@ house style, 128 px stills).
 - Rule: dust in construction comes from the machines (0.3.0: puffs at trolley wheels, the welding torch near the
   ground, drone downwash, touchdowns), the haze ramps up from 0 and is lumpy; split a pad into 2 or 3 plates.
   Machines drawn moving need easing and trails (Mark: "more organic", "give other drones trails").
-- Evidence: SpaceDeckBuilder2 anim-b1 picks (crusher, construction_yard, small_factory, foundry place), re-made in anim-b2
+- Evidence: a game project's anim-b1 picks (crusher, construction_yard, small_factory, foundry place), re-made in anim-b2
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
 
@@ -95,7 +95,7 @@ house style, 128 px stills).
 - Hypothesis: MACHINE greys and the accent yellow are the colours these buildings are made of.
 - Rule: in a use animation, give a `drone` or `cart` over the building a `machine` livery the still does not use
   (cyan worked), and zoom one frame to check it reads before review.
-- Evidence: SpaceDeckBuilder2 construction_yard use (anim-b2)
+- Evidence: a game project's construction_yard use (anim-b2)
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
 
@@ -105,7 +105,7 @@ house style, 128 px stills).
   pillar at its right end; `scroll` shifts every masked pixel by `dir`, so those moved too.
 - Rule: fit a `scroll` region to the belt only (zoom 12x with a 1 px grid, check each edge), never a loose
   parallelogram around it.
-- Evidence: SpaceDeckBuilder2 crusher use, anim-b3 (belt poly [[22,88],[25,88],[44,100],[44,105],[40,105],[22,95]])
+- Evidence: a game project's crusher use, anim-b3 (belt poly [[22,88],[25,88],[44,100],[44,105],[40,105],[22,95]])
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
 
@@ -117,7 +117,7 @@ house style, 128 px stills).
 - Rule: use a `cart` only where it visibly leaves or enters something (a door), in the load's own colours (crate
   brown on a grey chassis on storage_yard); otherwise drop it. Bring a cable or pipe in with `telescope` (dir
   `down`) instead of `hinge`; keep `hinge` for solid arms and beams.
-- Evidence: SpaceDeckBuilder2 anim-b3 construction_yard use r2, storage_yard use, fuel_cell_bank place
+- Evidence: a game project's anim-b3 construction_yard use r2, storage_yard use, fuel_cell_bank place
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
 
@@ -126,7 +126,7 @@ house style, 128 px stills).
 - Hypothesis: the lit windows are near the hot colour already, so the pulse moves them a step at most.
 - Rule: for lights that are on at rest, carry the motion with a warm `spill` on the facade around each light group
   (same curve as its pulse); that took habitat_module to 24% changed.
-- Evidence: SpaceDeckBuilder2 anim-b3 habitat_module use; anim-b5 launchpad_stage_1 use (2.7% to 25%)
+- Evidence: a game project's anim-b3 habitat_module use; anim-b5 launchpad_stage_1 use (2.7% to 25%)
 - Limit: spill only reaches the 8% share on a big lit area. basic_lab's six small screens with spill still
   peaked at 6.7% (anim-b5): small lights need a moving part or a larger lit surface to carry the use animation.
 - Scope: skill
@@ -138,7 +138,7 @@ house style, 128 px stills).
 - Hypothesis: inside the source box the spill is at full strength, so the whole region takes one tint with hard edges.
 - Rule: keep a spill's source narrower than its region (the lamp column, not the band) and its strength near
   0.35 on large regions; zoom one frame at 3x before review.
-- Evidence: SpaceDeckBuilder2 anim-b5 launchpad_stage_1 use (strength 0.8 boxes, 0.35 glow, both pass the gate)
+- Evidence: a game project's anim-b5 launchpad_stage_1 use (strength 0.8 boxes, 0.35 glow, both pass the gate)
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
 
@@ -150,7 +150,7 @@ house style, 128 px stills).
 - Rule: for a part set into the building (wheel, dish face, fan), give the track `"behind": "still"` and a disc
   polygon centred on the real hub; `alpha: true` only for parts against the sky. Also mark `alpha: true` on a
   `shift` or `scroll` zone whose source has semi-transparent pixels (regolith_extractor head).
-- Evidence: SpaceDeckBuilder2 anim-b5 fuel_processor use, regolith_extractor use, probe_lab dish
+- Evidence: a game project's anim-b5 fuel_processor use, regolith_extractor use, probe_lab dish
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
 
@@ -161,10 +161,10 @@ house style, 128 px stills).
   the last of two moving effects on overlapping pixels wins outright.
 - Rule: never stack two moving effects on the same pixels. Compose them yourself into a frames sheet (scroll the
   bit, then move the drill block, per frame) and paste it with `external` on a zone that covers the travel
-  (SpaceDeckBuilder2 `ArtCandidates/anim-b6/make_b6.py`). An arm carrying a hanging load works as `rotate` on the
+  (the project's `make_b6.py`). An arm carrying a hanging load works as `rotate` on the
   arm plus `shift` on the load by the wrist's offset at full angle, same curve (basic_lab: pivot at the
   shoulder, -22 degrees, load `by` [0.1, -7.4]).
-- Evidence: SpaceDeckBuilder2 anim-b6 mine_common use (spin visible in all 10 frames), basic_lab use (gate now
+- Evidence: a game project's anim-b6 mine_common use (spin visible in all 10 frames), basic_lab use (gate now
   passes noticeable, 9.4% peak vs 6.7%)
 - Scope: skill (candidate fix: let shift/scroll/rotate read the current frame, or a `compose` effect)
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-23
@@ -586,4 +586,18 @@ house style, 128 px stills).
   a script that prints a "not clean" verdict) so a shape change fails loudly.
 - Evidence: tests/test_make.py `test_artwright_verdict_fails_the_make`; the real potion run before and after.
 - Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+
+### L-048 · 2026-10-24 · artwright judged a small native sprite on a false grid and failed a pixel-perfect make
+- Trigger: the action-make-1 A/B runs: `pxw.py make` recovered the 16x16 potion exactly (10x16 after crop), yet
+  `aw_pixel` said not clean: scale 7, alignment 26.7%, 0% uniform blocks, 7.03% transitional pixels. Two runs then
+  tried to write this lesson into the plugin's own LEARNINGS.md and were refused.
+- Hypothesis: a sprite this small has too few edges for aw's grid search, and at native scale every one-pixel
+  shading step between two flat colours counts as a blend.
+- Rule: make output is native, so the make gate calls `aw.py pixel --scale 1`; artwright 0.4.1 reports the
+  transitional share at a stated scale of 1 instead of failing it (artwright L-012). With an older artwright the
+  blend problem remains: check the pixels and say so, never loosen the budget.
+- Evidence: C-20261024-2; tests/test_make.py `test_artwright_is_told_the_output_is_native`; the eval potion passes
+  with both fixes and fails with either alone.
+- Scope: skill (and artwright)
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24

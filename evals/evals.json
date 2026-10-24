@@ -104,6 +104,7 @@
     },
     {
       "id": "trigger-make-1",
+      "skill": "pixelwright-make",
       "kind": "trigger",
       "prompt": "This AI-generated sprite (render.png) is supposed to be pixel art but the pixels are blurry and uneven. Can you turn it into real pixel art at its native size with a transparent background?",
       "expectations": [
@@ -113,6 +114,7 @@
     },
     {
       "id": "trigger-make-2",
+      "skill": "pixelwright-make",
       "kind": "trigger",
       "prompt": "reduce chest.png to the PICO-8 palette, add an outline and crop it to 32x32",
       "expectations": [
@@ -122,6 +124,7 @@
     },
     {
       "id": "decoy-make-1",
+      "skill": "pixelwright-make",
       "kind": "trigger",
       "decoy": true,
       "prompt": "Critique my pixel art knight: is the silhouette readable and are the colour ramps good?",
@@ -132,6 +135,7 @@
     },
     {
       "id": "action-make-1",
+      "skill": "pixelwright-make",
       "kind": "action",
       "prompt": "First run python evals/fixtures/make_render.py . to create render.png and ref.png. render.png is an AI render of a small potion sprite. Make it into a clean pixel art sprite named potion-clean.png using only the colours in ref.png, with a transparent background.",
       "expectations": [
@@ -164,6 +168,7 @@
     },
     {
       "id": "outcome-make-1",
+      "skill": "pixelwright-make",
       "kind": "outcome",
       "prompt": "First run python evals/fixtures/make_render.py . to create render.png and ref.png. render.png is an image model's attempt at a 16x16 pixel art potion: blurred, noisy, on a flat blue background, drawn at about 5x. Recover the real sprite as potion-clean.png: one pixel per art pixel, transparent background, cropped to the sprite, using only ref.png's colours.",
       "files": [

@@ -1,6 +1,6 @@
 # Effects
 
-Checked 2026-10-23 against `pxw.py` 0.5.0. Every track: `effect`, `region`, optional `curve` (one value per frame;
+Checked 2026-10-23 against `sw.py` 0.5.0 (`pxw.py` since 0.6.0). Every track: `effect`, `region`, optional `curve` (one value per frame;
 missing = 1.0 every frame). Tracks run in order on a copy of the still, so a later track sees an earlier one's
 pixels. Colours in parameters are `[r, g, b]`. Output colours are snapped to the region's ramp (its `select`
 pixels plus `extraColours`) or the full still palette, so no stray colour appears.

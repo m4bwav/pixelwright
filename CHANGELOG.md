@@ -4,13 +4,23 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261024-2 · 2026-10-24 · 0.6.1: the make gate tells artwright the output is native (`--scale 1`)
+- because: L-048, T-20261024-2
+- files: skills/pixelwright/scripts/pxw.py (aw_pixel, VERSION), tests/test_make.py
+  (test_artwright_is_told_the_output_is_native), LEARNINGS.md (L-048), TESTS.md (T-20261024-2),
+  .claude-plugin/plugin.json; docs: pixelwright-make/SKILL.md (the .gpl holds the colours used; coherence can be
+  absent), animate references (checked against sw.py), CHANGELOG (23 make tests), a project name generalised in
+  CHANGELOG and LEARNINGS (wiki survey findings)
+- On a small sprite artwright fitted a false grid and failed a make that matched its source pixel for pixel. Output
+  pixels are unchanged; only the verdict differs. Needs artwright 0.4.1 for native shading ramps to pass as well.
+
 ### C-20261024-1 · 2026-10-24 · 0.6.0: spritewright becomes pixelwright; pixel creation (make) added
 - because: user request (2026-10-24: "expand spritewright to handle pixel art as well as animation", released
   publicly as pixelwright; own plugin, `pxw.py` with an `sw.py` shim, own numpy grid snap), R-20261024-1
 - files: skills/pixelwright/ (new hub SKILL.md; scripts/pxw.py, moved from skills/spritewright/scripts/sw.py),
   skills/pixelwright-make/ (new SKILL.md, references/recipe.md), skills/pixelwright-animate/ (the old spritewright
   skill renamed: name, description, Script line, `pxw.py` in the body and references; scripts/sw.py shim),
-  tests/test_pxw.py (moved from test_sw.py, imports pxw), tests/test_make.py (new, 21 tests), tests/check_skills.py
+  tests/test_pxw.py (moved from test_sw.py, imports pxw), tests/test_make.py (new, 23 tests), tests/check_skills.py
   (pxw.py version, banner exemption), evals (make cases, make_render.py fixture, check_make_outcome.py),
   README.md, AGENTS.md, SECURITY.md, RESEARCH.md, evergreen.json, .claude-plugin/plugin.json, CI workflow
 - New `pxw.py` commands: `make` (recipe pipeline with gates and artwright's `aw.py pixel`), `snap`, `bg`, `palette`,
@@ -89,7 +99,7 @@ Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (ID
   pixel from its row neighbour when there is no plate. Existing effects are byte-identical.
 
 ### C-20261023-4 · 2026-10-23 · 0.3.0: machine dust, ragged eased welds, drone trails; `arc`, `drone`, `cart` effects; L-008, L-009
-- because: L-008, L-009, user request (Mark's redo notes on the SpaceDeckBuilder2 batch 1 page)
+- because: L-008, L-009, user request (Mark's redo notes on a game project's batch 1 page)
 - files: skills/spritewright/scripts/sw.py (fx_assemble and helpers, cmd_assemble, fx_dust lumpy, fx_arc, fx_drone,
   fx_cart, gates), references/effects.md (table, Patterns), SKILL.md (description), tests/test_sw.py, LEARNINGS.md
 - `assemble` ramps a power-on `dust` track up from 0 (lumpy) instead of holding it at full strength, draws dust puffs

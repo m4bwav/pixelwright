@@ -39,7 +39,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.6.0"
+VERSION = "0.6.1"
 
 try:
     import numpy as np
@@ -2167,8 +2167,9 @@ def aw_pixel(path, budget=None, tile=False):
     aw = find_aw()
     if not aw:
         return {"skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"}
-    cmd = [sys.executable, str(aw), "pixel", str(path)] + (["--budget", str(budget)] if budget else []) \
-        + (["--tile"] if tile else [])
+    # make output is native size: on a sprite of a few pixels aw's grid search can fit a false lattice (L-048)
+    cmd = [sys.executable, str(aw), "pixel", str(path), "--scale", "1"] \
+        + (["--budget", str(budget)] if budget else []) + (["--tile"] if tile else [])
     r = subprocess.run(cmd, capture_output=True, text=True)
     try:
         return json.loads(r.stdout)

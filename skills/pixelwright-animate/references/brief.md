@@ -1,6 +1,6 @@
 # Brief schema
 
-Checked 2026-10-23 against `pxw.py` 0.1.0.
+Checked 2026-10-23 against `sw.py` 0.1.0 (`pxw.py` since 0.6.0).
 
 ```json
 {

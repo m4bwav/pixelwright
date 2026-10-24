@@ -25,7 +25,7 @@ Script: `../pixelwright/scripts/pxw.py` (Python 3.9+, numpy, Pillow). Every comm
 
 `aw.py pixel <render.png>` when artwright is installed: a raw render shows a scale, low lattice alignment and
 thousands of colours. Then `pxw.py snap <render.png> snapped.png` alone and read `scale`, `native` and
-`coherence`:
+`coherence` (absent when no grid is found):
 
 - `native` should be close to the size you expected. A scale of 1 on a render means no grid was found (coherence
   under 0.5): the image is painted, not pixel art. Do not snap it; downscale the render to the native size in the
@@ -48,8 +48,8 @@ snap, background, palette, clean, crop, tile.
 pxw.py make recipe.json out --root <folder the recipe's paths are relative to>
 ```
 
-It writes `out/<id>.png` (the sprite), `<id>.x4.png` (nearest-neighbour preview), `<id>.gpl` (its palette, for
-Aseprite or GIMP) and `<id>.make.json` (every step's numbers and the gates).
+It writes `out/<id>.png` (the sprite), `<id>.x4.png` (nearest-neighbour preview), `<id>.gpl` (the colours it
+uses, for Aseprite or GIMP) and `<id>.make.json` (every step's numbers and the gates).
 
 Choosing:
 

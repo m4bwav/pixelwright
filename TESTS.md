@@ -8,6 +8,22 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261024-2 · 2026-10-24 · evergreen worth --ab (claude -p), make cases · Windows 11, Opus · action 3/3 with (re-graded) vs 0/3 without; outcome 3/3 vs 3/3 (re-graded)
+- 12 runs, about $5.60; cost x1.42, turns x1.21, time x0.6 with the plugin. `pixelwright-make` fired in 6/6 with-arm
+  runs and never without. The harness printed "the skill never fired" because the cases are filed under the hub
+  `pixelwright`; give make cases `"skill": "pixelwright-make"` before the next A/B.
+- action-make-1 · action · harness misgrade + environment · with: all three ran `pxw.py make`; the harness passed one
+  and counted two as environment faults because they tried to write a lesson into the plugin's own LEARNINGS.md (the
+  with arm loads the live clone with `--plugin-dir`, so the first run's write landed in the repository). Without: 0/3
+  by construction (no pxw.py).
+- outcome-make-1 · outcome · harness misgrade · reported 0/3 and 0/3; `python evals/check_make_outcome.py .` by hand in
+  all six workdirs prints pass (pixel-exact). On this fixture the model does as well without the plugin; the case
+  does not separate the arms. A harder value case is owed: a fractional scale, a wandering grid or a set palette the
+  model has to infer.
+- Real finding: in the with arm `make` reported ok false on a pixel-perfect result (artwright's false grid and ramp
+  blends), fixed in 0.6.1 with artwright 0.4.1.
+- led to: L-048, C-20261024-2
+
 ### T-20261024-1 · 2026-10-24 · unittest + real renders · Windows 11, Python 3.14 · unit 64/64; real renders 2/2 as expected
 - `tests/test_pxw.py` 41/41 (animation, unchanged); `tests/test_make.py` 23/23 (new); `tests/check_skills.py` ok once
   the banner exists. The 32 frame builds of the animation suite hash identically before and after the move to pxw.py.

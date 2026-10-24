@@ -299,6 +299,20 @@ class TestMake(Base):
         self.assertEqual(r.returncode, 1, res)
         self.assertEqual(res["gates"]["aw_pixel"]["problems"], ["blend pixels"])
 
+    def test_artwright_is_told_the_output_is_native(self):
+        """make writes one pixel per art pixel; aw.py must judge at scale 1, not search a small sprite for a grid."""
+        stub = self.dir / "aw.py"
+        stub.write_text('import json, sys\nok = sys.argv[sys.argv.index("--scale") + 1] == "1" '
+                        'if "--scale" in sys.argv else False\n'
+                        'print(json.dumps({"items": [{"clean_pixel_art": ok, "problems": [] if ok else '
+                        '["false grid"]}], "ok": ok}))\n')
+        (self.dir / "r.json").write_text(json.dumps({"id": "p", "input": "potion.png"}))
+        r = subprocess.run([sys.executable, str(PXW), "make", "r.json", "out"], capture_output=True, text=True,
+                           cwd=self.dir, env=dict(__import__("os").environ, PIXELWRIGHT_AW=str(stub)))
+        res = json.loads(r.stdout)
+        self.assertEqual(r.returncode, 0, res)
+        self.assertIs(res["gates"]["aw_pixel"]["clean_pixel_art"], True)
+
     def test_median_cut_spends_no_colours_on_twins(self):
         """A big near-black area with noise must not take several of the N colours."""
         rng = np.random.default_rng(1)
