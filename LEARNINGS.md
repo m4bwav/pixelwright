@@ -677,3 +677,29 @@ house style, 128 px stills).
   chimney) passed every gate on the first run and read as a site going up; one same-wood log building was set aside.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+
+### L-057 · 2026-10-25 · Temporary construction lines outside the finished silhouette read as chatter
+- Trigger: a viewer watching natural construction strips: 1 px rafters, laths, wall plates and string ran out over
+  the sky past the finished roof and all vanished on the last frame; "visual chatter instead of scaffolding".
+- Hypothesis: a line the finished building does not explain, ending where the building is empty, reads as noise at
+  game scale; inside the silhouette the same line reads as structure the roof or wall then covers.
+- Rule: clip every temporary site element to the part that explains it (rafters and laths to the roof, posts and
+  plates to the walls below the gable, string, footing and ladder to the silhouette), drop clipped specks under
+  4 px, and gate on 0 pixels drawn where the still is fully transparent on any frame. Real scaffolding only with
+  visible thickness and judged at 1x.
+- Evidence: T-20261025-1 (four strips from up to 39 px outside a frame to 0; the old line positions kept)
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-25
+
+### L-058 · 2026-10-25 · Smoke tied to a game state belongs in one reusable overlay strip, not each sprite's loop
+- Trigger: a game owner asked for chimney smoke to show which buildings burn fuel (warm in winter) after several
+  active loops had smoke painted in; baked smoke could not be switched by state and differed per building.
+- Hypothesis: smoke is ephemeral and generic; the engine's overlay system can show or hide one strip per anchor
+  from any rule, while a loop with smoke baked in ties the smoke to that loop's state.
+- Rule: make one transparent, seamless smoke strip (puffs of the art's own painted smoke rising, leaning, swelling,
+  thinning) with its emission point as the pivot, place it per building at the chimney mouth, and clear painted
+  smoke from stills that will carry the overlay. Keep smoke out of active loops.
+- Evidence: one 48-frame strip and two variants previewed over eight painted buildings with thatch, tile and wood
+  roofs; no per-building art needed.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-10-25

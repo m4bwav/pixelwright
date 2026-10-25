@@ -710,6 +710,27 @@ class TestCommands(Base):
         shares = [same[j][still[..., 3] > 0].mean() for j in range(20)]
         self.assertEqual(shares, sorted(shares))
 
+    def test_natural_site_lines_stay_inside_the_finished_silhouette(self):
+        still, plan = self.cottage()
+        empty = still[..., 3] == 0
+        code, res = self.run_sw("assemble", "c.json", "c2.json", "--plan", "plan.json")
+        self.assertEqual(code, 0, res)
+        self.run_sw("frames", "c2.json", "out", "--no-aw")
+        g = json.loads((self.dir / "out" / "cottage.gates.json").read_text())["place"]
+        self.assertEqual(g["drawn_outside_silhouette"], 0)
+        self.assertTrue(g["pass"], g)
+        sheet = self.sheet("cottage-place-20f")
+        for j in range(20):
+            self.assertFalse((sheet[:, j * 48:(j + 1) * 48, 3] > 0)[empty].any(), j)
+        # unclipped, the string, ladder and rafters run out over empty ground and sky, and the gate fails
+        plan["clip"] = False
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        self.run_sw("assemble", "c.json", "c3.json", "--plan", "plan.json")
+        self.run_sw("frames", "c3.json", "out3", "--no-aw")
+        g = json.loads((self.dir / "out3" / "cottage.gates.json").read_text())["place"]
+        self.assertGreater(g["drawn_outside_silhouette"], 0)
+        self.assertFalse(g["pass"])
+
     def test_natural_assemble_needs_the_geometry(self):
         self.cottage()
         plan = json.loads((self.dir / "plan.json").read_text())

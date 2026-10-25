@@ -4,6 +4,16 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261025-1 · 2026-10-25 · 0.7.2: natural construction lines stay inside the finished silhouette; new gate; L-057, L-058
+- because: user request (stray construction lines read as visual chatter), L-057, L-058, T-20261025-1
+- files: skills/pixelwright/scripts/pxw.py (_site_items clip, _drop_specks, fx_site, SITE_KEYS, gates, VERSION),
+  skills/pixelwright-animate/SKILL.md (Placement, Step 3 gates, Guards), skills/pixelwright-animate/references/effects.md
+  (site row), tests/test_pxw.py (test_natural_site_lines_stay_inside_the_finished_silhouette), TESTS.md
+  (T-20261025-1), LEARNINGS.md (L-057, L-058), .claude-plugin/plugin.json
+- Site elements draw only on the part of the finished building that explains them, leftover specks are dropped, and
+  a `site` animation now fails when any frame draws where the still is empty (`drawn_outside_silhouette`). `clip:
+  false` keeps the old full lines.
+
 ### C-20261024-8 · 2026-10-24 · 0.7.1: natural construction needs a roof of a different material than the walls; L-056
 - because: L-056
 - files: LEARNINGS.md (L-056), skills/pixelwright-animate/SKILL.md (Placement), skills/pixelwright/scripts/pxw.py
