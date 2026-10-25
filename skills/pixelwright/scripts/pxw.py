@@ -40,7 +40,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.7.2"
+VERSION = "0.7.3"
 
 try:
     import numpy as np
