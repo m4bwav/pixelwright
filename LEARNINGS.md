@@ -661,3 +661,19 @@ house style, 128 px stills).
   byte-identical)
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+
+### L-056 · 2026-10-24 · A natural construction plan needs a roof that differs from the walls in material
+- Trigger: choosing three more painted village buildings for natural construction strips; on a log cabin with a
+  plank roof (same wood, same tones), no roof outline could be drawn from an 8x grid, while thatch over daub and
+  tile over half-timber gave clear outlines and strips that passed every gate first time.
+- Hypothesis: the plan's roof polygon and the timber/infill split both lean on a visible change of material at the
+  eave; where walls and roof share one material at 96 px, any outline is a guess and the roof would rise as wall or
+  the walls as roof.
+- Rule: before writing a natural plan, check at 8x that the roof's lower edge is a material change you can trace
+  (thatch, tile or shingle over timber, daub or stone). If walls and roof are the same material, leave the building
+  for another build order rather than guess the outline. A dome, chimney or porch of the wall material is fine: it
+  rises with the walls.
+- Evidence: three strips (thatch over daub; tile over half-timber with a stone oven dome; tile over half-timber with a
+  chimney) passed every gate on the first run and read as a site going up; one same-wood log building was set aside.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24

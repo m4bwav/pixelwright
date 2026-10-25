@@ -4,6 +4,13 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261024-8 · 2026-10-24 · 0.7.1: natural construction needs a roof of a different material than the walls; L-056
+- because: L-056
+- files: LEARNINGS.md (L-056), skills/pixelwright-animate/SKILL.md (Placement), skills/pixelwright/scripts/pxw.py
+  (VERSION), .claude-plugin/plugin.json
+- A guard on choosing buildings for a natural plan: trace the eave as a material change at 8x first, and set aside
+  buildings whose walls and roof are one material.
+
 ### C-20261024-7 · 2026-10-24 · 0.7.0: natural construction (`assemble` plan `"vocabulary": "natural"`, `site` effect); L-055
 - because: user request (a construction strip for a painted village building, approved by its owner), L-053, L-055
 - files: skills/pixelwright/scripts/pxw.py (fx_site and helpers, _assemble_natural, cmd_assemble, usage, VERSION),
