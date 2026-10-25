@@ -16,9 +16,9 @@ $ echo $?
 0
 
 ## installed
-pixelwright 0.6.2 from claude plugin install
+pixelwright 0.7.0 from claude plugin install
 Claude Code 2.1.281 (Claude Code)
-Python 3.14.7, numpy 2.5.4, Pillow 13.0.0 on Windows
+Python 3.14.6, numpy 2.5.4, Pillow 13.0.0 on Windows
 artwright aw.py 0.4.2
 
 ## fixtures
@@ -49,7 +49,7 @@ Columns: 4
 
 ## version
 $ python pxw.py --version
-0.6.2
+0.7.0
 $ echo $?
 0
 
@@ -91,8 +91,8 @@ $ echo $?
 $ python pxw.py doctor
 {
   "ok": true,
-  "version": "0.6.2",
-  "python": "3.14.7",
+  "version": "0.7.0",
+  "python": "3.14.6",
   "numpy": "2.5.4",
   "pillow": "13.0.0",
   "missing": null,
@@ -117,6 +117,7 @@ $ python pxw.py doctor
     "rotate",
     "scroll",
     "shift",
+    "site",
     "sparks",
     "spill"
   ]
@@ -128,8 +129,8 @@ $ echo $?
 $ python pxw.py doctor
 {
   "ok": false,
-  "version": "0.6.2",
-  "python": "3.14.7",
+  "version": "0.7.0",
+  "python": "3.14.6",
   "numpy": null,
   "pillow": null,
   "missing": "No module named 'numpy'",
@@ -154,6 +155,7 @@ $ python pxw.py doctor
     "rotate",
     "scroll",
     "shift",
+    "site",
     "sparks",
     "spill"
   ]
@@ -1227,8 +1229,8 @@ $ echo $?
 $ python pxw.py doctor
 {
   "ok": true,
-  "version": "0.6.2",
-  "python": "3.14.7",
+  "version": "0.7.0",
+  "python": "3.14.6",
   "numpy": "2.5.4",
   "pillow": "13.0.0",
   "missing": null,
@@ -1253,6 +1255,7 @@ $ python pxw.py doctor
     "rotate",
     "scroll",
     "shift",
+    "site",
     "sparks",
     "spill"
   ]
@@ -1844,7 +1847,7 @@ $ echo $?
 
 ## shim version
 $ python sw.py --version
-0.6.2
+0.7.0
 $ echo $?
 0
 
@@ -1852,8 +1855,8 @@ $ echo $?
 $ python sw.py doctor
 {
   "ok": true,
-  "version": "0.6.2",
-  "python": "3.14.7",
+  "version": "0.7.0",
+  "python": "3.14.6",
   "numpy": "2.5.4",
   "pillow": "13.0.0",
   "missing": null,
@@ -1878,6 +1881,7 @@ $ python sw.py doctor
     "rotate",
     "scroll",
     "shift",
+    "site",
     "sparks",
     "spill"
   ]
@@ -2076,7 +2080,7 @@ $ echo $?
 $ python pxw.py frames brief-odd.json out-odd
 {
   "ok": false,
-  "error": "use: unknown effect(s) ['wobble']; known: ['arc', 'assemble', 'bands', 'bend', 'brighten', 'buildup', 'cart', 'darken', 'drone', 'dust', 'external', 'fill', 'glint', 'model_rotate', 'puffs', 'pulse', 'rotate', 'scroll', 'shift', 'sparks', 'spill']"
+  "error": "use: unknown effect(s) ['wobble']; known: ['arc', 'assemble', 'bands', 'bend', 'brighten', 'buildup', 'cart', 'darken', 'drone', 'dust', 'external', 'fill', 'glint', 'model_rotate', 'puffs', 'pulse', 'rotate', 'scroll', 'shift', 'site', 'sparks', 'spill']"
 }
 $ echo $?
 1
@@ -2236,7 +2240,7 @@ $ echo $?
 
 ## review
 $ python pxw.py review batch --port 8799
-{"ok": true, "url": "http://127.0.0.1:<port>/", "picks": "<tmp>/run/batch/picks.json"}
+{"ok": true, "url": "http://127.0.0.1:8799/", "picks": "<tmp>/run/batch/picks.json"}
 section: forge, use (10 frames)
 section: forge, idle (8 frames)
 section: forge, place (8 frames)
@@ -2281,14 +2285,14 @@ $ echo $?
 
 ## tests: animation
 $ python tests/test_pxw.py
-Ran 41 tests in <s>s
+Ran 44 tests in <s>s
 OK (skipped=4)
 $ echo $?
 0
 
 ## tests: make
 $ python tests/test_make.py
-Ran 26 tests in <s>s
+Ran 27 tests in <s>s
 OK
 $ echo $?
 0
@@ -2301,3 +2305,4 @@ $ echo $?
 
 ## images
 render-2x.png, mushroom-make-8x.png, forge-use-8x.gif written; the GIF stores 80 ms a frame (83 asked)
+

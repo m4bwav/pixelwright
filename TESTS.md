@@ -29,6 +29,9 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
   `outcome1_fixture.py` (L-049).
 - Reading: across fractional scale, a palette spread over a set, and a real model render, nothing yet separates the
   arms on a single sprite. make's measured value is speed (time x0.64, T-20261024-3) and one tested pipeline.
+- Owner's ruling (2026-10-24, after this run): make's value as speed and one tested pipeline is enough. The hunt for
+  a single case where the baseline fails is closed; batches, a near-background colour and a drifting grid stay unscored
+  ideas, to be scored with the plain script first (L-054) if a later change gives a reason.
 - led to: L-054, C-20261024-6
 
 ### T-20261024-3 · 2026-10-24 · evergreen 0.17.1 worth --ab (claude -p), outcome-make-2 · Windows 11, Opus · outcome 3/3 with vs 3/3 without, twice
