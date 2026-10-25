@@ -8,6 +8,12 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261024-5 · 2026-10-24 · unittest + port check · Windows 11, Python 3.14 · unit 46/46
+- `tests/test_pxw.py` 44/44 (two new natural-assemble tests), `tests/test_make.py` OK, `check_skills.py` OK.
+- Port check: a 96x96 painted house (30 frames, 12 fps) through `pxw.py assemble` (natural) then `frames`: the sheet
+  equals the original project script's strip byte for byte; gates pass, rest frame identical, 0 new colours.
+- led to: C-20261024-7, L-055
+
 ### T-20261024-4 · 2026-10-24 · real model render (Z-Image img2img on the Mac) + unittest · Windows 11, Python 3.14 · unit 68/68; no A/B run
 - Renders: make_render's potion drawn at 58.5x on 1024 px, Z-Image Turbo img2img, seed 11, denoise 0.5, 0.65, 0.75,
   0.85. At 0.5 and 0.65 the model only adds shade columns; 0.75 adds off-grid curved shading inside blocks and moves

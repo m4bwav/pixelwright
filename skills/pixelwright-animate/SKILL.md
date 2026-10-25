@@ -56,6 +56,10 @@ construction frames: `pxw.py assemble <brief> <brief-assembled.json> --plan plan
 real site builds: crane, drones, trolley, telescoping stacks, unfolding arms, on-site welding; see
 [references/effects.md](references/effects.md) "Patterns"). `uncovered_pixels` must be 0. The older
 `pxw.py buildup` (seam rising behind a dotted holographic outline) reads as too futuristic for hard sci-fi (L-007).
+A natural building (timber, daub, thatch or tile; a village seen from above at an angle) takes a natural plan
+instead: `"vocabulary": "natural"` with the roof polygon, the ground diamond, the wall height and the eave and
+ridge lines; it raises stakes, footing, posts, walls course by course, rafters and the roof from the eave up, in
+colours sampled from the still (effects.md "Patterns", L-055).
 
 ## Step 3: gates
 

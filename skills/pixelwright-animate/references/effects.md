@@ -24,6 +24,7 @@ pixels plus `extraColours`) or the full still palette, so no stray colour appear
 | `fill` | a level rising bottom to top; empty part dimmed, hot level line | share full | `dim` (0.6), `hot` |
 | `buildup` | construction reveal from the ground: weld seam, dotted outline above | share built | `weld` colours, `ghost` colour, `sparks`, `jitter`, `seed` |
 | `assemble` | realistic construction ending on the still: parts arrive by crane, drone, trolley, telescope, hinge or on-site weld; drones leave motion trails; machines kick up dust where they work near the ground | unused (frames come from each step's `at`) | `steps` [{`part`, `how`, `at` [start, end], `from`, `dir`, `pivot`, `angle`, `drones`, weld: `ragged` (2 px), `speed` (4 px/frame), `seed`}], `machine` colours, `weld`, `dust` (2 colours, or false); made by `pxw.py assemble` |
+| `site` | natural construction ending on the still, for a timber-framed, daubed, roofed building seen from above at an angle: stakes and string on the ground diamond, a fieldstone footing, corner posts and wall plates, the still's wall timbers then its infill rising course by course, the gable, ridge pole, rafters and laths, the roof laid from the eave up to the ridge, a ladder; site elements take colours sampled from the still (0 new colours) | unused (frames 0 to `siteFrames` - 1; the last is the still) | `roof` and `lumber` (region names), `groundBase` {left, front, right: {x, y}}, `wallHeight` px, `eave` and `ridge` [[x, y], [x, y]], `ladder` [foot, top], `rafters` (7), `timberValue` (0.55), `timeline` {stakes, footing, posts, timber, infill, gable, rafters, roof, ladder: [start, end]; defaults scale from 30 frames}, `seed`; made by `pxw.py assemble` with `"vocabulary": "natural"` |
 | `arc` | electric arcs: jagged 1 px bolts along paths, a new shape every frame, glow pixels beside them | share of paths lit | `paths` [[x0, y0, x1, y1], ...] (lit in list order), `colours` [core, glow], `jag` (2.5), `flicker` (0.25), `seed` |
 | `drone` | a work drone flying a path, bobbing, with a motion trail; optional torch arm to a weld point | position along `path` by segment (k < 0 hides) | `path` [[x, y], ...], `torch` [x, y], `torchFrames`, `machine` (give it colours the still lacks), `weld` |
 | `cart` | a ground cart rolling a crate | position from `from` to `to` (k < 0 or > 1 hides) | `from`, `to` (x), `y` (wheel row), `size` [w, h], `machine` |
@@ -56,6 +57,14 @@ Seeds make every run byte-identical; change `seed` for a different scatter.
 - Power-on (placement): `darken` on each emissive region with curves 1 to 0 in a believable order (control room,
   work lights, the machine), one dip back up for a flicker; `dust` at the base settling; the last frame is the
   still. Then `pxw.py buildup` for the construction frames in front.
+- Natural construction (a medieval or village building, painted or pixel, seen from above at an angle):
+  `pxw.py assemble <brief> <out> --plan plan.json` with `"vocabulary": "natural"`. The plan gives a `roof` polygon
+  region, an optional `lumber` region (a plank pile that stands from frame 0), the `groundBase` diamond's left,
+  front and right corners, `wallHeight` (px from the near ground line to the wall plate), and the `eave` and
+  `ridge` lines; everything else in the silhouette is wall, split into timber (dark, or saturated and mid) and
+  infill. Height is measured up from the near ground line, so the walls rise from the diamond. The command
+  reports each part's pixels, the site colours it sampled and `idle_frames`; 30 frames at 12 fps read well. Check
+  the timber split at zoom first: a light timber frame lands in infill and rises with it.
 - Construction (placement, before the power-on): `pxw.py assemble <brief> <out> --plan plan.json`. Split the
   silhouette into parts the way a real site would: weld the deck or pad first (`weld`, `dir: right`), roll
   ground-level prefabs in (`trolley`), lower big prefab modules on the crane (`crane`), fly small boxes and tanks

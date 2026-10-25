@@ -19,7 +19,8 @@ Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, wh
   grid    <image> <out.png> [--zoom 8] [--step 8]            zoomed still with coordinates, for writing regions
   mask    <brief.json> <out.png> [--root DIR] [--zoom 4]     every region tinted and labelled, to check a brief
   buildup <brief.json> <out.json> [--anim place] [--frames 6]  prefix an animation with construction frames
-  assemble <brief.json> <out.json> --plan plan.json [--anim place]  prefix with crane/drone/trolley assembly
+  assemble <brief.json> <out.json> --plan plan.json [--anim place]  prefix with crane/drone/trolley assembly,
+                                                             or a natural site build ("vocabulary": "natural")
   contact <sheet.png> <out.png> --frames N [--per 5] [--zoom 3]
   pack    <out.png> <frame.png>...                           horizontal strip in the order given
   review  <dir> [--port 8765] [--extra items.json]           click page; every click saves <dir>/picks.json
@@ -39,7 +40,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.6.3"
+VERSION = "0.7.0"
 
 try:
     import numpy as np
@@ -1014,6 +1015,187 @@ def fx_assemble(s, f, k, t, i):
                     t.get("frames"))
 
 
+# Natural construction (`assemble` plan with "vocabulary": "natural"): a timber-framed, daubed, roofed building raised
+# on site from its ground diamond. Timeline keys and their defaults for a 30-frame strip; other lengths scale them.
+SITE_TIMELINE = {"stakes": [0, 10], "footing": [2, 6], "posts": [5, 10], "timber": [7, 13], "infill": [10, 17],
+                 "gable": [14, 18], "rafters": [15, 19], "roof": [19, 27], "ladder": [9, 27]}
+
+
+def _site_timeline(t):
+    n = t["siteFrames"]
+    tl = {kk: [int(round(v * (n - 1) / 29)) for v in vv] for kk, vv in SITE_TIMELINE.items()}
+    given = dict(t.get("timeline", {}))
+    if "thatch" in given:
+        given.setdefault("roof", given.pop("thatch"))
+    tl.update(given)
+    tl.setdefault("footing_gone", n - 1)
+    tl.setdefault("frame_gone", n - 1)
+    return tl
+
+
+def _hash01(a, b, seed):
+    v = (a * 73856093) ^ (b * 19349663) ^ (seed * 83492791)
+    return (v % 1000003) / 1000003.0
+
+
+def _ramp(f, f0, f1):
+    """0 before f0, 1 at f1 and after."""
+    if f1 <= f0:
+        return 1.0 if f >= f0 else 0.0
+    return float(min(1.0, max(0.0, (f - f0) / (f1 - f0))))
+
+
+def _line(s, p0, p1, width=1):
+    img = Image.new("L", (s.w, s.h), 0)
+    ImageDraw.Draw(img).line([tuple(p0), tuple(p1)], fill=1, width=width)
+    return np.asarray(img).astype(bool)
+
+
+def _site_geometry(s, t):
+    """Parts of the still (roof, loose lumber, wall timber, wall infill, gable), height above the near ground line,
+    position up the roof slope (0 eave, 1 ridge), panel and fine noise, and site colours sampled from the still."""
+    key = ("site", id(s), json.dumps(t, sort_keys=True))
+    if key in _CACHE:
+        return _CACHE[key]
+    yy, xx = np.mgrid[0:s.h, 0:s.w]
+    g = t["groundBase"]
+    L = np.array([g["left"]["x"], g["left"]["y"]], float)
+    F = np.array([g["front"]["x"], g["front"]["y"]], float)
+    R = np.array([g["right"]["x"], g["right"]["y"]], float)
+    B = L + R - F
+    wallH = t["wallHeight"]
+    groundY = np.where(xx <= F[0], L[1] + (xx - L[0]) * (F[1] - L[1]) / (F[0] - L[0]),
+                       F[1] + (xx - F[0]) * (R[1] - F[1]) / (R[0] - F[0]))
+    height = np.clip(groundY - yy, 0, None)
+    still = np.round(s.still).astype(np.uint8)
+    rgb = still[..., :3].astype(float)
+    roof = s.regions[t["roof"]] & s.opaque
+    lumber = s.regions[t["lumber"]] & s.opaque if t.get("lumber") else np.zeros_like(roof)
+    walls = s.opaque & ~roof & ~lumber
+    val = rgb.max(axis=2) / 255
+    sat = (rgb.max(axis=2) - rgb.min(axis=2)) / np.maximum(rgb.max(axis=2), 1)
+    timber = walls & ((val < t.get("timberValue", 0.55)) | ((sat > 0.5) & (val < 0.75)))
+    infill = walls & ~timber
+    e0, e1 = (np.array(p, float) for p in t["eave"])
+    r0, r1 = (np.array(p, float) for p in t["ridge"])
+
+    def dist(p0, p1):
+        d = p1 - p0
+        nrm = np.array([-d[1], d[0]]) / np.hypot(*d)
+        return np.abs((xx - p0[0]) * nrm[0] + (yy - p0[1]) * nrm[1])
+
+    de, dr = dist(e0, e1), dist(r0, r1)
+
+    def sample(mask, q):
+        """The q-quantile colour by brightness; the whole still's when the part is (nearly) empty, never invented."""
+        px = rgb[mask] if mask.sum() > 4 else rgb[s.opaque]
+        return np.asarray(px[np.argsort(px.mean(axis=1))[int(q * (len(px) - 1))]], np.float32)
+
+    stone = s.opaque & (sat < 0.22) & (val > 0.35) & (val < 0.8)
+    seed = t.get("seed", 7)
+    geo = dict(L=L, F=F, R=R, B=B, up=np.array([0, -wallH], float), wallH=wallH, height=height, roof=roof,
+               lumber=lumber, walls=walls, timber=timber, infill=infill, gable=walls & (height > wallH + 1),
+               slope=de / np.maximum(de + dr, 1e-6), e0=e0, e1=e1, r0=r0, r1=r1,
+               blk=_hash01(xx // 3, yy // 3, seed), fine=_hash01(xx, yy, seed + 1), xx=xx, yy=yy,
+               cols=dict(timber=sample(timber, 0.25), timber_lit=sample(timber, 0.75), string=sample(infill, 0.6),
+                         stone=sample(stone, 0.85), stone_dark=sample(stone, 0.15)))
+    _CACHE[key] = geo
+    return geo
+
+
+def _site_built(G, T, f):
+    """Pixels of the still standing at frame f: loose lumber from the start, wall timbers rising, infill course by
+    course, the gable's timbers then its infill, the roof from the eave up to the ridge with a ragged course edge."""
+    h, blk = G["height"], G["blk"]
+    wallH, gable, timber, infill = G["wallH"], G["gable"], G["timber"], G["infill"]
+    m = G["lumber"].copy()
+    m |= timber & ~gable & (h <= _ramp(f, *T["timber"]) * (wallH + 1) + blk * 2 - 1)
+    m |= infill & ~gable & (h <= _ramp(f, *T["infill"]) * (wallH + 2) + blk * 3 - 1.5)
+    gh = h[gable].max() if gable.any() else wallH
+    m |= gable & timber & (h <= wallH + _ramp(f, *T["gable"]) * (gh - wallH + 1))
+    m |= gable & (h <= wallH + _ramp(f, T["gable"][0] + 1, T["gable"][1] + 2) * (gh - wallH + 2) - blk * 2)
+    m |= G["roof"] & (G["slope"] <= _ramp(f, *T["roof"]) * 1.2 - 0.04 - G["fine"] * 0.06 - blk * 0.04)
+    return m
+
+
+def _site_items(s, G, T, t, f):
+    """Temporary site elements at frame f as (mask, colour), drawn under built pixels: corner stakes and string on
+    the ground diamond, a fieldstone footing laid near edges first, corner posts and wall plates, the ridge pole,
+    rafters and laths, a ladder."""
+    L, F, R, B, up, C = G["L"], G["F"], G["R"], G["B"], G["up"], G["cols"]
+    xx, yy = G["xx"], G["yy"]
+    items = []
+    if T["stakes"][0] <= f < T["stakes"][1]:
+        n = _ramp(f, T["stakes"][0], T["stakes"][0] + 2)
+        for j, c in enumerate([L, F, R, B]):
+            if n * 4 >= j + 1 or f >= T["stakes"][0] + 2:
+                items.append((_line(s, c, c + [0, -3]), C["timber"]))
+        if f >= T["stakes"][0] + 1:
+            for a, b in [(L, F), (F, R), (R, B), (B, L)]:
+                items.append((_line(s, a, b) & ~_line(s, a, a), C["string"]))
+    p = _ramp(f, *T["footing"])
+    if p > 0 and f < T["footing_gone"]:
+        for j, (a, b) in enumerate([(L, F), (F, R), (R, B), (B, L)]):
+            share = float(np.clip(4 * p - j, 0, 1))
+            if share <= 0:
+                continue
+            end = a + (b - a) * share
+            mk = _line(s, a, end, 2) | _line(s, a + [0, -1], end + [0, -1], 2) | _line(s, a + [0, -2], end + [0, -2], 1)
+            items.append((mk, C["stone_dark"]))
+            items.append((mk & ((xx // 2 + yy) % 3 != 0) & (yy % 2 == (xx // 2) % 2), C["stone"]))
+    p = _ramp(f, *T["posts"])
+    if p > 0 and f < T["frame_gone"]:
+        for c in [B, L, R, F]:
+            items.append((_line(s, c + [0, -1], c + up * p, 2 if (c == F).all() else 1), C["timber"]))
+        if p >= 1:
+            q = _ramp(f, T["posts"][1], T["posts"][1] + 2)
+            for a, b in [(B + up, L + up), (B + up, R + up), (L + up, F + up), (F + up, R + up)]:
+                items.append((_line(s, a, a + (b - a) * q), C["timber_lit"]))
+    p = _ramp(f, *T["rafters"])
+    if p > 0 and f < T["frame_gone"]:
+        e0, e1, r0, r1 = G["e0"], G["e1"], G["r0"], G["r1"]
+        items.append((_line(s, r0, r0 + (r1 - r0) * p, 2), C["timber_lit"]))
+        n = t.get("rafters", 7)
+        for j in range(n):
+            if p * n >= j + 1:
+                u = j / (n - 1)
+                items.append((_line(s, e0 + (e1 - e0) * u, r0 + (r1 - r0) * u), C["timber"]))
+        if p >= 1:
+            for u in (0.3, 0.6):
+                items.append((_line(s, e0 + (r0 - e0) * u, e1 + (r1 - e1) * u), C["timber_lit"]))
+    if t.get("ladder") and T["ladder"][0] <= f < T["ladder"][1]:
+        lb, lt = (np.array(p_, float) for p_ in t["ladder"])
+        for off in (0, 3):
+            items.append((_line(s, lb + [off, 0], lt + [off, 0]), C["timber_lit"]))
+        for j in range(1, 6):
+            a = lb + (lt - lb) * j / 6
+            items.append((_line(s, a, a + [3, 0]), C["timber"]))
+    return items
+
+
+def fx_site(s, f, k, t, i):
+    """Natural construction ending on the still, for a timber-framed, daubed, roofed building seen from above at an
+    angle: stakes and string on the ground diamond (`groundBase` left, front, right corners), a fieldstone footing,
+    corner posts and wall plates `wallHeight` px tall, the still's own wall timbers then its infill rising course by
+    course, the gable, the ridge pole, rafters and laths, the roof (`roof` region) laid from the `eave` line up to
+    the `ridge` line, a `ladder` that leaves before the end. The `lumber` region (a plank pile) stands from frame 0.
+    Site elements take colours sampled from the still, so a frame adds no colour. Frames 0 to `siteFrames` - 1;
+    the last of them is the still. Made by `pxw.py assemble` with a natural plan; put it last."""
+    n = t["siteFrames"]
+    if i >= n - 1:
+        return
+    G = _site_geometry(s, t)
+    T = _site_timeline(t)
+    src = f.copy()
+    f[s.opaque] = 0
+    f[~s.opaque] = s.still[~s.opaque]
+    for mk, col in _site_items(s, G, T, t, i):
+        f[mk, :3] = col
+        f[mk, 3] = 255
+    b = _site_built(G, T, i) & s.opaque
+    f[b] = src[b]
+
+
 def fx_arc(s, f, k, t, i):
     """Electric arcs: jagged 1 px bolts along each of `paths` ([[x0, y0, x1, y1], ...]), a new shape every frame
     (midpoint displacement, `jag` px), core colour then glow pixels beside it. k is the share of paths lit (0 off,
@@ -1401,7 +1583,7 @@ EFFECTS = {"pulse": fx_pulse, "spill": fx_spill, "darken": fx_darken, "glint": f
            "dust": fx_dust, "rotate": fx_rotate, "shift": fx_shift, "scroll": fx_scroll, "fill": fx_fill,
            "puffs": fx_puffs, "buildup": fx_buildup, "assemble": fx_assemble, "external": fx_external,
            "arc": fx_arc, "drone": fx_drone, "cart": fx_cart, "bend": fx_bend, "brighten": fx_brighten, "bands": fx_bands,
-           "model_rotate": fx_model_rotate}
+           "model_rotate": fx_model_rotate, "site": fx_site}
 
 
 def animations(brief):
@@ -1672,6 +1854,8 @@ def cmd_assemble(a):
     briefPath = Path(a.brief)
     brief = json.loads(briefPath.read_text(encoding="utf-8"))
     plan = json.loads(Path(a.plan).read_text(encoding="utf-8"))
+    if plan.get("vocabulary") == "natural":
+        return _assemble_natural(a, brief, briefPath, plan)
     anims = brief.get("animations", brief)
     anim = anims[a.anim]
     n, old = plan["frames"], anim["frames"]
@@ -1713,6 +1897,52 @@ def cmd_assemble(a):
     ok = not empty and not late and (loose == 0 or plan.get("allowUncovered"))
     out(dict(ok=bool(ok), out=a.out, anim=a.anim, frames=anim["frames"], assemble_frames=n, uncovered_pixels=loose,
              empty_parts=empty, steps_ending_after_assembly=late), 0 if ok else 1)
+
+
+SITE_KEYS = ("roof", "lumber", "groundBase", "wallHeight", "timberValue", "eave", "ridge", "ladder", "rafters",
+             "timeline", "seed")
+
+
+def _assemble_natural(a, brief, briefPath, plan):
+    """A natural plan: {"vocabulary": "natural", "frames": N, "regions": {roof, lumber}, "roof": name, "lumber": name,
+    "groundBase", "wallHeight", "eave", "ridge", "ladder", "rafters", "timeline", "timberValue", "seed", "fps"}.
+    Prefixes the animation (created when the brief has none by that name) with a `site` track."""
+    for key in ("roof", "groundBase", "wallHeight", "eave", "ridge"):
+        if key not in plan:
+            fail(f"natural plan needs '{key}'")
+    if "animations" not in brief and not any(isinstance(brief.get(kk), dict) for kk in ("use", "place")):
+        brief["animations"] = {}
+    anims = brief.get("animations", brief)
+    anim = anims.setdefault(a.anim, {"frames": 0, "tracks": [], "fps": plan.get("fps", 12)})
+    n, old = plan["frames"], anim["frames"]
+    for t in anim["tracks"]:
+        if "curve" in t:
+            t["curve"] = [t["curve"][0]] * n + t["curve"]
+        if "bornFrames" in t:
+            t["bornFrames"] = [x + n for x in t["bornFrames"]]
+    brief["regions"].update(plan.get("regions", {}))
+    brief["regions"]["build"] = {"rects": "all", "alpha": True}
+    track = {"effect": "site", "region": "build", "siteFrames": n, "frames": old + n}
+    track.update({kk: plan[kk] for kk in SITE_KEYS if kk in plan})
+    anim["tracks"].append(track)
+    anim["frames"] = old + n
+    anim["rest"] = "last"
+    anim.setdefault("focal", "build")
+    try:
+        s = Sprite(brief, a.root, briefPath.parent)
+    except (OSError, KeyError, ValueError) as e:
+        fail(f"brief, plan or still unreadable: {e}")
+    G = _site_geometry(s, track)
+    T = _site_timeline(track)
+    late = sorted(kk for kk, v in T.items() if (v if isinstance(v, int) else v[1]) > n - 1)
+    parts = {kk: int(G[kk].sum()) for kk in ("roof", "lumber", "timber", "infill", "gable")}
+    frames = build_frames(s, {"frames": n, "tracks": [track]})
+    idle = [j for j in range(n - 1) if (frames[j] == frames[j + 1]).all()]
+    Path(a.out).write_text(json.dumps(brief, indent=2), encoding="utf-8")
+    ok = parts["roof"] > 0 and parts["timber"] + parts["infill"] > 0 and not late
+    out(dict(ok=bool(ok), out=a.out, anim=a.anim, frames=anim["frames"], assemble_frames=n, vocabulary="natural",
+             parts=parts, idle_frames=idle, timeline_ends_after_assembly=late,
+             colours={kk: [int(v) for v in c] for kk, c in G["cols"].items()}), 0 if ok else 1)
 
 
 def cmd_contact(a):

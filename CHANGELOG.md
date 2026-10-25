@@ -4,6 +4,16 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261024-7 · 2026-10-24 · 0.7.0: natural construction (`assemble` plan `"vocabulary": "natural"`, `site` effect); L-055
+- because: user request (a construction strip for a painted village building, approved by its owner), L-053, L-055
+- files: skills/pixelwright/scripts/pxw.py (fx_site and helpers, _assemble_natural, cmd_assemble, usage, VERSION),
+  skills/pixelwright-animate/references/effects.md (effects table, Patterns), skills/pixelwright-animate/SKILL.md
+  (Placement), tests/test_pxw.py (test_natural_assemble_builds_up_from_the_ground_and_ends_on_still,
+  test_natural_assemble_needs_the_geometry), TESTS.md (T-20261024-5), LEARNINGS.md (L-055), .claude-plugin/plugin.json
+- A second construction vocabulary beside crane, drone and trolley: a timber-framed building raised on site from its
+  ground diamond, ported from a project script whose 30-frame strip it reproduces byte for byte. Site colours fall
+  back to the whole still's when a material (grey stone) is absent, instead of invented greys.
+
 ### C-20261024-6 · 2026-10-24 · Eval case outcome-make-3 (a real model render); outcome-make-1 copies only its input; no version change
 - because: T-20261024-4, L-049, L-054
 - files: evals/evals.json (outcome-make-1 prompt and files, outcome-make-3), evals/fixtures/outcome1_fixture.py,
