@@ -4,6 +4,13 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261025-2 · 2026-10-25 · 0.7.3: trace natural roofs by hand; desync loops with a random first-frame hold; L-059, L-060
+- because: L-059, L-060, L-056 (confirmed again)
+- files: LEARNINGS.md (L-056 count, L-059, L-060), skills/pixelwright-animate/SKILL.md (Placement, Guards),
+  skills/pixelwright/scripts/pxw.py (VERSION), .claude-plugin/plugin.json
+- Docs only: the roof polygon of a natural plan is traced on a grid, not taken from a colour mask, and loops shared
+  by many copies are put out of step by a random hold on frame 0 rather than a random start frame.
+
 ### C-20261025-1 · 2026-10-25 · 0.7.2: natural construction lines stay inside the finished silhouette; new gate; L-057, L-058
 - because: user request (stray construction lines read as visual chatter), L-057, L-058, T-20261025-1
 - files: skills/pixelwright/scripts/pxw.py (_site_items clip, _drop_specks, fx_site, SITE_KEYS, gates, VERSION),

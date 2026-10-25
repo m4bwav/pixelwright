@@ -61,7 +61,8 @@ instead: `"vocabulary": "natural"` with the roof polygon, the ground diamond, th
 ridge lines; it raises stakes, footing, posts, walls course by course, rafters and the roof from the eave up, in
 colours sampled from the still (effects.md "Patterns", L-055). The roof must differ from the walls in material (thatch,
 tile or shingle over timber, daub or stone); a building whose walls and roof are the same wood needs another
-build order (L-056). Site lines are clipped to the finished silhouette by default (`clip`, L-057).
+build order (L-056). Site lines are clipped to the finished silhouette by default (`clip`, L-057). Trace the
+roof polygon by hand on an 8x grid: a colour mask of the thatch also takes the straw-toned daub and timber (L-059).
 
 ## Step 3: gates
 
@@ -148,6 +149,9 @@ still's palette, and the same gates run. Details: [references/effects.md](refere
 - A part that travels more than a few pixels is the whole object, painted in code in ground coordinates with colours
   sampled from the still's matching faces, carried by what moves it (wheels on rails), occluded by depth behind the
   wall; offer the new rest frame as the idle still (L-040).
+- Many copies of one building in a scene: the engine should hold each copy's first frame for a random part of one
+  cycle before the loop runs, not start it on a random frame, so copies fall out of step and a start from an idle
+  still equal to frame 0 stays seamless (L-060).
 - Smoke and steam travel: puffs break off, rise and thin out (the project's own smoke strip, or `external` with
   `soft: "keep"`); never bend or shift a painted plume in place (L-034). Remove all the painted smoke, growing back
   what it covered, and emit from the true source; any part left still reads as frozen (L-036).

@@ -676,7 +676,7 @@ house style, 128 px stills).
 - Evidence: three strips (thatch over daub; tile over half-timber with a stone oven dome; tile over half-timber with a
   chimney) passed every gate on the first run and read as a site going up; one same-wood log building was set aside.
 - Scope: skill
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+- Status: active · helpful 2 · harmful 0 · last_confirmed 2026-10-25
 
 ### L-057 · 2026-10-25 · Temporary construction lines outside the finished silhouette read as chatter
 - Trigger: a viewer watching natural construction strips: 1 px rafters, laths, wall plates and string ran out over
@@ -701,5 +701,30 @@ house style, 128 px stills).
   smoke from stills that will carry the overlay. Keep smoke out of active loops.
 - Evidence: one 48-frame strip and two variants previewed over eight painted buildings with thatch, tile and wood
   roofs; no per-building art needed.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-10-25
+
+### L-059 · 2026-10-25 · A natural plan's roof outline is traced on a grid, not masked by colour
+- Trigger: seven thatch-over-timber village buildings for natural construction strips; a hue, saturation and value
+  mask for the straw thatch, closed and hole-filled, came back as the whole building: the daub and the lit timbers
+  share the thatch's straw tones.
+- Hypothesis: painted art at 96 px lights walls and roof from the same warm key, so their colours overlap; what
+  separates them is the eave's line and texture, which an eye reads on a grid and a colour threshold does not.
+- Rule: trace the roof polygon by hand on an 8x grid with 4 px lines and the ground diamond drawn (eave, ridge, left
+  overhang strip and the gable's bargeboard), as for the first strips; use a colour mask only to check the trace.
+- Evidence: the colour mask covered the gable wall on all seven; the hand traces gave seven strips that passed every
+  gate on the first run (rest frame identical, 0 new colours, 0 px outside the silhouette).
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-25
+
+### L-060 · 2026-10-25 · Desync copies of a loop with a random hold on frame 0, not a random start frame
+- Trigger: a game owner wanted two copies of one building not to animate in step; one building's idle still is its
+  loop's first frame so a cart doesn't jump when work starts and stops.
+- Hypothesis: a random start frame breaks that seam on every start; holding frame 0 for a random part of one cycle
+  desyncs copies just as well and every start still begins on the idle still.
+- Rule: when advising the engine side of a loop shared by many copies, start the clock at a random negative value in
+  (-one cycle, 0] and show frame 0 until it passes 0. One-shot strips (placement) start at once.
+- Evidence: written as a nine-line engine change with a before and after preview of three copies; the cost is the
+  still showing for up to one cycle after work starts.
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-10-25
