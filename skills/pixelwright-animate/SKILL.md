@@ -59,7 +59,9 @@ real site builds: crane, drones, trolley, telescoping stacks, unfolding arms, on
 A natural building (timber, daub, thatch or tile; a village seen from above at an angle) takes a natural plan
 instead: `"vocabulary": "natural"` with the roof polygon, the ground diamond, the wall height and the eave and
 ridge lines; it raises stakes, footing, posts, walls course by course, rafters and the roof from the eave up, in
-colours sampled from the still (effects.md "Patterns", L-055).
+colours sampled from the still (effects.md "Patterns", L-055). The roof must differ from the walls in material (thatch,
+tile or shingle over timber, daub or stone); a building whose walls and roof are the same wood needs another
+build order (L-056).
 
 ## Step 3: gates
 
