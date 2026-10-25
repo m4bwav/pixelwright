@@ -56,3 +56,15 @@ block is filled in. Across three tries, nothing separates the arms on a single s
 owner is whether speed and one tested pipeline are enough for make. 0.6.3 (PR #4, from another session) is merged
 but not tagged. The old spritewright repository was retired the same evening by another session (archived
 privately, its plugin entry and evergreen unit removed); nothing from it is owed here.
+
+## 2026-10-24: 0.6.3 and 0.7.0 released, wiki updated to 0.7.0; make's eval hunt closed
+
+The owner ruled that make's measured value, speed and one tested pipeline, is enough, so the search for an eval case
+the baseline fails is closed (recorded under T-20261024-4 in TESTS.md). The owner then approved releasing both
+merged versions: `v0.6.3` on `2901382` (review page items, PR #4) and `v0.7.0` on `a3f02f5` (natural construction,
+PR #7 from another session), each with a hand-written GitHub release; CI passed on both commits. The local install is
+0.7.0. The wiki was re-verified against the plugin as `claude plugin install` installs it (identical to
+`git archive v0.7.0` apart from `.in_use`) on Windows 3.14, Windows 3.9 and Linux; the only differences were versions,
+the new `site` effect in `doctor` and the unknown-effect error, and the test counts (44 and 27). Animating-A-Sprite now
+describes the natural vocabulary and the 0.6.3 review items (neither run for the wiki). Details in
+`ai-docs/notes/2026-10-24-github-wiki.md`.
