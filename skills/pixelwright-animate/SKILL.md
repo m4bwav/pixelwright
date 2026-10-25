@@ -61,7 +61,7 @@ instead: `"vocabulary": "natural"` with the roof polygon, the ground diamond, th
 ridge lines; it raises stakes, footing, posts, walls course by course, rafters and the roof from the eave up, in
 colours sampled from the still (effects.md "Patterns", L-055). The roof must differ from the walls in material (thatch,
 tile or shingle over timber, daub or stone); a building whose walls and roof are the same wood needs another
-build order (L-056).
+build order (L-056). Site lines are clipped to the finished silhouette by default (`clip`, L-057).
 
 ## Step 3: gates
 
@@ -75,6 +75,7 @@ Every animation in `gates.json` must `pass`:
 | `new_colours` | 0: only the still's colours, `extraColours` and the tracks' declared colours |
 | `noticeable` | peak changed share >= 8% of opaque pixels or peak focal brightness change >= 40 (override per brief) |
 | `loop_seam_ok` | loops only: the last-to-first jump is no bigger than the largest step inside |
+| `drawn_outside_silhouette` | construction (`site`) only: 0 pixels on any frame where the still is fully transparent (L-057) |
 
 Also read `aw_pixel_frames` (artwright's frame-size, bounding-box and baseline checks). A gate that fails twice
 for the same sprite stops the work: report it with the gate JSON, do not loosen the threshold to pass.
@@ -128,6 +129,11 @@ still's palette, and the same gates run. Details: [references/effects.md](refere
 - Never overwrite a shipped still or sheet without the human's say-so; candidates live in a scratch folder.
 - Rotate only from the original still (`rotate` does), never from a rotated copy; at 0 degrees the part must
   equal the still.
+- Construction: a temporary line (string, post, plate, rafter, lath) only draws where the finished building stands,
+  on the part that explains it; lines over the sky that vanish on the last frame read as chatter, not scaffolding.
+  Real scaffolding needs visible thickness and must read at 1x (L-057).
+- Smoke that should follow a game state (fuel, heat, season) is one reusable overlay strip at a chimney anchor, not
+  painted into each sprite's loop (L-058).
 - Particles are hard-edged palette pixels with a 2 to 3 frame trail, never soft blurred circles.
 - Preview timing from the APNG or the engine, never from a GIF (256 colours, 10 ms steps).
 - Painted art: a part is the object's own colour family inside a loose shape, never the bare shape (soft edges

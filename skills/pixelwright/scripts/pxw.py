@@ -40,7 +40,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.7.1"
+VERSION = "0.7.2"
 
 try:
     import numpy as np
@@ -1051,6 +1051,31 @@ def _line(s, p0, p1, width=1):
     return np.asarray(img).astype(bool)
 
 
+def _drop_specks(mask, least=4):
+    """The mask without 8-connected pieces under `least` px: a clipped line's leftover dots read as noise."""
+    keep = mask.copy()
+    seen = np.zeros_like(mask)
+    h, w = mask.shape
+    for y0, x0 in zip(*np.nonzero(mask)):
+        if seen[y0, x0]:
+            continue
+        stack, piece = [(y0, x0)], []
+        seen[y0, x0] = True
+        while stack:
+            y, x = stack.pop()
+            piece.append((y, x))
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    yy, xx = y + dy, x + dx
+                    if 0 <= yy < h and 0 <= xx < w and mask[yy, xx] and not seen[yy, xx]:
+                        seen[yy, xx] = True
+                        stack.append((yy, xx))
+        if len(piece) < least:
+            for y, x in piece:
+                keep[y, x] = False
+    return keep
+
+
 def _site_geometry(s, t):
     """Parts of the still (roof, loose lumber, wall timber, wall infill, gable), height above the near ground line,
     position up the roof slope (0 eave, 1 ridge), panel and fine noise, and site colours sampled from the still."""
@@ -1125,14 +1150,20 @@ def _site_items(s, G, T, t, f):
     L, F, R, B, up, C = G["L"], G["F"], G["R"], G["B"], G["up"], G["cols"]
     xx, yy = G["xx"], G["yy"]
     items = []
+    if t.get("clip", True):
+        # a temporary line only shows where the finished building stands, on the part that explains it: string,
+        # footing and ladder inside the silhouette, posts and plates on the walls below the gable, rafters and laths on the roof
+        ground, frame, roofing = s.opaque, G["walls"] & (G["height"] <= G["wallH"] + 2), G["roof"]
+    else:
+        ground = frame = roofing = np.ones((s.h, s.w), dtype=bool)
     if T["stakes"][0] <= f < T["stakes"][1]:
         n = _ramp(f, T["stakes"][0], T["stakes"][0] + 2)
         for j, c in enumerate([L, F, R, B]):
             if n * 4 >= j + 1 or f >= T["stakes"][0] + 2:
-                items.append((_line(s, c, c + [0, -3]), C["timber"]))
+                items.append((_line(s, c, c + [0, -3]) & ground, C["timber"]))
         if f >= T["stakes"][0] + 1:
             for a, b in [(L, F), (F, R), (R, B), (B, L)]:
-                items.append((_line(s, a, b) & ~_line(s, a, a), C["string"]))
+                items.append((_line(s, a, b) & ~_line(s, a, a) & ground, C["string"]))
     p = _ramp(f, *T["footing"])
     if p > 0 and f < T["footing_gone"]:
         for j, (a, b) in enumerate([(L, F), (F, R), (R, B), (B, L)]):
@@ -1141,35 +1172,36 @@ def _site_items(s, G, T, t, f):
                 continue
             end = a + (b - a) * share
             mk = _line(s, a, end, 2) | _line(s, a + [0, -1], end + [0, -1], 2) | _line(s, a + [0, -2], end + [0, -2], 1)
+            mk &= ground
             items.append((mk, C["stone_dark"]))
             items.append((mk & ((xx // 2 + yy) % 3 != 0) & (yy % 2 == (xx // 2) % 2), C["stone"]))
     p = _ramp(f, *T["posts"])
     if p > 0 and f < T["frame_gone"]:
         for c in [B, L, R, F]:
-            items.append((_line(s, c + [0, -1], c + up * p, 2 if (c == F).all() else 1), C["timber"]))
+            items.append((_line(s, c + [0, -1], c + up * p, 2 if (c == F).all() else 1) & frame, C["timber"]))
         if p >= 1:
             q = _ramp(f, T["posts"][1], T["posts"][1] + 2)
             for a, b in [(B + up, L + up), (B + up, R + up), (L + up, F + up), (F + up, R + up)]:
-                items.append((_line(s, a, a + (b - a) * q), C["timber_lit"]))
+                items.append((_line(s, a, a + (b - a) * q) & frame, C["timber_lit"]))
     p = _ramp(f, *T["rafters"])
     if p > 0 and f < T["frame_gone"]:
         e0, e1, r0, r1 = G["e0"], G["e1"], G["r0"], G["r1"]
-        items.append((_line(s, r0, r0 + (r1 - r0) * p, 2), C["timber_lit"]))
+        items.append((_line(s, r0, r0 + (r1 - r0) * p, 2) & roofing, C["timber_lit"]))
         n = t.get("rafters", 7)
         for j in range(n):
             if p * n >= j + 1:
                 u = j / (n - 1)
-                items.append((_line(s, e0 + (e1 - e0) * u, r0 + (r1 - r0) * u), C["timber"]))
+                items.append((_line(s, e0 + (e1 - e0) * u, r0 + (r1 - r0) * u) & roofing, C["timber"]))
         if p >= 1:
             for u in (0.3, 0.6):
-                items.append((_line(s, e0 + (r0 - e0) * u, e1 + (r1 - e1) * u), C["timber_lit"]))
+                items.append((_line(s, e0 + (r0 - e0) * u, e1 + (r1 - e1) * u) & roofing, C["timber_lit"]))
     if t.get("ladder") and T["ladder"][0] <= f < T["ladder"][1]:
         lb, lt = (np.array(p_, float) for p_ in t["ladder"])
         for off in (0, 3):
-            items.append((_line(s, lb + [off, 0], lt + [off, 0]), C["timber_lit"]))
+            items.append((_line(s, lb + [off, 0], lt + [off, 0]) & ground, C["timber_lit"]))
         for j in range(1, 6):
             a = lb + (lt - lb) * j / 6
-            items.append((_line(s, a, a + [3, 0]), C["timber"]))
+            items.append((_line(s, a, a + [3, 0]) & ground, C["timber"]))
     return items
 
 
@@ -1190,6 +1222,8 @@ def fx_site(s, f, k, t, i):
     f[s.opaque] = 0
     f[~s.opaque] = s.still[~s.opaque]
     for mk, col in _site_items(s, G, T, t, i):
+        if t.get("clip", True):
+            mk = _drop_specks(mk)
         f[mk, :3] = col
         f[mk, 3] = 255
     b = _site_built(G, T, i) & s.opaque
@@ -1640,6 +1674,7 @@ def gates(s, anim, frames, restIndex):
     res = {"rest_frame": restIndex,
            "rest_frame_identical": None if restIndex is None else bool((frames[restIndex] == still).all())}
     outside = alphaBad = 0
+    outsideSilhouette = []
     newCols = set()
     changedShare, lumDelta = [], []
     focal = s.regions[anim.get("focal") or anim["tracks"][0]["region"]]
@@ -1648,6 +1683,7 @@ def gates(s, anim, frames, restIndex):
         diff = (f != still).any(-1)
         outside += int((diff & ~union).sum())
         alphaBad += int(((f[..., 3] != still[..., 3]) & ~alphaOk).sum())
+        outsideSilhouette.append(int(((f[..., 3] > 0) & (still[..., 3] == 0)).sum()))
         vis = f[..., 3] > 0
         newCols |= {tuple(c) for c in f[..., :3][vis].reshape(-1, 3)} - allowed
         changedShare.append(round(float(diff.sum()) / opaqueCount, 4))
@@ -1658,14 +1694,18 @@ def gates(s, anim, frames, restIndex):
     th.update(anim.get("noticeable", {}))
     res.update(changed_outside_mask=outside, alpha_changed_outside_alpha_regions=alphaBad, new_colours=len(newCols),
                changed_share_per_frame=changedShare, focal_mean_abs_luma_delta=lumDelta, noticeable_thresholds=th,
-               noticeable=bool(max(changedShare) >= th["share"] or max(lumDelta) >= th["luma"]))
+               noticeable=bool(max(changedShare) >= th["share"] or max(lumDelta) >= th["luma"]),
+               drawn_outside_silhouette=max(outsideSilhouette))
+    # a construction strip may not draw where the finished building is empty: temporary lines over the sky that
+    # vanish on the last frame read as chatter, not scaffolding
+    siteOk = not any(t["effect"] == "site" for t in anim["tracks"]) or max(outsideSilhouette) == 0
     if restIndex is None and len(frames) > 2:
         # a loop has no rest frame; its seam (last to first) must be no bigger a jump than the largest step inside
         steps = [int((frames[j] != frames[j + 1]).any(-1).sum()) for j in range(len(frames) - 1)]
         res["loop_seam_changed"] = int((frames[-1] != frames[0]).any(-1).sum())
         res["loop_seam_ok"] = res["loop_seam_changed"] <= max(steps)
     res["pass"] = bool(res["rest_frame_identical"] is not False and outside == 0 and alphaBad == 0 and not newCols
-                       and res["noticeable"] and res.get("loop_seam_ok", True))
+                       and res["noticeable"] and res.get("loop_seam_ok", True) and siteOk)
     return res
 
 
@@ -1900,7 +1940,7 @@ def cmd_assemble(a):
 
 
 SITE_KEYS = ("roof", "lumber", "groundBase", "wallHeight", "timberValue", "eave", "ridge", "ladder", "rafters",
-             "timeline", "seed")
+             "timeline", "seed", "clip")
 
 
 def _assemble_natural(a, brief, briefPath, plan):

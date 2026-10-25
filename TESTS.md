@@ -8,6 +8,13 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261025-1 · 2026-10-25 · unittest + four painted strips · Windows 11, Python 3.14 · unit 72/72
+- `tests/test_pxw.py` with the new clip test (fails unclipped: the gate counts pixels over empty ground and sky),
+  `tests/test_make.py` OK, `check_skills.py` OK.
+- Four 96x96 painted village buildings (thatch and tile roofs, 30 f): before, up to 39 px a frame drawn outside the
+  still; after, 0 on every frame, rest frame identical, 0 new colours; judged at 1x and 3x.
+- led to: C-20261025-1, L-057
+
 ### T-20261024-5 · 2026-10-24 · unittest + port check · Windows 11, Python 3.14 · unit 46/46
 - `tests/test_pxw.py` 44/44 (two new natural-assemble tests), `tests/test_make.py` OK, `check_skills.py` OK.
 - Port check: a 96x96 painted house (30 frames, 12 fps) through `pxw.py assemble` (natural) then `frames`: the sheet
