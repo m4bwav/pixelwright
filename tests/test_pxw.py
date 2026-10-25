@@ -655,6 +655,70 @@ class TestCommands(Base):
         self.assertEqual(code, 1)
         self.assertGreater(res["uncovered_pixels"], 0)
 
+    def cottage(self):
+        """A 48x48 timber-framed cottage seen from above at an angle: dark posts every 6 px in pale daub walls, a
+        thatch roof band, a plank pile at the front left, no grey stone (the footing must still sample the still)."""
+        a = np.zeros((48, 48, 4), dtype=np.uint8)
+        a[18:41, 8:41] = [210, 190, 150, 255]
+        a[18:41, 8:41:6] = [70, 45, 30, 255]
+        a[38:41, 8:41] = [70, 45, 30, 255]
+        a[6:23, 6:43] = [180, 150, 80, 255]
+        a[6:23:3, 6:43:2] = [150, 120, 60, 255]
+        a[42:44, 4:9] = [120, 80, 40, 255]
+        Image.fromarray(a, "RGBA").save(self.dir / "cottage.png")
+        (self.dir / "c.json").write_text(json.dumps({"id": "cottage", "still": "cottage.png", "motion": "raised on site",
+                                                     "regions": {}}))
+        plan = {"vocabulary": "natural", "frames": 20, "fps": 12,
+                "regions": {"roof": {"rects": [[6, 6, 43, 23]]}, "lumber": {"rects": [[4, 42, 9, 44]]}},
+                "roof": "roof", "lumber": "lumber",
+                "groundBase": {"left": {"x": 6, "y": 38}, "front": {"x": 24, "y": 44}, "right": {"x": 42, "y": 38}},
+                "wallHeight": 10, "eave": [[6, 22], [42, 22]], "ridge": [[6, 7], [42, 7]],
+                "ladder": [[34, 42], [32, 26]], "rafters": 6}
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        return a, plan
+
+    def test_natural_assemble_builds_up_from_the_ground_and_ends_on_still(self):
+        still, plan = self.cottage()
+        code, res = self.run_sw("assemble", "c.json", "c2.json", "--plan", "plan.json")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["vocabulary"], "natural")
+        self.assertGreater(res["parts"]["timber"], 0)
+        self.assertGreater(res["parts"]["infill"], 0)
+        self.assertEqual(res["parts"]["lumber"], 10)
+        code, res = self.run_sw("frames", "c2.json", "out", "--no-aw")
+        g = json.loads((self.dir / "out" / "cottage.gates.json").read_text())["place"]
+        self.assertTrue(g["pass"], g)
+        self.assertTrue(g["rest_frame_identical"])
+        self.assertEqual(g["new_colours"], 0)
+        sheet = self.sheet("cottage-place-20f")
+        frame = [sheet[:, j * 48:(j + 1) * 48] for j in range(20)]
+        roof = np.zeros((48, 48), dtype=bool)
+        roof[6:23, 6:43] = True
+        same = [(fr == still).all(-1) & (still[..., 3] > 0) for fr in frame]
+        # frame 0: the plank pile stands; of the walls only a ragged first course (and string in timber colour)
+        self.assertTrue(same[0][42:44, 4:9].all())
+        self.assertLess(same[0][18:41, 8:41].mean(), 0.1)
+        self.assertFalse(same[0][roof].any())
+        # the walls rise from the ground: low courses stand before high ones, and before any roof
+        low, high = (same[9][34:38, 8:41].mean(), same[9][24:28, 8:41].mean())
+        self.assertGreater(low, high)
+        self.assertLess(same[9][roof].mean(), 0.05)
+        # the roof is laid from the eave up: near the eave first, the ridge last
+        mid = next(j for j in range(20) if 0.2 < same[j][roof].mean() < 0.8)
+        self.assertGreater(same[mid][19:22, 6:43].mean(), same[mid][7:10, 6:43].mean())
+        # built share never falls back
+        shares = [same[j][still[..., 3] > 0].mean() for j in range(20)]
+        self.assertEqual(shares, sorted(shares))
+
+    def test_natural_assemble_needs_the_geometry(self):
+        self.cottage()
+        plan = json.loads((self.dir / "plan.json").read_text())
+        del plan["eave"]
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        code, res = self.run_sw("assemble", "c.json", "c2.json", "--plan", "plan.json")
+        self.assertEqual(code, 1)
+        self.assertIn("eave", json.dumps(res))
+
     def test_mask_reports_empty_region(self):
         b = brief(use=PULSE)
         b["regions"]["nothing"] = {"rects": [[0, 0, 2, 2]]}  # sky is transparent, so opaque-only gives 0 pixels

@@ -647,3 +647,17 @@ house style, 128 px stills).
 - Evidence: T-20261024-4 (plain 3 pixels off at 1024 px, 0 off at the shipped 512 px crop)
 - Scope: skill (eval design)
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
+
+### L-055 · 2026-10-24 · A construction strip's site elements must take colours from the still, with a still-sampled fallback
+- Trigger: porting a natural construction generator (stakes, string, stone footing, posts, rafters, ladder drawn in
+  colours sampled from the still) to a test sprite with no grey stone; the footing fell back to hard-coded greys,
+  colours the still lacked.
+- Hypothesis: a sampler keyed to a material (stone: low saturation, mid value) finds nothing on a still built of
+  other materials, and any invented fallback breaks the zero-new-colours gate on that still only.
+- Rule: every temporary element samples the still by brightness quantile from its material's pixels, and from the
+  whole still's opaque pixels when that material is (nearly) absent; never a literal colour. Port a project script
+  into the plugin by running both on the original still and comparing the sheets byte for byte before refactoring.
+- Evidence: T-20261024-5 (test cottage without stone: 0 new colours after the change; the original house strip
+  byte-identical)
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-24
