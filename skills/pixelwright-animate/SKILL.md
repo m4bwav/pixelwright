@@ -63,6 +63,7 @@ colours sampled from the still (effects.md "Patterns", L-055). The roof must dif
 tile or shingle over timber, daub or stone); a building whose walls and roof are the same wood needs another
 build order (L-056). Site lines are clipped to the finished silhouette by default (`clip`, L-057). Trace the
 roof polygon by hand on an 8x grid: a colour mask of the thatch also takes the straw-toned daub and timber (L-059).
+Open-sided sheds (roof on posts over goods) take the same plan; no posts-only variant (L-064).
 
 ## Step 3: gates
 
