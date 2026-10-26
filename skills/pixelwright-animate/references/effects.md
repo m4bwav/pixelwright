@@ -25,7 +25,7 @@ pixels plus `extraColours`) or the full still palette, so no stray colour appear
 | `buildup` | construction reveal from the ground: weld seam, dotted outline above | share built | `weld` colours, `ghost` colour, `sparks`, `jitter`, `seed` |
 | `assemble` | realistic construction ending on the still: parts arrive by crane, drone, trolley, telescope, hinge or on-site weld; drones leave motion trails; machines kick up dust where they work near the ground | unused (frames come from each step's `at`) | `steps` [{`part`, `how`, `at` [start, end], `from`, `dir`, `pivot`, `angle`, `drones`, weld: `ragged` (2 px), `speed` (4 px/frame), `seed`}], `machine` colours, `weld`, `dust` (2 colours, or false); made by `pxw.py assemble` |
 | `site` | natural construction ending on the still, for a timber-framed, daubed, roofed building seen from above at an angle: stakes and string on the ground diamond, a fieldstone footing, corner posts and wall plates, the still's wall timbers then its infill rising course by course, the gable, ridge pole, rafters and laths, the roof laid from the eave up to the ridge, a ladder; site elements take colours sampled from the still (0 new colours) | unused (frames 0 to `siteFrames` - 1; the last is the still) | `roof` and `lumber` (region names), `groundBase` {left, front, right: {x, y}}, `wallHeight` px, `eave` and `ridge` [[x, y], [x, y]], `ladder` [foot, top], `rafters` (7), `timberValue` (0.55), `timeline` {stakes, footing, posts, timber, infill, gable, rafters, roof, ladder: [start, end]; defaults scale from 30 frames}, `seed`, `clip` (true: string, footing and ladder only inside the silhouette, posts and plates only on the walls below the gable, rafters and laths only on the roof, specks under 4 px dropped; false draws the full lines); made by `pxw.py assemble` with `"vocabulary": "natural"` |
-| `arc` | electric arcs: jagged 1 px bolts along paths, a new shape every frame, glow pixels beside them | share of paths lit | `paths` [[x0, y0, x1, y1], ...] (lit in list order), `colours` [core, glow], `jag` (2.5), `flicker` (0.25), `seed` |
+| `arc` | electric arcs: jagged 1 px bolts along paths, a new shape every frame, glow pixels beside them | share of paths lit | `paths` [[x0, y0, x1, y1], ...] (lit in list order), `colours` [core, glow], `jag` (2.5), `flicker` (0.25), `seed`, `perfect` (true: clean one-pixel bolts, no L-shaped steps) |
 | `drone` | a work drone flying a path, bobbing, with a motion trail; optional torch arm to a weld point | position along `path` by segment (k < 0 hides) | `path` [[x, y], ...], `torch` [x, y], `torchFrames`, `machine` (give it colours the still lacks), `weld` |
 | `cart` | a ground cart rolling a crate | position from `from` to `to` (k < 0 or > 1 hides) | `from`, `to` (x), `y` (wheel row), `size` [w, h], `machine` |
 | `external` | pastes frames made elsewhere, inside the region only | unused | `sheet` (frame size = still), `map` (frame index list) |
@@ -53,6 +53,12 @@ Seeds make every run byte-identical; change `seed` for a different scatter.
 - **Charge reads as electricity, not sparks.** For a railgun or coil: `arc` rungs across the rails lit bottom to
   top, a cool `spill` on the barrel, one long `arc` up the channel on the shot frame (guard_post).
 
+- **Use animations (a recoil, a press, a launch)**: anticipation first, a small move opposite to the action; the
+  squash frame next to the stretch peak; a 1 px overshoot, then settle. A `shift` curve such as
+  `[0, -0.3, 1, 1.15, 1, 1]` does it (Silber section 8.4; Azzi pp. 218, 223).
+- **Effect beats** (Dawe and Humphries, ch. 7): a flame is two nested teardrops, the inner one moving inside the
+  outer, with a rare escaping ember; a laser is a bright core with a short build-up and a fade; a glow grows,
+  holds and shrinks; an explosion is a flash frame, an expanding fireball, then smoke that outlives it.
 - Blink or chase: one `pulse` track per lamp, curves offset by a frame or two.
 - Power-on (placement): `darken` on each emissive region with curves 1 to 0 in a believable order (control room,
   work lights, the machine), one dip back up for a flicker; `dust` at the base settling; the last frame is the

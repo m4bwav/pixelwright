@@ -80,3 +80,12 @@ are byte-identical to 0.7.3 apart from no-grid images. Rulings: `ai-docs/notes/2
 - Tests: test_make 36, test_pxw green, check_skills ok.
 - Next: the animate side (flicker-pixel and uneven-cadence gates, pixel-perfect bolts and trails, puff noise that
   moves with the puff, timing rules).
+
+## 2026-10-25: 0.8.1, animate gates from the book pass
+
+`gates.json` reports `flicker_pixels` (lone pixels that blink over three frames) and `cadence_uneven` (linear moves
+whose whole-pixel steps differ); `arc` gains `perfect` for clean one-pixel bolts; the timing reference gains the
+books' rules. Sheets are byte-identical to 0.8.0. The cadence report caught the skill's own first wording of the
+fix (L-063).
+
+- Tests: test_pxw (TestRound2Gates, 4 new; five mutations each fail a test), test_make, check_skills green.

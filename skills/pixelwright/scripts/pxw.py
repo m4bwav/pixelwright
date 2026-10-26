@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.8.0"
+VERSION = "0.8.1"
 
 try:
     import numpy as np
@@ -1236,7 +1236,9 @@ def fx_site(s, f, k, t, i):
 def fx_arc(s, f, k, t, i):
     """Electric arcs: jagged 1 px bolts along each of `paths` ([[x0, y0, x1, y1], ...]), a new shape every frame
     (midpoint displacement, `jag` px), core colour then glow pixels beside it. k is the share of paths lit (0 off,
-    1 all); `flicker` (default 0.25) drops a lit path at random per frame so it crackles."""
+    1 all); `flicker` (default 0.25) drops a lit path at random per frame so it crackles. `perfect`: true drops the
+    redundant pixel of every L-shaped step, so each bolt is a clean one-pixel line (about 30% of bolt pixels
+    otherwise)."""
     if k <= 0:
         return
     zone = s.regions[t["region"]]
@@ -1257,19 +1259,35 @@ def fx_arc(s, f, k, t, i):
                 o = rnd.uniform(-jag, jag) * min(1.0, ln / 8)
                 nxt += [((a[0] + b[0]) / 2 - dy / ln * o, (a[1] + b[1]) / 2 + dx / ln * o), b]
             pts = nxt
+        px = []
         for a, b in zip(pts, pts[1:]):
             steps = int(max(abs(b[0] - a[0]), abs(b[1] - a[1]))) + 1
-            for q in range(steps + 1):
-                x = int(round(a[0] + (b[0] - a[0]) * q / steps))
-                y = int(round(a[1] + (b[1] - a[1]) * q / steps))
-                if 0 <= x < s.w and 0 <= y < s.h and zone[y, x]:
-                    f[y, x, :3] = core
-                    f[y, x, 3] = 255
-                    if rnd.random() < 0.3:
-                        gx, gy = x + rnd.choice((-1, 1)), y + rnd.choice((-1, 0, 1))
-                        if 0 <= gx < s.w and 0 <= gy < s.h and zone[gy, gx]:
-                            f[gy, gx, :3] = glow
-                            f[gy, gx, 3] = 255
+            px += [(int(round(a[0] + (b[0] - a[0]) * q / steps)), int(round(a[1] + (b[1] - a[1]) * q / steps)))
+                   for q in range(steps + 1)]
+        if t.get("perfect"):
+            px = _pixel_perfect(px)
+        for x, y in px:
+            if 0 <= x < s.w and 0 <= y < s.h and zone[y, x]:
+                f[y, x, :3] = core
+                f[y, x, 3] = 255
+                if rnd.random() < 0.3:
+                    gx, gy = x + rnd.choice((-1, 1)), y + rnd.choice((-1, 0, 1))
+                    if 0 <= gx < s.w and 0 <= gy < s.h and zone[gy, gx]:
+                        f[gy, gx, :3] = glow
+                        f[gy, gx, 3] = 255
+
+
+def _pixel_perfect(px):
+    """An ordered 8-connected pixel path without repeats or L-corners: a pixel goes when the pixel kept before it and
+    the one after it already touch diagonally. Both ends stay."""
+    pts = [p for j, p in enumerate(px) if j == 0 or p != px[j - 1]]
+    keep = pts[:1]
+    for j in range(1, len(pts) - 1):
+        a, c = keep[-1], pts[j + 1]
+        if abs(c[0] - a[0]) == 1 and abs(c[1] - a[1]) == 1:
+            continue
+        keep.append(pts[j])
+    return keep + pts[-1:] if len(pts) > 1 else keep
 
 
 def _along(path, k):
@@ -1710,13 +1728,47 @@ def gates(s, anim, frames, restIndex):
     # a construction strip may not draw where the finished building is empty: temporary lines over the sky that
     # vanish on the last frame read as chatter, not scaffolding
     siteOk = not any(t["effect"] == "site" for t in anim["tracks"]) or max(outsideSilhouette) == 0
+    # a lone pixel that turns on and back off (or the reverse) over three frames, with no changed neighbour, reads
+    # as flicker at game size (R-P10, confirmed by two books); things that move on do not count
+    seq = frames + frames[:2] if restIndex is None else frames
+    flick = np.zeros((s.h, s.w), bool)
+    for j in range(len(seq) - 2):
+        a, b, c = seq[j], seq[j + 1], seq[j + 2]
+        ch = (a != b).any(-1)
+        lone = ch & ~(c != a).any(-1)
+        for dy, dx in N8:
+            lone &= ~(_nb(ch.astype(np.int8), dy, dx, 0) == 1)
+        flick |= lone
+    res["flicker_pixels"] = int(flick.sum())
+    if flick.any():
+        res["flicker_at"] = [[int(x), int(y)] for y, x in np.argwhere(flick)[:8]]
+    # a linear scroll or shift whose whole-pixel steps differ in size (8 px over 6 frames: 1, 2, 1, 1, 2) judders
+    uneven = []
+    for n_, t in enumerate(anim["tracks"]):
+        c = t.get("curve")
+        if t["effect"] not in ("scroll", "shift") or not c or len(c) < 3:
+            continue
+        d = np.diff(c)
+        if np.ptp(d) > 1e-6 or abs(d[0]) < 1e-9:
+            continue
+        if t["effect"] == "scroll":
+            o = np.round(np.asarray(c) * t["period"]).astype(int)
+            st = np.diff(o)
+        else:
+            o = np.round(np.outer(c, t["by"])).astype(int)
+            st = np.abs(np.diff(o, axis=0)).max(1)
+        if len(set(st.tolist())) > 1:
+            uneven.append({"track": n_, "effect": t["effect"], "steps": st.tolist()})
+    if uneven:
+        res["cadence_uneven"] = uneven
     if restIndex is None and len(frames) > 2:
         # a loop has no rest frame; its seam (last to first) must be no bigger a jump than the largest step inside
         steps = [int((frames[j] != frames[j + 1]).any(-1).sum()) for j in range(len(frames) - 1)]
         res["loop_seam_changed"] = int((frames[-1] != frames[0]).any(-1).sum())
         res["loop_seam_ok"] = res["loop_seam_changed"] <= max(steps)
+    flickOk = res["flicker_pixels"] <= anim.get("max_flicker_pixels", res["flicker_pixels"])
     res["pass"] = bool(res["rest_frame_identical"] is not False and outside == 0 and alphaBad == 0 and not newCols
-                       and res["noticeable"] and res.get("loop_seam_ok", True) and siteOk)
+                       and res["noticeable"] and res.get("loop_seam_ok", True) and siteOk and flickOk)
     return res
 
 
