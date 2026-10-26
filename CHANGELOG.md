@@ -4,6 +4,13 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261025-5 · 2026-10-25 · 0.8.2: open-sided buildings take the ordinary natural plan; L-064
+- because: L-064 (and L-059 confirmed twice more)
+- files: LEARNINGS.md (L-059 status, L-064), skills/pixelwright-animate/SKILL.md (Step 2: frames),
+  ai-docs/log.md, skills/pixelwright/scripts/pxw.py (VERSION), .claude-plugin/plugin.json
+- Docs only: the skill no longer suggests a posts-only reading for open-sided sheds; four of them passed every gate
+  with the plain natural plan.
+
 ### C-20261025-4 · 2026-10-25 · 0.8.1: flicker-pixel and uneven-cadence reports, pixel-perfect arcs, timing rules from the books; L-063
 - because: R-20261025-1 (R-P10 confirmed by Silber section 8.3 and Azzi p. 199; cadence from Computer Graphics:
   Principles and Practice section 18.2), L-063

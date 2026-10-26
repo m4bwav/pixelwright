@@ -89,3 +89,9 @@ books' rules. Sheets are byte-identical to 0.8.0. The cadence report caught the 
 fix (L-063).
 
 - Tests: test_pxw (TestRound2Gates, 4 new; five mutations each fail a test), test_make, check_skills green.
+
+## 2026-10-25: 0.8.2, open-sided buildings (docs only)
+
+Four open-sided sheds made natural construction strips with the ordinary plan and passed every gate on the first
+run, so the skill drops the idea of a posts-only reading (L-064). L-059's hand-traced roofs confirmed on two more
+batches.

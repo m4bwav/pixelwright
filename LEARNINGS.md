@@ -713,9 +713,10 @@ house style, 128 px stills).
 - Rule: trace the roof polygon by hand on an 8x grid with 4 px lines and the ground diamond drawn (eave, ridge, left
   overhang strip and the gable's bargeboard), as for the first strips; use a colour mask only to check the trace.
 - Evidence: the colour mask covered the gable wall on all seven; the hand traces gave seven strips that passed every
-  gate on the first run (rest frame identical, 0 new colours, 0 px outside the silhouette).
+  gate on the first run (rest frame identical, 0 new colours, 0 px outside the silhouette). Confirmed on two more
+  batches of six (tile and slate roofs too, and open-sided workshops), all passing on the first run.
 - Scope: skill
-- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-25
+- Status: active · helpful 3 · harmful 0 · last_confirmed 2026-10-25
 
 ### L-060 · 2026-10-25 · Desync copies of a loop with a random hold on frame 0, not a random start frame
 - Trigger: a game owner wanted two copies of one building not to animate in step; one building's idle still is its
@@ -769,3 +770,19 @@ house style, 128 px stills).
   steps 1, 1, 1 (TestRound2Gates).
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-10-25
+
+### L-064 · 2026-10-25 · Open-sided buildings take the same natural plan; the posts are the walls
+- Trigger: four open-sided village workshops (a thatch roof on corner posts over a floor of benches, vats, dressed
+  stone or market stalls with awnings) were set aside for a natural construction strip, on the guess that the walls
+  needed a posts-only reading with no infill.
+- Hypothesis: the wall rise reveals the still's own pixels course by course inside the silhouette, so whatever
+  stands under the eave (posts, goods, awnings) rises with it, and the empty gaps between posts stay empty because
+  they are transparent in the still.
+- Rule: give an open-sided building the ordinary natural plan (roof polygon traced to the thatch, eave on the
+  bottom of the roof over the visible face, wall height from the ground diamond to the eave less about 4 px). Don't
+  write a posts-only variant unless a strip shows infill where the still has none.
+- Evidence: weaving, tanning, stone-dressing and market sheds passed every gate on the first run (rest frame
+  identical, 0 new colours, 0 px outside the silhouette) and read at 1x and 3x as a frame going up and being fitted
+  out; awnings under the eave rose with the walls without help.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-25
