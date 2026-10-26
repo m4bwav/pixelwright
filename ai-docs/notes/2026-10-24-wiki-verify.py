@@ -2,6 +2,12 @@
 
     python ai-docs/notes/2026-10-24-wiki-verify.py --install --aw <artwright aw.py> --port 8799 > new.out.txt
     python ai-docs/notes/2026-10-24-wiki-verify.py --plugin <installed plugin folder> --aw <artwright aw.py>
+    add --old <extracted previous release> (git archive v0.7.0) for the "snap smooth before 0.8.0" case
+
+Saved runs of 2026-10-26 (0.8.2): .out.txt (--install, Windows, Python 3.14.7), .py39.out.txt (--plugin on
+`git archive v0.8.2`, Windows, Python 3.9.25, numpy 2.0.2, Pillow 11.3.0) and .linux.out.txt (the same archive,
+Ubuntu on WSL, Python 3.14.4); all with --old on `git archive v0.7.0`, --aw from artwright's v0.7.0 tag and --port 8799.
+The paragraph below describes the first runs of 2026-10-24.
 
 Run it from a folder outside the repository, with a Python that has numpy and Pillow (and `claude` on PATH for
 --install). The saved runs of 2026-10-24: .out.txt (Windows, Python 3.14.7, numpy 2.5.4, Pillow 13.0.0, --install,
@@ -53,6 +59,7 @@ ap.add_argument("--plugin", help="an installed or extracted pixelwright folder")
 ap.add_argument("--aw", help="artwright's aw.py from a release, for the aw_pixel gate cases")
 ap.add_argument("--images", help="write the wiki's pictures into this folder")
 ap.add_argument("--port", type=int, default=8765)
+ap.add_argument("--old", help="an extracted older release (git archive v0.7.0), to show what snap did before 0.8.0")
 A = ap.parse_args()
 
 WORK = os.path.realpath(tempfile.mkdtemp(prefix="pxwwiki_"))
@@ -103,6 +110,8 @@ def argv(command):
             args[0] = PXW
         elif args and args[0] == "sw.py":
             args[0] = SHIM
+        elif args and args[0] == "old-pxw.py":
+            args[0] = OLD_PXW
         return [sys.executable] + flags + args
     return args
 
@@ -177,7 +186,11 @@ MASKS += [(PLUGIN, "<plugin>"), (WORK, "<tmp>"), (str(Path(np.__file__).parents[
           (sys.base_prefix, "<python>"), (sys.prefix, "<python>")]
 PXW = os.path.join(PLUGIN, "skills", "pixelwright", "scripts", "pxw.py")
 SHIM = os.path.join(PLUGIN, "skills", "pixelwright-animate", "scripts", "sw.py")
-AW = os.path.realpath(A.aw) if A.aw else None
+OLD = os.path.realpath(A.old) if A.old else None
+OLD_PXW = os.path.join(OLD, "skills", "pixelwright", "scripts", "pxw.py") if OLD else None
+if OLD:
+    MASKS.append((OLD, "<old-plugin>"))
+AW =os.path.realpath(A.aw) if A.aw else None
 if AW:
     MASKS.append((str(Path(AW).parents[3]), "<artwright>"))
 manifest = json.loads(Path(PLUGIN, ".claude-plugin", "plugin.json").read_text(encoding="utf-8"))
@@ -378,6 +391,100 @@ write_json("recipe-tile.json", {"id": "grass", "input": "grass.png", "snap": Fal
                                 "palette": "from:grass.png", "tile": True}, "file: recipe-tile.json")
 case("make tile", "python pxw.py make recipe-tile.json out-tile")
 
+# ---- 0.8.0: snap's test against chance, and the opt-in steps (Making pixel art, Palettes, Commands)
+# a smooth render saved as JPEG, as the repository's test_smooth_jpeg_has_no_grid draws it
+src = np.random.default_rng(0).integers(0, 256, (96, 96, 3), dtype=np.uint8)
+Image.fromarray(src).resize((768, 768), Image.BICUBIC).filter(ImageFilter.GaussianBlur(6)).save(
+    os.path.join(RUN, "smooth.jpg"), "JPEG", quality=55)
+show("fixture: smooth.jpg", "smooth.jpg: 768x768 JPEG, quality 55: random colours resized 8x bicubic and blurred")
+case("snap smooth", "python pxw.py snap smooth.jpg smooth-snapped.png")
+if OLD_PXW:
+    case("snap smooth before 0.8.0", "python old-pxw.py snap smooth.jpg smooth-old.png",
+         shown="python pxw.py snap smooth.jpg smooth-old.png")
+    case("old version", "python old-pxw.py --version", shown="python pxw.py --version")
+
+# a ring on a magenta ground: the hole in the middle is ground colour but not joined to the border
+ring = np.zeros((32, 32, 4), np.uint8)
+ring[...] = [255, 0, 255, 255]
+ring[8:24, 8:24] = [40, 60, 200, 255]
+ring[12:20, 12:20] = [255, 0, 255, 255]
+ring[9, 9] = [255, 0, 255, 255]
+save(ring, "ring.png")
+show("fixture: ring.png", "ring.png: 32x32, a 16x16 blue square with an 8x8 hole of the magenta ground in it, "
+     "and one magenta pixel at 9,9")
+case("bg ring", "python pxw.py bg ring.png ring-bg.png")
+case("bg ring holes", "python pxw.py bg ring.png ring-holes.png --holes 4")
+rb, rh = load("ring-bg.png"), load("ring-holes.png")
+show("bg ring: alpha", "ring-bg.png: hole alpha %d, pixel 9,9 alpha %d; ring-holes.png: hole alpha %d, "
+     "pixel 9,9 alpha %d" % (rb[15, 15, 3], rb[9, 9, 3], rh[15, 15, 3], rh[9, 9, 3]))
+
+# mid grey dithered on black and white: share of white pixels per space
+grey = np.zeros((16, 16, 4), np.uint8)
+grey[...] = [128, 128, 128, 255]
+save(grey, "grey.png")
+write("bw.hex", "000000\nffffff\n")
+show("fixture: grey.png", "grey.png: 16x16, every pixel 128,128,128; bw.hex: 000000 and ffffff")
+for label, cmd, name in (
+        ("palette dither srgb", "python pxw.py palette grey.png grey-srgb.png --palette bw.hex --dither bayer4",
+         "grey-srgb.png"),
+        ("palette dither linear", "python pxw.py palette grey.png grey-linear.png --palette bw.hex --dither bayer4 "
+         "--dither-space linear", "grey-linear.png"),
+        ("palette dither max-step", "python pxw.py palette grey.png grey-capped.png --palette bw.hex --dither bayer4 "
+         "--dither-space linear --max-step 0.12", "grey-capped.png")):
+    case(label, cmd)
+    q = load(name)
+    show(label + ": white share", "%s: %d of 256 pixels white (%.1f%%)" % (
+        name, int((q[..., 0] == 255).sum()), 100.0 * (q[..., 0] == 255).mean()))
+
+# a one-pixel diagonal drawn with doubled steps, and a box with real corners
+stairs = np.zeros((10, 14, 4), np.uint8)
+for i in range(6):
+    stairs[i, i:i + 2] = INK + [255]
+save(stairs, "stairs.png")
+show("fixture: stairs.png", "stairs.png: 14x10, a diagonal of 12 pixels, two a row, each row one to the right")
+case("clean corners", "python pxw.py clean stairs.png stairs-clean.png --corners")
+sc = load("stairs-clean.png")
+show("clean corners: rows", "\n".join("row %d: %s" % (y, "".join("#" if sc[y, x, 3] else "." for x in range(8)))
+                                      for y in range(6)))
+case("clean corners on a box", "python pxw.py clean chest.png chest-corners.png --corners")
+
+# swap: a night version of the chest by a colour map, a map that leaves colours out, and by palette index
+write_file("night.json", """
+{"281824": "141428", "a46422": "523a3c", "c83438": "642848", "f8f0e2": "a8b0c8", "78401e": "3c2830"}
+""", "file: night.json")
+case("swap", "python pxw.py swap chest.png chest-night.png --map night.json")
+write_file("night-part.json", """
+{"281824": "141428", "a46422": "523a3c"}
+""", "file: night-part.json")
+case("swap unmapped", "python pxw.py swap chest.png chest-part.png --map night-part.json")
+write("day.hex", "281824\na46422\nc83438\nf8f0e2\n78401e\n")
+write("dusk.hex", "201428\n7a4a30\n9a2c40\nd8c8c0\n5a3424\n")
+show("file: day.hex", Path(RUN, "day.hex").read_text(encoding="utf-8"))
+show("file: dusk.hex", Path(RUN, "dusk.hex").read_text(encoding="utf-8"))
+case("swap by index", "python pxw.py swap chest.png chest-dusk.png --from day.hex --to dusk.hex")
+os.makedirs(os.path.join(RUN, "chests"))
+for n in ("f00.png", "f01.png"):
+    shutil.copy(os.path.join(RUN, "chest.png"), os.path.join(RUN, "chests", n))
+case("swap folder", "python pxw.py swap chests night-chests --map night.json")
+
+# fog in a recipe: a far-layer variant of the mushroom
+write_file("recipe-fog.json", """
+{"id": "mushroom-mid", "input": "render.png", "palette": 8,
+ "fog": {"colour": "194,195,199", "amount": 0.4}, "crop": {"pad": 1, "size": "32x32"}}
+""", "file: recipe-fog.json")
+case("make fog", "python pxw.py make recipe-fog.json out-fog")
+write_file("recipe-fog-far.json", """
+{"id": "mushroom-far", "input": "render.png", "palette": "pico-8",
+ "fog": {"colour": "194,195,199", "amount": 0.8}, "crop": {"pad": 1, "size": "32x32"}}
+""", "file: recipe-fog-far.json")
+case("make fog far", "python pxw.py make recipe-fog-far.json out-fog-far")
+lum = lambda a: float((a[a[..., 3] > 0][:, :3] @ [0.2126, 0.7152, 0.0722]).std())
+show("make fog: contrast", "luminance spread (standard deviation over opaque pixels): out/mushroom.png %.1f "
+     "(%d colours), out-fog/mushroom-mid.png %.1f (%d colours), out-fog-far/mushroom-far.png %.1f (%d colours)" % (
+         lum(load("out/mushroom.png")), colours(load("out/mushroom.png")),
+         lum(load("out-fog/mushroom-mid.png")), colours(load("out-fog/mushroom-mid.png")),
+         lum(load("out-fog-far/mushroom-far.png")), colours(load("out-fog-far/mushroom-far.png"))))
+
 # ---- Gates: budget, and artwright's verdict
 write_json("recipe-budget.json", {"id": "mushroom", "input": "render.png", "palette": "pico-8", "budget": 4},
            "file: recipe-budget.json")
@@ -528,6 +635,27 @@ variant("brief-empty.json", "regions", """
 {"screen": {"rects": [[4, 14, 10, 20]], "select": "cool"}}
 """, "file: brief-empty.json extra region")
 case("mask empty", "python pxw.py mask brief-empty.json mask2.png")
+
+# 0.8.1: flicker_pixels can fail when a brief caps it; cadence_uneven reports a shift whose steps differ
+variant("brief-flicker.json", "animations", """
+{"use": {"frames": 10, "focal": "fire", "fps": 12, "max_flicker_pixels": 0, "tracks": [
+  {"effect": "pulse", "region": "fire", "hot": [255, 250, 220],
+   "curve": [0, 0.5, 1, 1, 0.8, 0.6, 0.4, 0.2, 0.1, 0]},
+  {"effect": "sparks", "region": "sky", "source": [19, 3, 24, 4], "bornFrames": [1, 2, 3],
+   "colours": [[255, 250, 220], [255, 150, 40], [200, 70, 20]]}]}}
+""", "file: brief-flicker.json animations")
+case("frames flicker capped", "python pxw.py frames brief-flicker.json out-flicker")
+g = json.loads(Path(RUN, "out-flicker", "forge.gates.json").read_text(encoding="utf-8"))
+show("file: out-flicker/forge.gates.json (use, flicker)", json.dumps(
+    {k: g["use"][k] for k in ("flicker_pixels", "flicker_at", "pass") if k in g["use"]}, indent=2))
+variant("brief-cadence.json", "animations", """
+{"slide": {"frames": 6, "focal": "fire", "tracks": [
+  {"effect": "shift", "part": "fire", "region": "front", "by": [8, 0], "curve": [0, 0.2, 0.4, 0.6, 0.8, 1]}]}}
+""", "file: brief-cadence.json animations")
+case("frames cadence", "python pxw.py frames brief-cadence.json out-cadence")
+g = json.loads(Path(RUN, "out-cadence", "forge.gates.json").read_text(encoding="utf-8"))
+show("file: out-cadence/forge.gates.json (slide, cadence)", json.dumps(
+    {k: g["slide"][k] for k in ("cadence_uneven", "pass") if k in g["slide"]}, indent=2))
 case("snap missing file", "python pxw.py snap nothing.png x.png")
 case("no command", "python pxw.py")
 lines = []

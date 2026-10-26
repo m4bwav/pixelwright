@@ -1,11 +1,11 @@
 ---
-title: GitHub wiki written for 0.6.0, published, and updated through 0.7.0
+title: GitHub wiki written for 0.6.0, published, and updated through 0.8.2
 kind: note
 date: 2026-10-24
-verified: 2026-10-24
+verified: 2026-10-26
 stale_after: 2027-04-24
-tags: [wiki, docs, 0.6.0, 0.6.1, 0.6.2, 0.7.0, github]
-summary: "the wiki's ten pages for pixelwright 0.6.1 (first written for 0.6.0), where they are, how every example was verified against the released plugin, the facts found on the way, the inaccuracies in the shipped docs, and how to update the wiki; read before touching the wiki or the files listed under inaccuracies"
+tags: [wiki, docs, 0.6.0, 0.6.1, 0.6.2, 0.7.0, 0.8.2, github]
+summary: "the wiki's eleven pages for pixelwright 0.8.2 (first written for 0.6.0), where they are, how every example was verified against the released plugin, the facts found on the way, the inaccuracies in the shipped docs, and how to update the wiki; read before touching the wiki or the files listed under inaccuracies"
 ---
 
 # GitHub wiki for 0.6.0 and 0.6.1
@@ -22,6 +22,8 @@ Update to 0.6.2 (same day, Update mode): 0.6.2 (tag `v0.6.2`, merge commit `49a8
 
 Update to 0.7.0 (2026-10-24 local, Update mode, skipping a separate 0.6.3 wiki): the owner approved releasing both merged versions, `v0.6.3` on `2901382` (review page items `display: full` and `kind: info`) and `v0.7.0` on `a3f02f5` (natural construction: `assemble` plan `"vocabulary": "natural"`, effect `site`); both tags carry hand-written releases dated 2026-10-25 UTC. The program ran with `--install` (Windows, Python 3.14.6 in a fresh venv, numpy 2.5.4, Pillow 13.0.0) and with `--plugin` on `git archive v0.7.0` (Windows Python 3.9.25 venv with numpy 2.0.2 and Pillow 11.3.0; Ubuntu on WSL, Python 3.14), all with artwright 0.4.2's `aw.py`. The throwaway install matched the archive (`diff -rq`, only `.in_use`). `diffout`: versions, `site` in every `doctor` effect list and in the unknown-effect error, `test_pxw.py` 41 to 44 and `test_make.py` 26 to 27; on 3.9 the Pillow warnings' line numbers moved (1764 to 1994 and others). Images byte-identical. Pages changed: Home (versions, the 0.6.3 and 0.7.0 sentence), Getting-Started (cache path, tag, `doctor` outputs, the 3.9 warning line), Animating-A-Sprite (a paragraph on the natural vocabulary and one on the 0.6.3 review items, both from the source docs and not run; `site` added to the not-run list; tests 44), Gates (the unknown-effect error), FAQ, Coming-From-Spritewright, Development (tests, release commit `a3f02f5`), sidebar, footer. Gates: `check --version 0.7.0` 0 errors, 0 warnings; `outputs` 163 checked, 0 missing on all three outputs; `snippets` 1 checked, 0 missing; `tells.py --wiki` 0 strong. Published as wiki commit `4e1d365`; `live` 10 pages, 0 failures, 13 anchors 0 broken; the three images 200 at their sizes. For the Linux run, copy artwright's `skills/` tree (not `aw.py` alone) and keep `--port 8799`, or the masked `aw` path and the review port differ from the saved output; and give `wsl bash -lc` absolute paths (`$PWD` resolved to the Windows working folder, not the folder `cd` named in the same script).
 
+Update to 0.8.2 (2026-10-26, Update mode, with the owner's approval): `v0.8.2` on `18e320c` (released 2026-10-26 12:05 UTC) holds 0.7.1 to 0.8.1 too, none of which was tagged. The program gained `--old` (an extracted older release, run as `old-pxw.py`) and 38 new sections: `snap` on a smooth JPEG (0.8.2 and 0.7.0), `bg --holes` on a ring, `--dither-space linear` and `--max-step` on a flat grey, `clean --corners` on a stair-step line and on the chest, `swap` (map, unmapped colours, palette index, folder), `fog` at 0.4 and 0.8, a capped `max_flicker_pixels` and a `shift` with uneven cadence. Runs: `--install` on Windows, Python 3.14.7 (numpy 2.5.4, Pillow 13.0.0), with `--images`; `--plugin` on `git archive v0.8.2` on Windows Python 3.9.25 (numpy 2.0.2, Pillow 11.3.0) and on Ubuntu on WSL (Python 3.14.4); all with `--old` on `git archive v0.7.0` and artwright 0.7.0's `skills/` tree (tag `v0.7.0`, the newest; its cases printed what 0.4.2 printed). A separate throwaway install matched `git archive v0.8.2` (`diff -rq`, only `.in_use`). `diffout` against the 0.7.0 outputs, old cases only: versions; `swap` in the usage text; `palette --help` two lines longer; `enclosed_cleared: 0` in every background step; `drawn_outside_silhouette` and `flicker_pixels` (with `flicker_at`) in every animation's gates; tests 44 to 50 and 27 to 36. No `pass` or `ok` changed; the three images byte-identical. Pages changed: Home, Getting-Started, Making-Pixel-Art (too few edges, enclosed holes, corners, swap, fog), Palettes (linear light and the cap), Animating-A-Sprite, Commands (swap, new options, exit rows), Gates (two table rows, Flicker and cadence), FAQ (the snap question), Coming-From-Spritewright, Development (tests, CI commit, the eval sentence, which was stale), sidebar, footer; new page Versions-And-Upgrading. Pages were written with `{{CASE:label}}` placeholders filled from the saved output by a scratch script (L-155). Gates: `check --version 0.8.2` 0 errors, 0 warnings; `outputs` 211 checked, 0 missing over the three outputs; `snippets` 1 checked, 0 missing, 6 commands; `tells.py --wiki` 0 strong. Published as wiki commit `bea16e8`; `live` 11 pages, 0 failures, 22 anchors 0 broken; the three images 200 at their sizes. From Git Bash, `wsl bash -l /mnt/c/...` fails (MSYS rewrites the path); call `wsl` from PowerShell.
+
 ## Where the pages are
 
 The wiki working copy `pixelwright.wiki/` (a sibling of this clone, outside this repository), branch `master`, remote `https://github.com/m4bwav/pixelwright.wiki.git`. The pages were drafted in `pixelwright.wiki-draft/` (a flat folder beside it) and copied in; edit the working copy from now on. Links between pages are plain markdown (`[Gates](Gates)`), no wikilinks.
@@ -35,9 +37,9 @@ Images (`check` and `live` do not look at them): each answered 200 with its imag
 ## Updating the wiki later
 
 1. `git -C pixelwright.wiki pull --ff-only`, then edit the pages.
-2. Re-verify from a folder outside the repository: `python ai-docs/notes/2026-10-24-wiki-verify.py --install --aw <artwright aw.py> --port <free port> --images <folder> > new.out.txt` (needs numpy, Pillow and `claude` on PATH), then `python <wikiwright>/scripts/wikiwright.py diffout ai-docs/notes/2026-10-24-wiki-verify.out.txt new.out.txt`. Every difference is a page to fix (exit 1 means differences). Do the same with `--plugin` on Python 3.9 and on Linux against `.py39.out.txt` and `.linux.out.txt`. Save the new outputs over the old.
+2. Re-verify from a folder outside the repository: `python ai-docs/notes/2026-10-24-wiki-verify.py --install --old <git archive of the previous release> --aw <artwright aw.py> --port <free port> --images <folder> > new.out.txt` (needs numpy, Pillow and `claude` on PATH), then `python <wikiwright>/scripts/wikiwright.py diffout ai-docs/notes/2026-10-24-wiki-verify.out.txt new.out.txt`. Every difference is a page to fix (exit 1 means differences). Do the same with `--plugin` on Python 3.9 and on Linux against `.py39.out.txt` and `.linux.out.txt`. Save the new outputs over the old.
 3. `wikiwright.py outputs pixelwright.wiki <every new output> --address ''`, `wikiwright.py snippets pixelwright.wiki ai-docs/notes/2026-10-24-wiki-verify.py`, `wikiwright.py check pixelwright.wiki --version <new>`, and everwrite's `tells.py --wiki`.
-4. Commit, `git push`, `wikiwright.py live`, and fetch the three image URLs. Pages that name the version: `_Footer.md`, `_Sidebar.md` and Home (release link), Home (0.6.0 first release, 0.6.1 change), Getting-Started (cache path `0.6.1/`, tag, artwright 0.4.1), Gates and FAQ (the version pair the artwright verdict needs), Coming-From-Spritewright (0.6.0 rename, "two runs of 0.6.1"), Development (installed copy, release commit `49a8981`), Commands (the 0.6.2 change to missing files), FAQ (the traceback question), and every `doctor` and `--version` output.
+4. Commit, `git push`, `wikiwright.py live`, and fetch the three image URLs. Pages that name the version: `_Footer.md`, `_Sidebar.md` and Home (release link), Home (release history paragraph and the 0.8.2 paragraph, run version), Versions-And-Upgrading (release table, the upgrade section names 0.7.0 and 0.8.2: add a row and a new upgrade section), Making-Pixel-Art, Palettes, Commands and Gates ("since 0.8.0/0.8.1" notes, and the 0.7.0 smooth-render output), FAQ (the snap question, the newest pair), Getting-Started (cache path, tag, artwright version), Gates and FAQ (the version pair the artwright verdict needs), Coming-From-Spritewright (0.6.0 rename, "two runs of 0.6.1"), Development (installed copy, release commit `49a8981`), Commands (the 0.6.2 change to missing files), FAQ (the traceback question), and every `doctor` and `--version` output.
 
 ## How the examples were verified
 
@@ -70,6 +72,14 @@ Images (`check` and `live` do not look at them): each answered 200 with its imag
 - `review` binds 127.0.0.1, has a `--print-page` option, and an item picked anything but `redo` leaves the page.
 - `make` and `frames` write their files even when a gate fails; `frames` writes every animation's sheet when one fails.
 - The 4 `model_rotate` tests skip without `tifffile`; CI installs only numpy and Pillow, so CI skips them.
+- (0.8.2) A smooth JPEG with no grid snapped at scale 57 into 13x13 under 0.7.0, with coherence 1.0 across and 0.0 down; 0.8.2 returns it at scale 1.
+- (0.8.2) `bg --holes 4` on a ring cleared the 64-pixel hole and kept a 1-pixel patch of the ground colour; `enclosed_cleared` is printed (0) even without `--holes`.
+- (0.8.2) Flat grey 128 dithered bayer4 on black and white: 75.0% white in `srgb`, 18.8% (3 of 16) in `linear`; with `--max-step 0.12` nothing is dithered (100% white, the nearest colour).
+- (0.8.2) `--corners` on a doubled diagonal removed 5 pixels and kept both ends; on the chest's box outline it changed nothing.
+- (0.8.2) `swap` with a partial map still writes the file and exits 1 with the unmapped colours.
+- (0.8.2) `fog` 0.4 on the mushroom with 8 colours kept 6 colours (brightness spread 70.3 to 42.1); `fog` 0.8 with PICO-8 collapsed the sprite to one colour (spread 0.0), and every gate still passed.
+- (0.8.2) `flicker_pixels` counted 3 pixels on the forge's `use` animation, all sparks in the sky; with `max_flicker_pixels: 0` the animation fails. `drawn_outside_silhouette` is 8 there (sparks over the transparent sky) and does not fail it.
+- (0.8.2) A `shift` of 8 px over 6 frames with a linear curve reports `cadence_uneven` steps 2, 1, 2, 1, 2 and still passes.
 
 ## Inaccuracies found in the shipped docs
 
@@ -84,6 +94,13 @@ Status after 0.6.2: 2, 5, 6 and 9 fixed in 0.6.1; 3, 4, 7 and 8 fixed in 0.6.2 (
 7. skills/pixelwright-make/references/recipe.md:7-8: "Paths are relative to `--root`, then to the current folder"; `resolve()` tries `--root` and nothing else for a recipe (from the source; not run with a non-default `--root`).
 8. skills/pixelwright-make/references/recipe.md:18: the `clean` default reads as if it merged with what you write; a written `clean` object replaces it and orphan removal stops.
 9. skills/pixelwright-animate/references/brief.md:3 ("Checked 2026-10-23 against `pxw.py` 0.1.0") and effects.md:3 ("against `pxw.py` 0.5.0"): `pxw.py` first exists in 0.6.0; those versions were `sw.py`.
+
+Found in the 0.8.2 pass (not fixed; for the maintainer):
+
+10. skills/pixelwright/scripts/pxw.py, the flicker gate's comment "things that move on do not count": a spark that moves more than one pixel a frame is counted (3 on the forge's `use`, all sparks). Either the comment or the test is off; the timing reference does not say which animations should cap it.
+11. skills/pixelwright-make/references/recipe.md, `fog` row: "about 0.4 for a middle layer, 0.8 for the far one" carries no caveat; 0.8 with PICO-8 turned the whole mushroom into one colour and no gate noticed (the budget gate only caps colours).
+12. skills/pixelwright-animate/SKILL.md (Step 3) says flicker pixels are "located in `flicker_at`" but not its form: up to 8 `[x, y]` pairs with no frame index, so a reader cannot tell which frame blinks. timing-and-gates.md does not mention it.
+13. The wiki's own Development page said the make eval cases had not run in an A/B pass; TESTS.md records two passes on 2026-10-24 (fixed on the wiki).
 
 ## Gotchas
 
