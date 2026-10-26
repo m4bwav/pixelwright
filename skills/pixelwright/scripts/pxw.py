@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.8.2"
+VERSION = "0.8.3"
 
 try:
     import numpy as np
@@ -1021,7 +1021,7 @@ def fx_assemble(s, f, k, t, i):
 # Natural construction (`assemble` plan with "vocabulary": "natural"): a timber-framed, daubed, roofed building raised
 # on site from its ground diamond. Timeline keys and their defaults for a 30-frame strip; other lengths scale them.
 SITE_TIMELINE = {"stakes": [0, 10], "footing": [2, 6], "posts": [5, 10], "timber": [7, 13], "infill": [10, 17],
-                 "gable": [14, 18], "rafters": [15, 19], "roof": [19, 27], "ladder": [9, 27]}
+                 "walls": [6, 17], "gable": [14, 18], "rafters": [15, 19], "roof": [19, 27], "ladder": [9, 27]}
 
 
 def _site_timeline(t):
@@ -1113,6 +1113,11 @@ def _site_geometry(s, t):
         return np.abs((xx - p0[0]) * nrm[0] + (yy - p0[1]) * nrm[1])
 
     de, dr = dist(e0, e1), dist(r0, r1)
+    # along each face from the front corner (0) to its far corner (1): a log is laid from the corner out
+    along = np.where(xx <= F[0], (F[0] - xx) / max(F[0] - L[0], 1), (xx - F[0]) / max(R[0] - F[0], 1)).clip(0, 1)
+    # position along the ridge from the front rake: boards are laid side by side, each from eave to ridge
+    d = e1 - e0
+    rake = ((xx - e0[0]) * d[0] + (yy - e0[1]) * d[1]) / np.hypot(*d)
 
     def sample(mask, q):
         """The q-quantile colour by brightness; the whole still's when the part is (nearly) empty, never invented."""
@@ -1123,7 +1128,8 @@ def _site_geometry(s, t):
     seed = t.get("seed", 7)
     geo = dict(L=L, F=F, R=R, B=B, up=np.array([0, -wallH], float), wallH=wallH, height=height, roof=roof,
                lumber=lumber, walls=walls, timber=timber, infill=infill, gable=walls & (height > wallH + 1),
-               slope=de / np.maximum(de + dr, 1e-6), e0=e0, e1=e1, r0=r0, r1=r1,
+               slope=de / np.maximum(de + dr, 1e-6), e0=e0, e1=e1, r0=r0, r1=r1, along=along, rake=rake,
+               left=xx <= F[0],
                blk=_hash01(xx // 3, yy // 3, seed), fine=_hash01(xx, yy, seed + 1), xx=xx, yy=yy,
                cols=dict(timber=sample(timber, 0.25), timber_lit=sample(timber, 0.75), string=sample(infill, 0.6),
                          stone=sample(stone, 0.85), stone_dark=sample(stone, 0.15)))
@@ -1131,18 +1137,44 @@ def _site_geometry(s, t):
     return geo
 
 
-def _site_built(G, T, f):
+def _laid(p, n, order):
+    """Pieces 1..n laid one after another over progress p (0 to 1), each from its start (order 0) to its end (1)."""
+    u = p * n
+    return (u > order) | (p >= 1)
+
+
+def _site_built(G, T, f, t=None):
     """Pixels of the still standing at frame f: loose lumber from the start, wall timbers rising, infill course by
-    course, the gable's timbers then its infill, the roof from the eave up to the ridge with a ragged course edge."""
+    course, the gable's timbers then its infill, the roof from the eave up to the ridge with a ragged course edge.
+    `walls: "logs"` lays the walls whole, a `course` px log at a time, the two faces in turn and each log from the
+    front corner out (a log wall has no frame to fill: its dark seams must not stand before its logs); `roofOrder:
+    "boards"` lays the roof a `board` px board at a time from the front rake to the back, each from eave to ridge."""
+    t = t or {}
     h, blk = G["height"], G["blk"]
     wallH, gable, timber, infill = G["wallH"], G["gable"], G["timber"], G["infill"]
     m = G["lumber"].copy()
-    m |= timber & ~gable & (h <= _ramp(f, *T["timber"]) * (wallH + 1) + blk * 2 - 1)
-    m |= infill & ~gable & (h <= _ramp(f, *T["infill"]) * (wallH + 2) + blk * 3 - 1.5)
     gh = h[gable].max() if gable.any() else wallH
-    m |= gable & timber & (h <= wallH + _ramp(f, *T["gable"]) * (gh - wallH + 1))
-    m |= gable & (h <= wallH + _ramp(f, T["gable"][0] + 1, T["gable"][1] + 2) * (gh - wallH + 2) - blk * 2)
-    m |= G["roof"] & (G["slope"] <= _ramp(f, *T["roof"]) * 1.2 - 0.04 - G["fine"] * 0.06 - blk * 0.04)
+    if t.get("walls") == "logs":
+        c = t.get("course", 3)
+        nc = int(math.ceil((wallH + 2) / c))
+        j = np.clip(np.ceil(h / c), 1, nc)
+        order = np.where(G["left"], 2 * (j - 1), 2 * j - 1) + G["along"]
+        m |= (timber | infill) & ~gable & _laid(_ramp(f, *T["walls"]), 2 * nc, order)
+        ng = max(1, int(math.ceil((gh - wallH - 1) / c)))
+        jg = np.clip(np.ceil((h - wallH - 1) / c), 1, ng)
+        m |= gable & _laid(_ramp(f, *T["gable"]), ng, jg - 1 + G["along"])
+    else:
+        m |= timber & ~gable & (h <= _ramp(f, *T["timber"]) * (wallH + 1) + blk * 2 - 1)
+        m |= infill & ~gable & (h <= _ramp(f, *T["infill"]) * (wallH + 2) + blk * 3 - 1.5)
+        m |= gable & timber & (h <= wallH + _ramp(f, *T["gable"]) * (gh - wallH + 1))
+        m |= gable & (h <= wallH + _ramp(f, T["gable"][0] + 1, T["gable"][1] + 2) * (gh - wallH + 2) - blk * 2)
+    roof = G["roof"]
+    if t.get("roofOrder") == "boards" and roof.any():
+        rk = G["rake"] - G["rake"][roof].min()
+        idx = np.floor(rk / t.get("board", 3))
+        m |= roof & _laid(_ramp(f, *T["roof"]), int(idx[roof].max()) + 1, idx)
+    else:
+        m |= roof & (G["slope"] <= _ramp(f, *T["roof"]) * 1.2 - 0.04 - G["fine"] * 0.06 - blk * 0.04)
     return m
 
 
@@ -1179,7 +1211,7 @@ def _site_items(s, G, T, t, f):
             items.append((mk, C["stone_dark"]))
             items.append((mk & ((xx // 2 + yy) % 3 != 0) & (yy % 2 == (xx // 2) % 2), C["stone"]))
     p = _ramp(f, *T["posts"])
-    if p > 0 and f < T["frame_gone"]:
+    if p > 0 and f < T["frame_gone"] and t.get("walls") != "logs":
         for c in [B, L, R, F]:
             items.append((_line(s, c + [0, -1], c + up * p, 2 if (c == F).all() else 1) & frame, C["timber"]))
         if p >= 1:
@@ -1229,7 +1261,7 @@ def fx_site(s, f, k, t, i):
             mk = _drop_specks(mk)
         f[mk, :3] = col
         f[mk, 3] = 255
-    b = _site_built(G, T, i) & s.opaque
+    b = _site_built(G, T, i, t) & s.opaque
     f[b] = src[b]
 
 
@@ -2003,12 +2035,13 @@ def cmd_assemble(a):
 
 
 SITE_KEYS = ("roof", "lumber", "groundBase", "wallHeight", "timberValue", "eave", "ridge", "ladder", "rafters",
-             "timeline", "seed", "clip")
+             "timeline", "seed", "clip", "walls", "course", "roofOrder", "board")
 
 
 def _assemble_natural(a, brief, briefPath, plan):
     """A natural plan: {"vocabulary": "natural", "frames": N, "regions": {roof, lumber}, "roof": name, "lumber": name,
-    "groundBase", "wallHeight", "eave", "ridge", "ladder", "rafters", "timeline", "timberValue", "seed", "fps"}.
+    "groundBase", "wallHeight", "eave", "ridge", "ladder", "rafters", "timeline", "timberValue", "seed", "fps",
+    "walls": "logs", "course", "roofOrder": "boards", "board"}.
     Prefixes the animation (created when the brief has none by that name) with a `site` track."""
     for key in ("roof", "groundBase", "wallHeight", "eave", "ridge"):
         if key not in plan:

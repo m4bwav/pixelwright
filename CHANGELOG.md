@@ -4,6 +4,17 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261026-1 · 2026-10-26 · 0.8.3: log walls and plank roofs in natural plans; L-065
+- because: L-065 (L-056 superseded for log-and-plank buildings)
+- files: skills/pixelwright/scripts/pxw.py (SITE_TIMELINE, _site_geometry, _laid, _site_built, _site_items, fx_site,
+  SITE_KEYS, _assemble_natural, VERSION), tests/test_pxw.py (sheet, cabin, built,
+  test_natural_logs_lay_whole_courses_and_boards_from_the_front), skills/pixelwright-animate/SKILL.md (Step 2),
+  skills/pixelwright-animate/references/effects.md (site row, Patterns), LEARNINGS.md (L-056 status, L-065),
+  ai-docs/log.md, .claude-plugin/plugin.json
+- A natural plan takes `"walls": "logs"` (`course` px: whole courses, the faces in turn, each log from the front
+  corner out, the gable the same way, no corner posts or plates) and `"roofOrder": "boards"` (`board` px: boards side
+  by side from the front rake, each whole from eave to ridge). Plans without them are unchanged.
+
 ### C-20261025-5 · 2026-10-25 · 0.8.2: open-sided buildings take the ordinary natural plan; L-064
 - because: L-064 (and L-059 confirmed twice more)
 - files: LEARNINGS.md (L-059 status, L-064), skills/pixelwright-animate/SKILL.md (Step 2: frames),

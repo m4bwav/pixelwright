@@ -107,3 +107,11 @@ snap chance test, holes, linear dither, corners, swap, fog, flicker and cadence.
 0 failures. Four new findings for the maintainer (items 10 to 13 in `ai-docs/notes/2026-10-24-github-wiki.md`): the
 flicker gate counts moving sparks, `fog` 0.8 with PICO-8 flattens a sprite to one colour unnoticed by any gate,
 `flicker_at`'s form is undocumented, and the wiki's own eval sentence was stale.
+
+## 2026-10-26: 0.8.3, log walls and plank roofs
+
+The natural construction plan gains a log build order (`walls: "logs"`) and a board-by-board plank roof
+(`roofOrder: "boards"`), so log buildings with plank roofs no longer need setting aside (L-065 supersedes L-056 for
+them). Piloted on a painted log lodge: every gate passed on the first run once the roof trace covered the top rim.
+
+- Tests: test_pxw (one new; removing the board order fails it), test_make, check_skills green.
