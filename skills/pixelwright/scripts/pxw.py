@@ -9,9 +9,12 @@ still's own palette plus the brief's declared extra colours, so a frame can neve
 Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, which prints argparse's usage text):
   make    <recipe.json> <outdir> [--root DIR] [--no-aw]      the whole make pipeline from one recipe, then gates
   snap    <in.png> <out.png> [--scale S] [--offset X,Y]      detect the pixel grid; one pixel per block (mode)
-  bg      <in.png> <out.png> [--colour auto|R,G,B] [--tol 40]  background flood-filled from the border to clear
-  palette <in.png> <out.png> (--palette P | --colours N) [--dither bayer4] [--gpl OUT]  lock or extract colours
-  clean   <in.png> <out.png> [--alpha 128] [--orphans] [--thin] [--outline auto|selective|R,G,B]
+  bg      <in.png> <out.png> [--colour auto|R,G,B] [--tol 40] [--holes N]  background cleared from the border
+                                                             (and enclosed patches of N+ pixels)
+  palette <in.png> <out.png> (--palette P | --colours N) [--dither bayer4] [--dither-space linear] [--max-step L]
+          [--gpl OUT]                                        lock or extract colours
+  clean   <in.png> <out.png> [--alpha 128] [--orphans] [--thin] [--corners] [--outline auto|selective|R,G,B]
+  swap    <in> <out> (--map map.json | --from a.gpl --to b.gpl)  recolour variants; every colour must be mapped
   crop    <in.png> <out.png> [--pad 0] [--size pow2|WxH] [--anchor bottom|centre]
   tile    <in.png> <out.png> [--band N]                     make a tile wrap, with no new colours
   palettes                                                   built-in palette names
@@ -40,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.7.3"
+VERSION = "0.8.0"
 
 try:
     import numpy as np
@@ -1489,14 +1492,21 @@ def _fold_colour(Lq, ax, nSym, near, cols, offset):
     return res
 
 
-def _downscale(rgb, alpha, w, h):
-    """Premultiplied Lanczos to (w, h): soft edges keep their own colour instead of picking up black."""
+def _downscale(rgb, alpha, w, h, filt="lanczos"):
+    """Premultiplied Lanczos to (w, h): soft edges keep their own colour instead of picking up black. filt "box"
+    averages each block's area in linear light instead: no ringing (Lanczos leaves a dark halo outside a bright
+    edge, which the palette step can turn into a ring of a darker colour), at the cost of a softer edge."""
+    lin = filt == "box"
+    if lin:
+        rgb = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
     pre = np.dstack([rgb * alpha[..., None], alpha])
-    small = np.stack([np.asarray(Image.fromarray(pre[..., c].astype(np.float32), "F").resize((w, h), Image.LANCZOS))
-                      for c in range(4)], -1)
+    small = np.stack([np.asarray(Image.fromarray(pre[..., c].astype(np.float32), "F").resize(
+        (w, h), Image.BOX if lin else Image.LANCZOS)) for c in range(4)], -1)
     small = np.clip(small, 0, 1)
     al = small[..., 3]
-    col = np.where(al[..., None] > 1e-4, small[..., :3] / np.maximum(al[..., None], 1e-4), 0)
+    col = np.clip(np.where(al[..., None] > 1e-4, small[..., :3] / np.maximum(al[..., None], 1e-4), 0), 0, 1)
+    if lin:
+        col = np.where(col <= 0.0031308, col * 12.92, 1.055 * col ** (1 / 2.4) - 0.055)
     res = np.dstack([np.clip(col, 0, 1), al])
     res[al < 0.03] = 0
     return np.round(res * 255).astype(np.float32)
@@ -1557,7 +1567,8 @@ def _model_frames(s, t):
     if t.get("hires", True) and getattr(s, "outdir", None):
         hires = Path(s.outdir) / f"{s.id}-{part}-hires"
         hires.mkdir(parents=True, exist_ok=True)
-    ref = _downscale(f0, alphas[0], s.w, s.h)
+    filt = t.get("filter", "lanczos")
+    ref = _downscale(f0, alphas[0], s.w, s.h, filt)
     frames, unmatched = [], []
     for i, mi in enumerate(masks):
         q = np.nonzero(mi)
@@ -1590,7 +1601,7 @@ def _model_frames(s, t):
         if hires is not None:
             Image.fromarray(np.round(np.dstack([np.clip(frame, 0, 1), al]) * 255).astype(np.uint8), "RGBA") \
                 .save(hires / f"f{i:02d}.png")
-        frames.append(_downscale(frame, al, s.w, s.h))
+        frames.append(_downscale(frame, al, s.w, s.h, filt))
     _CACHE[key] = (frames, ref)
     s.__dict__.setdefault("modelStats", {})[part] = {"symmetry": nSym, "axis": axis, "tol": tol,
                                                       "unmatched_px": unmatched}
@@ -2061,7 +2072,7 @@ def opaque_colours(a):
     return np.unique(px, axis=0) if len(px) else np.zeros((0, 3), np.uint8)
 
 
-def load_palette(spec, root="."):
+def load_palette(spec, root=".", ordered=False):
     """A built-in name, a .hex/.txt file (one hex colour per line), a GIMP .gpl, or from:<png>[,<png>...] (every
     opaque colour of reference sprites, so a new sprite matches a set)."""
     if spec in PALETTES:
@@ -2086,6 +2097,9 @@ def load_palette(spec, root="."):
             cols.append(parse_rgb(h[2:] if len(h) == 8 else h))  # Paint.NET's AARRGGBB
     if not cols:
         fail(f"no colours in palette file: {spec}")
+    if ordered:  # file order, first of any repeat kept: index i of one file maps to index i of another
+        _, first = np.unique(np.array(cols, np.uint8), axis=0, return_index=True)
+        return np.array(cols, np.uint8)[np.sort(first)]
     return np.unique(np.array(cols, np.uint8), axis=0)
 
 
@@ -2119,8 +2133,11 @@ def _coherence(e, s):
 
 def detect_scale(e, smax):
     """(scale, offset, coherence) for one axis. Divisors of the true size are as coherent as the size itself and
-    multiples are not, so the largest scale near the best coherence wins."""
-    if e.sum() == 0 or smax < 2:
+    multiples are not, so the largest scale near the best coherence wins. A few edges line up with some period by
+    chance (the best of the candidate periods over k random edges reaches about 2.6/sqrt(k) one time in 20), so
+    fewer than 8 edges, or a peak under 2.8/sqrt(k), is no grid."""
+    k = int((e > 0).sum())
+    if k < 8 or smax < 2:
         return 1.0, 0.0, 0.0
     cands = []
     s = 2.0
@@ -2129,7 +2146,7 @@ def detect_scale(e, smax):
         s *= 1.01
     cs = [(s, *_coherence(e, s)) for s in cands]
     best = max(c for _, c, _ in cs)
-    if best < 0.5:
+    if best < max(0.5, 2.8 / math.sqrt(k)):
         return 1.0, 0.0, best
     s0 = max(s for s, c, _ in cs if c >= 0.85 * best)
     s0 = max((t for t in cs if abs(t[0] - s0) <= 0.1 * s0), key=lambda t: t[1])[0]  # the peak, not its shoulder
@@ -2169,8 +2186,8 @@ def snap_grid(a, scale=None, offset=None, smax=64):
         sy, oy, cy = detect_scale(_edge_energy(a, 0), min(smax, h / 4))
         if sx > 1 and sy > 1 and abs(sx - sy) / max(sx, sy) < 0.03:
             sx = sy = (sx + sy) / 2
-        elif sx == 1 or sy == 1:  # one axis found nothing: trust the other for both
-            sx = sy = max(sx, sy)
+        elif (sx == 1) != (sy == 1) and (_edge_energy(a, 1 if sx > 1 else 0) > 0).sum() >= 16:
+            sx = sy = max(sx, sy)  # one axis found nothing: trust the other for both, if it rests on enough edges
             ox = ox if cx and cx >= 0.5 else oy
             oy = oy if cy and cy >= 0.5 else ox
     if sx <= 1 and sy <= 1:
@@ -2196,9 +2213,28 @@ def snap_grid(a, scale=None, offset=None, smax=64):
                    coherence=[None if cx is None else rnd(cx), None if cy is None else rnd(cy)])
 
 
-def remove_background(a, colour="auto", tol=40):
+def _flood(near, seeds):
+    """Pixels of `near` 4-connected to any seed."""
+    h, w = near.shape
+    seen = np.zeros((h, w), bool)
+    stack = list(seeds)
+    while stack:
+        y, x = stack.pop()
+        if seen[y, x] or not near[y, x]:
+            continue
+        seen[y, x] = True
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            yy, xx = y + dy, x + dx
+            if 0 <= yy < h and 0 <= xx < w and not seen[yy, xx]:
+                stack.append((yy, xx))
+    return seen
+
+
+def remove_background(a, colour="auto", tol=40, holes=0):
     """Clear the background: pixels connected to the border whose colour is within tol (OKLab x 255) of the
-    background colour (auto: the most common border colour)."""
+    background colour (auto: the most common border colour). holes=N also clears enclosed patches of it of N+
+    pixels (inside a ring or a handle, between an arm and the body); off by default, since a window or a gap that
+    shows the sky is often meant to stay."""
     h, w = a.shape[:2]
     b = a.copy()
     border = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
@@ -2211,19 +2247,17 @@ def remove_background(a, colour="auto", tol=40):
         bg = np.array(parse_rgb(colour), np.uint8)
     dist = np.linalg.norm(oklab(a[..., :3]) - oklab(bg), axis=2) * 255
     near = (dist <= tol) | (a[..., 3] < 128)
-    seen = np.zeros((h, w), bool)
-    stack = [(y, x) for y in range(h) for x in (0, w - 1)] + [(y, x) for x in range(w) for y in (0, h - 1)]
-    while stack:
-        y, x = stack.pop()
-        if seen[y, x] or not near[y, x]:
-            continue
-        seen[y, x] = True
-        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            yy, xx = y + dy, x + dx
-            if 0 <= yy < h and 0 <= xx < w and not seen[yy, xx]:
-                stack.append((yy, xx))
+    seen = _flood(near, [(y, x) for y in range(h) for x in (0, w - 1)] + [(y, x) for x in range(w) for y in (0, h - 1)])
+    inner = 0
+    left = near & ~seen & (a[..., 3] >= 128)
+    while holes and left.any():
+        part = _flood(near & ~seen, [tuple(np.argwhere(left)[0])])
+        left &= ~part
+        if part.sum() >= holes:
+            seen |= part
+            inner += int((part & (a[..., 3] >= 128)).sum())
     b[seen] = 0
-    return b, dict(colour=[int(v) for v in bg], cleared=int((seen & (a[..., 3] >= 128)).sum()))
+    return b, dict(colour=[int(v) for v in bg], cleared=int((seen & (a[..., 3] >= 128)).sum()), enclosed_cleared=inner)
 
 
 def median_cut(px, n):
@@ -2250,23 +2284,48 @@ def median_cut(px, n):
     return np.unique(np.array(keep, np.uint8), axis=0)
 
 
-def quantise(a, pal, dither=None):
+def _linear(c):
+    c = np.asarray(c, np.float64) / 255.0
+    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+
+
+def _nearest(rgb, plab, k=1):
+    """Indices of the k nearest palette colours in OKLab, nearest first, for (n, 3) sRGB."""
+    idx = np.empty((len(rgb), k), np.int64)
+    for i in range(0, len(rgb), 65536):
+        d = ((oklab(rgb[i:i + 65536])[:, None, :] - plab[None]) ** 2).sum(-1)
+        idx[i:i + 65536] = np.argsort(d, axis=1, kind="stable")[:, :k]
+    return idx
+
+
+def quantise(a, pal, dither=None, space="srgb", max_step=None):
     """Every opaque pixel to its nearest palette colour in OKLab. Ordered (Bayer) dithering nudges each pixel by its
-    matrix cell before the match, so flats stay flat and gradients get a regular pattern."""
+    matrix cell before the match, so flats stay flat and gradients get a regular pattern. space "linear" instead
+    mixes each pixel's two nearest colours in the share that keeps its light (an sRGB nudge turns mid grey 75% white
+    on black and white, where the eye's average needs 22%). max_step (OKLab lightness) keeps a pixel undithered
+    where the pair it would mix differ by more, so dither only joins neighbouring ramp steps."""
     h, w = a.shape[:2]
     rgb = a[..., :3].astype(np.float64)
-    if dither:
+    flat, plab = rgb.reshape(-1, 3), oklab(pal)
+    if not dither:
+        idx = _nearest(flat, plab)[:, 0]
+    else:
         n = int(str(dither).replace("bayer", "") or 4)
         if n not in BAYER:
             fail(f"dither must be bayer2, bayer4 or bayer8, not {dither}")
-        m = (np.array(BAYER[n], np.float64) + 0.5) / (n * n) - 0.5
-        spread = 255.0 / max(2, round(len(pal) ** (1 / 3)))
-        rgb = np.clip(rgb + np.tile(m, (h // n + 1, w // n + 1))[:h, :w, None] * spread, 0, 255)
-    flat, plab = rgb.reshape(-1, 3), oklab(pal)
-    idx = np.empty(len(flat), np.int64)
-    for i in range(0, len(flat), 65536):
-        lab = oklab(flat[i:i + 65536])
-        idx[i:i + 65536] = np.argmin(((lab[:, None, :] - plab[None]) ** 2).sum(-1), axis=1)
+        m = np.tile((np.array(BAYER[n], np.float64) + 0.5) / (n * n), (h // n + 1, w // n + 1))[:h, :w].reshape(-1)
+        if space == "linear" and len(pal) > 1:
+            two = _nearest(flat, plab, 2)
+            p, c1, c2 = _linear(flat), _linear(pal[two[:, 0]]), _linear(pal[two[:, 1]])
+            t = np.clip(((p - c1) * (c2 - c1)).sum(1) / np.maximum(((c2 - c1) ** 2).sum(1), 1e-12), 0, 1)
+            idx = np.where(t > m, two[:, 1], two[:, 0])
+            base = two[:, 0]
+        else:
+            spread = 255.0 / max(2, round(len(pal) ** (1 / 3)))
+            idx = _nearest(np.clip(flat + (m[:, None] - 0.5) * spread, 0, 255), plab)[:, 0]
+            base = _nearest(flat, plab)[:, 0] if max_step is not None else idx
+        if max_step is not None:
+            idx = np.where(np.abs(plab[idx, 0] - plab[base, 0]) > max_step, base, idx)
     b = a.copy()
     b[..., :3] = pal[idx].reshape(h, w, 3)
     b[a[..., 3] == 0] = 0
@@ -2355,6 +2414,37 @@ def thin_outline(a, colour=None):
         if v is not None:
             b[y, x] = _unkey(v)
             n += 1
+    return b, n
+
+
+def fix_corners(a, colour=None):
+    """Pixel-perfect lines: a pixel of the line colour whose only same-colour sides are one horizontal and one
+    vertical neighbour that step on in opposite directions (a stair step, not a real corner), with the pixel inside
+    the L not of the line colour, is redundant: the two neighbours already touch at a corner. It takes the colour of
+    the pixel on its outer diagonal. Pixels are visited in reading order and earlier removals count, so a run of
+    doubled steps keeps one pixel a step and line ends stay. colour None: the darkest colour (the outline)."""
+    if colour is None:
+        cols = opaque_colours(a)
+        if not len(cols):
+            return a.copy(), 0
+        colour = cols[int(np.argmin(oklab(cols)[:, 0]))]
+    b = a.copy()
+    h, w = a.shape[:2]
+    on = (b[..., 3] > 0) & (b[..., :3] == np.asarray(colour[:3], np.uint8)).all(-1)
+    at = lambda y, x: 0 <= y < h and 0 <= x < w and on[y, x]
+    n = 0
+    for y, x in zip(*np.nonzero(on.copy())):
+        hs = [dx for dx in (-1, 1) if at(y, x + dx)]
+        vs = [dy for dy in (-1, 1) if at(y + dy, x)]
+        if len(hs) != 1 or len(vs) != 1:
+            continue
+        dx, dy = hs[0], vs[0]
+        if at(y + dy, x + dx) or not (at(y + dy, x - dx) or at(y - dy, x + dx)):
+            continue
+        oy, ox = y - dy, x - dx
+        b[y, x] = b[oy, ox] if 0 <= oy < h and 0 <= ox < w and not on[oy, ox] else 0
+        on[y, x] = False
+        n += 1
     return b, n
 
 
@@ -2464,7 +2554,15 @@ def run_make(rec, root, outdir, use_aw=True):
     bg = rec.get("background", "auto")
     if bg not in (False, None, "none"):
         a, steps["background"] = remove_background(a, bg if isinstance(bg, str) else bg.get("colour", "auto"),
-                                                   40 if isinstance(bg, str) else bg.get("tol", 40))
+                                                   40 if isinstance(bg, str) else bg.get("tol", 40),
+                                                   0 if isinstance(bg, str) else int(bg.get("holes", 0)))
+    fog = rec.get("fog")
+    if fog:  # a far-layer variant: blend toward the air colour, then the palette step locks the result again
+        amt = float(fog.get("amount", 0.4))
+        op = a[..., 3] > 0
+        a = a.copy()
+        a[op, :3] = np.round(a[op, :3] * (1 - amt) + np.asarray(parse_rgb(fog.get("colour", "200,210,230"))) * amt)
+        steps["fog"] = dict(colour=fog.get("colour", "200,210,230"), amount=amt)
     pal = None
     p = rec.get("palette")
     if p:
@@ -2477,7 +2575,9 @@ def run_make(rec, root, outdir, use_aw=True):
             pal = median_cut(px, int(p["colours"]))
         else:
             pal = load_palette(p["name"], root)
-        a = quantise(a, pal, rec.get("dither"))
+        d = rec.get("dither")
+        d = d if isinstance(d, dict) else {"pattern": d}
+        a = quantise(a, pal, d.get("pattern"), d.get("space", "srgb"), d.get("max_step"))
         steps["palette"] = dict(colours=int(len(pal)), used=int(len(opaque_colours(a))), dither=rec.get("dither"))
     cl = rec.get("clean", {"alpha": 128, "orphans": True})
     if cl is not False:
@@ -2491,6 +2591,9 @@ def run_make(rec, root, outdir, use_aw=True):
         if cl.get("outline"):
             a, st["outlined"] = outline(a, cl["outline"], pal if pal is not None else opaque_colours(a),
                                         cl.get("light", "top-left"))
+        if cl.get("corners"):
+            c = cl["corners"]
+            a, st["corners_fixed"] = fix_corners(a, None if c is True else parse_rgb(c) + [255])
         steps["clean"] = st
     cr = rec.get("crop")
     if cr:
@@ -2562,7 +2665,7 @@ def cmd_snap(a):
 
 def cmd_bg(a):
     need_deps()
-    img, info = remove_background(load_u8(a.input), a.colour, a.tol)
+    img, info = remove_background(load_u8(a.input), a.colour, a.tol, a.holes)
     save_u8(img, a.out)
     out(dict(ok=True, out=a.out, **info))
 
@@ -2579,7 +2682,7 @@ def cmd_palette(a):
         pal = median_cut(px, a.colours)
     else:
         pal = load_palette(a.palette)
-    q = quantise(img, pal, a.dither)
+    q = quantise(img, pal, a.dither, a.dither_space, a.max_step)
     save_u8(q, a.out)
     if a.gpl:
         write_gpl(pal, a.gpl, Path(a.out).stem)
@@ -2597,8 +2700,45 @@ def cmd_clean(a):
         img, info["doubles_thinned"] = thin_outline(img)
     if a.outline:
         img, info["outlined"] = outline(img, a.outline, opaque_colours(img), a.light)
+    if a.corners:
+        img, info["corners_fixed"] = fix_corners(img)
     save_u8(img, a.out)
     out(dict(ok=True, out=a.out, colours=int(len(opaque_colours(img))), **info))
+
+
+def cmd_swap(a):
+    """Recolour by an exact colour map: enemy tiers, team colours, night tiles. Every opaque colour must be mapped."""
+    need_deps()
+    if a.map:
+        raw = json.loads(Path(a.map).read_text(encoding="utf-8"))
+        pairs = [(parse_rgb(k), parse_rgb(v)) for k, v in raw.items()]
+    elif a.src and a.dst:
+        f, t = load_palette(a.src, ordered=True), load_palette(a.dst, ordered=True)
+        if len(f) != len(t):
+            fail(f"--from has {len(f)} colours and --to {len(t)}; index maps to index, so they must match")
+        pairs = list(zip(f.tolist(), t.tolist()))
+    else:
+        out(dict(ok=False, error="give --map, or --from and --to"), 2)
+    src = Path(a.input)
+    files = sorted(src.glob("*.png")) if src.is_dir() else [src]
+    lut = {tuple(k): v for k, v in pairs}
+    res, unmapped = [], set()
+    for fp in files:
+        img = load_u8(fp)
+        op = img[..., 3] > 0
+        o = img.copy()
+        for c in opaque_colours(img).tolist():
+            if tuple(c) not in lut:
+                unmapped.add(_hex(c))
+                continue
+            o[op & (img[..., :3] == c).all(-1), :3] = lut[tuple(c)]
+        dest = Path(a.out) / fp.name if src.is_dir() else Path(a.out)
+        save_u8(o, dest)
+        res.append(dest.as_posix())
+    merged = len(set(tuple(v) for _, v in pairs)) < len(pairs)
+    ok = not unmapped
+    out(dict(ok=ok, out=res, mapped=len(pairs), unmapped=sorted(unmapped),
+             note="two colours map to one: those parts merge" if merged else None), 0 if ok else 1)
 
 
 def cmd_crop(a):
@@ -2830,6 +2970,7 @@ def main(argv=None):
     c.add_argument("out")
     c.add_argument("--colour", default="auto")
     c.add_argument("--tol", type=float, default=40)
+    c.add_argument("--holes", type=int, default=0, help="also clear enclosed background patches of N+ pixels")
     c.set_defaults(fn=cmd_bg)
     c = sub.add_parser("palette")
     c.add_argument("input")
@@ -2837,6 +2978,8 @@ def main(argv=None):
     c.add_argument("--palette")
     c.add_argument("--colours", type=int)
     c.add_argument("--dither", choices=["bayer2", "bayer4", "bayer8"])
+    c.add_argument("--dither-space", default="srgb", choices=["srgb", "linear"])
+    c.add_argument("--max-step", type=float, help="no dither between colours further apart in OKLab lightness")
     c.add_argument("--gpl")
     c.set_defaults(fn=cmd_palette)
     c = sub.add_parser("clean")
@@ -2847,7 +2990,15 @@ def main(argv=None):
     c.add_argument("--thin", action="store_true")
     c.add_argument("--outline", help="auto, selective or R,G,B")
     c.add_argument("--light", default="top-left", choices=["top-left", "top-right", "top", "none"])
+    c.add_argument("--corners", action="store_true", help="pixel-perfect lines in the darkest colour")
     c.set_defaults(fn=cmd_clean)
+    c = sub.add_parser("swap")
+    c.add_argument("input", help="a PNG, or a folder of PNGs (frames)")
+    c.add_argument("out", help="a PNG, or a folder when input is one")
+    c.add_argument("--map", help="JSON object: each hex colour to its replacement")
+    c.add_argument("--from", dest="src", help="palette file, index to index with --to")
+    c.add_argument("--to", dest="dst")
+    c.set_defaults(fn=cmd_swap)
     c = sub.add_parser("crop")
     c.add_argument("input")
     c.add_argument("out")

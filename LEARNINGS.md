@@ -728,3 +728,31 @@ house style, 128 px stills).
   still showing for up to one cycle after work starts.
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-10-25
+
+### L-061 · 2026-10-25 · A pixel grid read from a handful of edges is chance, not a grid
+- Trigger: a book pass (Gonzalez and Woods on telling a spectral peak from noise) and a probe: a smooth render saved
+  as JPEG had one or two colour steps over the detection tolerance, and `snap` returned scale 57 (coherence 1.0)
+  and copied it to the axis with no edges, turning the image into 13x13 mush.
+- Hypothesis: any period lines up one or two edges perfectly; with k random edges the best of the candidate
+  periods reaches about 2.6/sqrt(k) one time in 20 (simulated: k 8 0.91, k 16 0.69, k 40 0.43), so a fixed 0.5
+  line accepts chance up to about 25 edges.
+- Rule: require at least 8 edge positions and a coherence above 2.8/sqrt(k) (and 0.5); copy a scale to an empty
+  axis only when it rests on 16 or more edges. A real 16 px sprite has about 10 edges at coherence 0.94-0.95, just
+  inside the line; do not raise it without a fixture that small.
+- Evidence: the JPEG and a twelve-random-band fixture now return scale 1; 304 real ComfyUI renders give the same
+  scale as before (12 grids found both times); all earlier snap tests pass.
+- Scope: script
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-10-25
+
+### L-062 · 2026-10-25 · Background-coloured pixels inside a sprite are often meant; clearing holes is opt-in
+- Trigger: the book pass proposed clearing enclosed background (a ring's hole stayed magenta). Turned on by default,
+  it failed three tests: a sky-coloured window inside an outline, and the real Z-Image render (outcome-make-3),
+  whose interior shares the sky tone and came back 4 pixels wrong.
+- Hypothesis: renders on a flat background reuse that colour inside the subject (glass, a window, a highlight);
+  only the person knows whether an enclosed patch is background.
+- Rule: `background.holes` (or `bg --holes N`) is off by default; the skill names when to turn it on (a ring, a
+  handle, a gap between an arm and the body).
+- Evidence: the three tests pass with it off; the ring fixture clears its 64 px hole with `holes: 4` and keeps a
+  1 px highlight of the background colour.
+- Scope: script
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-10-25

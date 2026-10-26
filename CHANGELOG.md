@@ -4,6 +4,24 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261025-3 · 2026-10-25 · 0.8.0: grid test against chance, enclosed holes, linear-light dither with a contrast cap, swap, pixel-perfect corners, fog, box downscale; L-061, L-062, R-20261025-1
+- because: R-20261025-1 (three pixel-art books, Gonzalez and Woods, Computer Graphics: Principles and Practice and
+  Gambetta, read 2026-10-25), L-061, L-062
+- files: skills/pixelwright/scripts/pxw.py (detect_scale, snap_grid, _flood, remove_background, _linear, _nearest,
+  quantise, load_palette, fix_corners, run_make, cmd_swap, cmd_palette, cmd_clean, cmd_bg, _downscale,
+  _model_frames, usage, VERSION), skills/pixelwright-make/SKILL.md (description, Step 0, Choosing, Step 4,
+  Hand-offs), skills/pixelwright-make/references/recipe.md (Recipe, Commands, How each step works, Rules from the
+  books), skills/pixelwright-animate/references/effects.md (model_rotate `filter`), tests/test_make.py (TestRound2),
+  tests/test_pxw.py (TestDownscale), RESEARCH.md (R-20261025-1), LEARNINGS.md (L-061, L-062),
+  ai-docs/notes/2026-10-25-books-round2.md, README.md (Choices made), .claude-plugin/plugin.json
+- Behaviour change: `snap` finds no grid where the edges are too few to tell a grid from chance (fewer than 8, or a
+  coherence under 2.8/sqrt(edges)); a smooth JPEG render used to snap at scale 17 or 57 into mush. 304 real
+  renders give the same scale as before. Everything else is new and opt-in, and default outputs are byte-identical
+  (checked against 0.7.3 on random images for every dither pattern and the downscale): `background.holes`,
+  `dither.space: linear` and `dither.max_step`, `clean.corners`, `fog`, the `swap` command and model_rotate's
+  `filter: box`. The make skill gains the outline-by-background rule, the smallest-feature size rule, no dither on
+  sprites that will move, sharing ramp ends before raising the budget, and the mirrored-light caveat.
+
 ### C-20261025-2 · 2026-10-25 · 0.7.3: trace natural roofs by hand; desync loops with a random first-frame hold; L-059, L-060
 - because: L-059, L-060, L-056 (confirmed again)
 - files: LEARNINGS.md (L-056 count, L-059, L-060), skills/pixelwright-animate/SKILL.md (Placement, Guards),

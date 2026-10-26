@@ -104,6 +104,7 @@ gives `id_colours.<part>` (linear, as Blender writes an emission colour), `pos_e
 | `tol` | model units: a body point counts as seen in frame 0 within this (0.03) |
 | `posExtent` | overrides `pos_extent` (1.0 if neither) |
 | `sectorOffset` | degrees where the canonical sector starts (180 / symmetry) |
+| `filter` | `lanczos` (default) or `box`: box averages each block in linear light, with no dark halo outside a bright edge (Lanczos rings, and the palette step can turn the ring into a darker colour), at the cost of softer edges |
 | `hires` | false skips writing the render-size frames to `<outdir>/<id>-<part>-hires/` |
 
 Render one symmetry interval (a wheel with 8 spokes turns 45 degrees over the loop), with the last frame one step

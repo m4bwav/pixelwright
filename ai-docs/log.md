@@ -68,3 +68,15 @@ PR #7 from another session), each with a hand-written GitHub release; CI passed 
 the new `site` effect in `doctor` and the unknown-effect error, and the test counts (44 and 27). Animating-A-Sprite now
 describes the natural vocabulary and the 0.6.3 review items (neither run for the wiki). Details in
 `ai-docs/notes/2026-10-24-github-wiki.md`.
+
+## 2026-10-25: 0.8.0, make fixes and steps from a book pass
+
+Six books (three on pixel art, Gonzalez and Woods, two on rendering) were read for the owner's plugins; R-20261025-1
+holds what applies here. Make side built: the grid test now rejects periods that a handful of edges fit by chance
+(L-061), opt-in clearing of enclosed background (L-062), linear-light dither and a contrast cap, `swap` for palette
+variants, `clean.corners` for pixel-perfect lines, a `fog` step and a box filter for model_rotate. Default outputs
+are byte-identical to 0.7.3 apart from no-grid images. Rulings: `ai-docs/notes/2026-10-25-books-round2.md`.
+
+- Tests: test_make 36, test_pxw green, check_skills ok.
+- Next: the animate side (flicker-pixel and uneven-cadence gates, pixel-perfect bolts and trails, puff noise that
+  moves with the puff, timing rules).
