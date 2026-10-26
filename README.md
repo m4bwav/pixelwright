@@ -83,7 +83,7 @@ calls `pxw.py`; `SPRITEWRIGHT_AW` is still read beside `PIXELWRIGHT_AW`. Uninsta
 ## Choices made
 
 Built-in palettes: PICO-8 only (CC0); every other palette comes from a file, since Lospec palettes carry their own
-licences. Dithering is ordered (Bayer) only and off by default. Grid detection is pixelwright's own (phase
+licences. Dithering is ordered (Bayer) only and off by default; `"space": "linear"` keeps each area's light. Grid detection is pixelwright's own (phase
 coherence over edge positions), so it works without artwright; artwright's checks are called, never copied.
 
 ## Development

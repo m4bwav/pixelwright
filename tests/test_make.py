@@ -363,5 +363,134 @@ class TestMake(Base):
         self.assertEqual(res["version"], pxw.VERSION)
 
 
+class TestRound2(Base):
+    """Fixes and steps from the 2026-10-25 book pass (grid significance, enclosed holes, linear dither, contrast cap,
+    swap, pixel-perfect corners, fog)."""
+
+    def test_smooth_jpeg_has_no_grid(self):
+        """A smooth render saved as JPEG has one or two strong edges; a period through them is chance, not a grid
+        (it used to snap at scale 17 or 57 into mush)."""
+        import io
+        src = np.random.default_rng(0).integers(0, 256, (96, 96, 3), dtype=np.uint8)
+        im = Image.fromarray(src).resize((768, 768), Image.BICUBIC).filter(ImageFilter.GaussianBlur(6))
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=55)
+        buf.seek(0)
+        out, info = pxw.snap_grid(np.array(Image.open(buf).convert("RGBA")))
+        self.assertEqual(info["scale"], [1, 1])
+        self.assertEqual(out.shape[:2], (768, 768))
+
+    def test_a_dozen_random_edges_are_no_grid(self):
+        """Twelve colour bands at random places: some period always lines a few of them up (coherence above the old
+        0.5 line), but not above 2.8/sqrt(12)."""
+        rng = np.random.default_rng(3)
+        a = np.zeros((40, 300, 4), np.uint8)
+        a[..., 3] = 255
+        for i, x in enumerate(sorted(rng.choice(np.arange(5, 295), 12, replace=False))):
+            a[:, x:, :3] = (i * 40 % 256, 255 - i * 20, 90)
+        self.assertEqual(pxw.snap_grid(a)[1]["scale"], [1, 1])
+
+    def test_enclosed_background_cleared_only_when_asked(self):
+        r = np.zeros((32, 32, 4), np.uint8)
+        r[...] = [255, 0, 255, 255]
+        r[8:24, 8:24] = [40, 60, 200, 255]
+        r[12:20, 12:20] = [255, 0, 255, 255]  # the hole of a ring
+        r[9, 9] = [255, 0, 255, 255]  # a one-pixel highlight of the background colour
+        b, info = pxw.remove_background(r)
+        self.assertEqual(int(b[15, 15, 3]), 255)
+        b, info = pxw.remove_background(r, holes=4)
+        self.assertEqual(int(b[15, 15, 3]), 0)
+        self.assertEqual(int(b[9, 9, 3]), 255)
+        self.assertEqual(info["enclosed_cleared"], 64)
+
+    def ramp(self):
+        g = np.zeros((16, 64, 4), np.uint8)
+        g[..., 3] = 255
+        for i in range(16):
+            g[:, i * 4:(i + 1) * 4, :3] = i * 17
+        return g
+
+    def test_linear_dither_keeps_the_light(self):
+        """Each grey step dithered on black and white must average to its own linear light (within a Bayer step)."""
+        g, pal = self.ramp(), np.array([[0, 0, 0], [255, 255, 255]], np.uint8)
+        for space, ok in (("linear", True), ("srgb", False)):
+            q = pxw.quantise(g, pal, "bayer4", space)
+            err = max(abs((q[:, i * 4:(i + 1) * 4, 0] == 255).mean() - pxw._linear(np.array([i * 17]))[0])
+                      for i in range(16))
+            self.assertEqual(err < 0.04, ok, (space, err))
+
+    def test_dither_cap_keeps_far_pairs_apart(self):
+        g = self.ramp()
+        bw = np.array([[0, 0, 0], [255, 255, 255]], np.uint8)
+        self.assertTrue(np.array_equal(pxw.quantise(g, bw, "bayer4", max_step=0.12), pxw.quantise(g, bw)))
+        greys = np.array([[110, 110, 110], [128, 128, 128]], np.uint8)  # about 0.05 apart in OKLab lightness
+        flat = np.full((8, 8, 4), 119, np.uint8)
+        flat[..., 3] = 255
+        q = pxw.quantise(flat, greys, "bayer4", "linear", max_step=0.12)
+        self.assertEqual(len(pxw.opaque_colours(q)), 2)
+
+    def test_swap_round_trip_and_unmapped_colour(self):
+        save(draw_sprite(), self.dir / "p.png")
+        cols = [pxw._hex(c) for c in pxw.opaque_colours(draw_sprite())]
+        fwd = {c: "%06x" % (int(c, 16) ^ 0x0f0f0f) for c in cols}
+        (self.dir / "f.json").write_text(json.dumps(fwd))
+        (self.dir / "b.json").write_text(json.dumps({v: k for k, v in fwd.items()}))
+        code, res = self.run_pxw("swap", "p.png", "q.png", "--map", "f.json")
+        self.assertEqual(code, 0, res)
+        self.assertFalse(np.array_equal(self.load("q.png"), draw_sprite()))
+        self.run_pxw("swap", "q.png", "r.png", "--map", "b.json")
+        self.assertTrue(np.array_equal(self.load("r.png"), draw_sprite()))
+        (self.dir / "part.json").write_text(json.dumps(dict(list(fwd.items())[:2])))
+        code, res = self.run_pxw("swap", "p.png", "s.png", "--map", "part.json")
+        self.assertEqual(code, 1)
+        self.assertEqual(len(res["unmapped"]), len(cols) - 2)
+
+    def test_swap_by_palette_index_keeps_file_order(self):
+        a = np.zeros((2, 2, 4), np.uint8)
+        a[0, 0], a[1, 1] = [250, 0, 0, 255], [0, 0, 250, 255]
+        save(a, self.dir / "a.png")
+        (self.dir / "from.hex").write_text("fa0000\n0000fa\n")
+        (self.dir / "to.hex").write_text("00fa00\n101010\n")
+        code, _ = self.run_pxw("swap", "a.png", "b.png", "--from", "from.hex", "--to", "to.hex")
+        b = self.load("b.png")
+        self.assertEqual(code, 0)
+        self.assertEqual(b[0, 0, :3].tolist(), [0, 250, 0])
+        self.assertEqual(b[1, 1, :3].tolist(), [16, 16, 16])
+
+    def test_corners_fix_stair_steps_but_not_real_corners(self):
+        a = np.zeros((10, 14, 4), np.uint8)
+        for i in range(6):  # a diagonal drawn with doubled steps: two pixels a row, each row one to the right
+            a[i, i:i + 2] = INK + [255]
+        line = (a[..., 3] > 0).sum()
+        b, n = pxw.fix_corners(a)
+        self.assertGreater(n, 0)
+        on = b[..., 3] > 0
+        self.assertTrue(on[0, 0] and on[5, 6])  # both ends kept
+        ys, xs = np.nonzero(on)
+        for y, x in zip(ys, xs):  # still one 8-connected line with no L-corner left
+            self.assertFalse(on[y, x + 1] and y + 1 < 10 and on[y + 1, x + 1] and not on[y + 1, x]
+                             if x + 1 < 14 else False)
+        self.assertEqual(int(on.sum()), line - n)
+        sq = np.zeros((8, 8, 4), np.uint8)
+        sq[1:7, 1:7] = INK + [255]
+        sq[2:6, 2:6] = RED + [255]
+        self.assertEqual(pxw.fix_corners(sq)[1], 0)
+        clean = np.zeros((6, 6, 4), np.uint8)
+        for i in range(6):
+            clean[i, i] = INK + [255]
+        self.assertEqual(pxw.fix_corners(clean)[1], 0)
+
+    def test_fog_lowers_contrast_and_stays_in_palette(self):
+        save(draw_sprite(), self.dir / "p.png")
+        rec = {"id": "far", "input": "p.png", "snap": False, "palette": "pico-8",
+               "fog": {"colour": "194,195,199", "amount": 0.8}}
+        (self.dir / "r.json").write_text(json.dumps(rec))
+        code, res = self.run_pxw("make", "r.json", "out", "--no-aw")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["gates"]["colours_outside_palette"], 0)
+        lum = lambda a: (a[a[..., 3] > 0][:, :3] @ [0.2126, 0.7152, 0.0722]).std()
+        self.assertLess(lum(self.load("out/far.png")), 0.5 * lum(draw_sprite()))
+
+
 if __name__ == "__main__":
     unittest.main()

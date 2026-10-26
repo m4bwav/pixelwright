@@ -835,5 +835,19 @@ class TestCommands(Base):
         self.assertIn("buildup", res["effects"])
 
 
+class TestDownscale(unittest.TestCase):
+    def test_box_filter_leaves_no_halo(self):
+        """A white disc on mid grey reduced 8x: Lanczos rings below the grey outside the edge; box (linear light)
+        keeps every pixel between the two."""
+        yy, xx = np.mgrid[0:256, 0:256]
+        rgb = np.where((((yy - 128) ** 2 + (xx - 128) ** 2) < 70 ** 2)[..., None], 1.0, 0.5) * np.ones((256, 256, 3))
+        grey = round(0.5 * 255)
+        lz = sw._downscale(rgb, np.ones((256, 256)), 32, 32)[..., 0]
+        bx = sw._downscale(rgb, np.ones((256, 256)), 32, 32, "box")[..., 0]
+        self.assertGreater(int((lz < grey).sum()), 0)
+        self.assertEqual(int((bx < grey).sum()), 0)
+        self.assertEqual(float(bx.max()), 255.0)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

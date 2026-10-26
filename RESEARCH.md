@@ -95,6 +95,25 @@ SEO "best AI pixel art" lists, Kling and Pixa marketing pages, OnWorks mirrors, 
 
 Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P (practice), R-T (testing).
 
+### R-20261025-1 · 2026-10-25 · Six books: three on pixel art, image processing, two on rendering
+- Track: subject and practice. Magnitude 0.3 (bugs fixed, new opt-in steps; no claim reversed).
+- Azzi, Pixel Logic: the most exact of the pixel books: staircase and anti-aliasing amounts, banding, outlines by
+  background, hue-shifted ramps, dither only between low-contrast neighbours and never on animated parts (pp.
+  111-120), popping rows of 2-3 px, faces kept out of sub-pixel motion, 3-frame minimum loops. Silber, Pixel Art
+  for Game Developers: tile repetition faults, palette swaps, pixel flashing (confirms R-P10), flipped light.
+  Dawe and Humphries, Make Your Own Pixel Art: fog at about 40% and 80% for middle and far layers, effect beats.
+- Gonzalez and Woods, Digital Image Processing 4e: a peak counts only when it stands above chance (section 4.5 and
+  the spectral chapters; the grid test, L-061); hole filling by region labelling (section 9.5).
+- Hughes et al., Computer Graphics: Principles and Practice 3e: an ordered pattern is seen as its average light,
+  so dither belongs in linear light (sections 17.4.5, 28.12); a box filter does not ring where Lanczos does
+  (section 19); detail under 2 px aliases (section 25.4). Gambetta, Computer Graphics from Scratch: one pixel per
+  major-axis step, and line and fill from one computation.
+- Probes on 0.7.3: Bayer dither turned mid grey 75% white on black and white (a light-keeping mix is about 22%);
+  Lanczos left a dark halo outside a bright disc reduced 8x; `fx_arc` bolts are about 30% redundant L-corners and
+  `fx_scroll` at period 8 over 6 frames steps 1, 2, 1, 1, 2 (both for the animate pass).
+- Notes, with page citations and the full proposal lists: kept with the owner's book-learnings records, outside
+  this repository.
+
 ### R-20261024-1 · 2026-10-24 · Survey for pixel creation (the pixelwright expansion)
 - Track: tooling and subject. Magnitude 0.3 (scope widened; no animation claim changed).
 - Fixers exist and are good at their core job: Sprite Fusion Pixel Snapper (Rust CLI and WebAssembly, MIT; grid
