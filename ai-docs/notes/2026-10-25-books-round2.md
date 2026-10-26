@@ -25,3 +25,14 @@ Rulings made while building R-20261025-1 into pixelwright-make. Each is small an
 
 Dropped from the proposals: ramp builder, fractional shift, flame effect, Lloyd refinement of median cut and a
 `false_contours` gate (low value for their bytes, or no failing case yet).
+
+## Animate side (0.8.1)
+
+9. **Flicker and cadence are reports, not gates.** Sparks, dust and glints may blink on purpose (dust settling
+   gave 3 flicker pixels on the test machine); a brief that wants none sets `max_flicker_pixels: 0`.
+10. **Cadence checks only linear curves** (equal curve steps): an eased curve is uneven on purpose.
+11. **`arc` pixel-perfect is opt-in (`perfect: true`)**: approved strips must re-render byte for byte, and bolts
+    change shape every frame anyway. Core-colour L-corners fall from 21% to 0.6% of bolt pixels over 20 seeds.
+12. **Dropped:** a pixel-perfect pass for drone trails (they are dotted on purpose, not lines) and anchoring the
+    puff noise to the moving puff (the puffs thin every frame, which hides the crawl, no clean test could show
+    it, and approved construction strips use them).

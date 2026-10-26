@@ -4,6 +4,18 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261025-4 · 2026-10-25 · 0.8.1: flicker-pixel and uneven-cadence reports, pixel-perfect arcs, timing rules from the books; L-063
+- because: R-20261025-1 (R-P10 confirmed by Silber section 8.3 and Azzi p. 199; cadence from Computer Graphics:
+  Principles and Practice section 18.2), L-063
+- files: skills/pixelwright/scripts/pxw.py (gates, fx_arc, _pixel_perfect, VERSION), skills/pixelwright-animate/SKILL.md
+  (Step 3), skills/pixelwright-animate/references/timing-and-gates.md (Timing),
+  skills/pixelwright-animate/references/effects.md (arc row, Patterns), tests/test_pxw.py (TestRound2Gates),
+  LEARNINGS.md (L-063), ai-docs/notes/2026-10-25-books-round2.md, .claude-plugin/plugin.json
+- `gates.json` gains `flicker_pixels` (with `flicker_at`) and, when it applies, `cadence_uneven`; both are reported,
+  not failed, unless a brief sets `max_flicker_pixels`. `arc` gains `perfect` (clean one-pixel bolts). Sheets and
+  frames are byte-identical to 0.8.0 (the arc default was checked on 20 seeds). Timing rules: pop rows 2-3 px,
+  faces out of shimmer, 3-frame loops, favour keys, steady steps; use-animation and effect beats in Patterns.
+
 ### C-20261025-3 · 2026-10-25 · 0.8.0: grid test against chance, enclosed holes, linear-light dither with a contrast cap, swap, pixel-perfect corners, fog, box downscale; L-061, L-062, R-20261025-1
 - because: R-20261025-1 (three pixel-art books, Gonzalez and Woods, Computer Graphics: Principles and Practice and
   Gambetta, read 2026-10-25), L-061, L-062

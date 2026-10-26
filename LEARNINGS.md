@@ -756,3 +756,16 @@ house style, 128 px stills).
   1 px highlight of the background colour.
 - Scope: script
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-10-25
+
+### L-063 · 2026-10-25 · A steady move needs the frame count to divide the distance, not the reverse
+- Trigger: the new cadence report, run over the effects on the test machine, flagged a 4 px belt scroll over 8
+  frames (steps 0, 1, 1, 0, 0, 1, 1); the first fix written into the skill said to make the frame count a multiple
+  of the period, which is exactly that case.
+- Hypothesis: a linear move of d pixels over n frames moves d/n a frame; whole-pixel rounding gives equal steps only
+  when n divides d. More frames than pixels means stalls, not smoothness.
+- Rule: for a linear `scroll` or `shift`, choose n so that it divides the period or the distance (8 px in 4 or 8
+  frames, not 6; 4 px in 4, not 8). When more frames are needed, hold frames on purpose in the curve.
+- Evidence: period 8 over 6 frames steps 1, 2, 1, 1, 2; period 4 over 8 stalls every other frame; period 4 over 4
+  steps 1, 1, 1 (TestRound2Gates).
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-10-25

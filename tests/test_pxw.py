@@ -835,6 +835,76 @@ class TestCommands(Base):
         self.assertIn("buildup", res["effects"])
 
 
+class TestRound2Gates(Base):
+    """Animation gates and the arc option from the 2026-10-25 book pass."""
+
+    def make(self, anim, extra=None):
+        b = brief(x=anim)
+        b["regions"].update(extra or {})
+        s = sw.Sprite(b, str(self.dir))
+        return s, sw.build_frames(s, anim)
+
+    def test_a_lone_blinking_pixel_is_flicker_and_a_blinking_block_is_not(self):
+        blink = [0, 1, 0, 1, 0, 0]
+        dot = {"frames": 6, "focal": "dot", "tracks": [{"effect": "pulse", "region": "dot", "hot": [255, 240, 200],
+                                                         "strength": 1.0, "curve": blink}]}
+        s, frames = self.make(dot, {"dot": {"rects": [[9, 15, 10, 16]]}})
+        g = sw.gates(s, dot, frames, 0)
+        self.assertEqual(g["flicker_pixels"], 1)
+        self.assertEqual(g["flicker_at"], [[9, 15]])
+        self.assertTrue(g["pass"])  # reported, not failed, unless the brief sets a limit
+        dot["max_flicker_pixels"] = 0
+        self.assertFalse(sw.gates(s, dot, frames, 0)["pass"])
+        lamp = json.loads(json.dumps(PULSE))
+        lamp["tracks"][0]["curve"] = blink
+        s, frames = self.make(lamp)
+        self.assertEqual(sw.gates(s, lamp, frames, 0)["flicker_pixels"], 0)
+
+    def test_uneven_scroll_cadence_is_reported(self):
+        for n, uneven in ((3, True), (4, False)):
+            anim = {"frames": n, "tracks": [{"effect": "scroll", "region": "belt", "period": 4,
+                                             "curve": [j / n for j in range(n)]}]}
+            s, frames = self.make(anim)
+            g = sw.gates(s, anim, frames, None)
+            self.assertEqual("cadence_uneven" in g, uneven, g.get("cadence_uneven"))
+        self.assertEqual(g.get("cadence_uneven"), None)
+        anim = {"frames": 3, "tracks": [{"effect": "scroll", "region": "belt", "period": 4, "curve": [0, 1 / 3, 2 / 3]}]}
+        s, frames = self.make(anim)
+        self.assertEqual(sw.gates(s, anim, frames, None)["cadence_uneven"][0]["steps"], [1, 2])
+
+    def test_pixel_perfect_path_drops_l_corners_and_keeps_ends(self):
+        path = [(0, 0), (1, 0), (1, 1), (2, 1), (2, 2), (2, 2), (3, 2), (3, 3)]
+        out = sw._pixel_perfect(path)
+        self.assertEqual(out[0], (0, 0))
+        self.assertEqual(out[-1], (3, 3))
+        for a, b in zip(out, out[1:]):
+            self.assertEqual(max(abs(a[0] - b[0]), abs(a[1] - b[1])), 1)
+        for a, b, c in zip(out, out[1:], out[2:]):
+            self.assertFalse(abs(c[0] - a[0]) == 1 and abs(c[1] - a[1]) == 1, (a, b, c))
+        self.assertEqual(sw._pixel_perfect([(5, 5)]), [(5, 5)])
+
+    def test_perfect_arc_has_no_l_corners(self):
+        s = sw.Sprite(brief(x=PULSE), str(self.dir))
+        s.regions["wide"] = np.ones((32, 32), bool)
+        for perfect, most in ((True, 0), (False, None)):
+            hits = 0
+            for seed in range(6):
+                f = np.zeros((32, 32, 4), np.float32)
+                sw.fx_arc(s, f, 1.0, {"region": "wide", "colours": [[255, 255, 0], [200, 100, 0]],
+                                      "paths": [[2, 16, 29, 14]], "seed": seed, "flicker": 0, "perfect": perfect}, 0)
+                core = (f[..., :3] == [255, 255, 0]).all(-1) & (f[..., 3] > 0)
+                for y, x in zip(*np.nonzero(core)):
+                    for dy in (-1, 1):
+                        for dx in (-1, 1):
+                            if 0 <= y + dy < 32 and 0 <= x + dx < 32 and core[y + dy, x] and core[y, x + dx] \
+                                    and not core[y + dy, x + dx] and not (f[y + dy, x + dx, 3] > 0):
+                                hits += 1
+            if most is not None:
+                self.assertEqual(hits, most)
+            else:
+                self.assertGreater(hits, 0)
+
+
 class TestDownscale(unittest.TestCase):
     def test_box_filter_leaves_no_halo(self):
         """A white disc on mid grey reduced 8x: Lanczos rings below the grey outside the edge; box (linear light)

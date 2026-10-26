@@ -12,7 +12,18 @@ Checked 2026-10-23. Sources are the `R-` entries in the plugin's RESEARCH.md.
 - Idle loops: 2 to 4 frames of 1 px moves with long holds, up to about 8 to add a blink (R-P11). Loops use
   `"rest": "none"` and must pass the seam gate.
 - Sub-pixel tricks (shifting edge colours) only on big flat areas; on small sprites move whole pixels (R-P9).
-- 1 px features blink in and out when animated; thicken them or leave them out of the region (R-P10).
+- 1 px features blink in and out when animated; thicken them or leave them out of the region (R-P10, now
+  confirmed by two books: Silber section 8.3, Azzi p. 199). `flicker_pixels` counts them. A row that appears or
+  goes should pop 2-3 px at once, not 1.
+- Keep faces and eyes out of shimmer, bend and sub-pixel regions: a face that wobbles by a pixel reads as a
+  different expression (Azzi p. 205).
+- Loops need at least 3 frames to read as motion; a 2-frame idle works only slowly, about 500 ms a frame (Azzi
+  p. 232; Silber exercise 8.3). Walks: 8 frames typical, 16 smooth.
+- In-betweens favour a key: frames bunched near the start or end pose read as weight; evenly spaced ones read as
+  mechanical (Azzi pp. 232-234).
+- A steady move needs a steady step: 8 px over 6 frames steps 1, 2, 1, 1, 2 and judders (Computer Graphics:
+  Principles and Practice, section 18.2); 4 px over 8 frames stalls every other frame. Let the frame count divide
+  the distance or the period. `cadence_uneven` reports it.
 
 ## Gates
 
