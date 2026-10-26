@@ -79,8 +79,8 @@ class Base(unittest.TestCase):
         gates = json.loads((self.dir / "out" / "machine.gates.json").read_text())
         return code, res, gates
 
-    def sheet(self, name):
-        return np.array(Image.open(self.dir / "out" / f"{name}.png").convert("RGBA"))
+    def sheet(self, name, out="out"):
+        return np.array(Image.open(self.dir / out / f"{name}.png").convert("RGBA"))
 
 
 class TestFrames(Base):
@@ -730,6 +730,64 @@ class TestCommands(Base):
         g = json.loads((self.dir / "out3" / "cottage.gates.json").read_text())["place"]
         self.assertGreater(g["drawn_outside_silhouette"], 0)
         self.assertFalse(g["pass"])
+
+    def cabin(self, logs=True):
+        """The cottage as a log cabin: pale logs with a dark seam every 3 rows, a roof of boards; `logs` sets the
+        plan's `walls: "logs"` and `roofOrder: "boards"`."""
+        still, plan = self.cottage()
+        a = still.copy()
+        a[23:41, 8:41] = [205, 170, 120, 255]
+        a[23:41:3, 8:41] = [80, 55, 35, 255]
+        a[6:23, 6:43] = [150, 115, 75, 255]
+        a[6:23, 6:43:3] = [120, 90, 55, 255]
+        Image.fromarray(a, "RGBA").save(self.dir / "cottage.png")
+        if logs:
+            plan.update({"walls": "logs", "course": 3, "roofOrder": "boards", "board": 3})
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        return a, plan
+
+    def built(self, still, name, out):
+        sheet = self.sheet(name, out)
+        return [(sheet[:, j * 48:(j + 1) * 48] == still).all(-1) & (still[..., 3] > 0) for j in range(20)]
+
+    def test_natural_logs_lay_whole_courses_and_boards_from_the_front(self):
+        still, plan = self.cabin()
+        code, res = self.run_sw("assemble", "c.json", "c2.json", "--plan", "plan.json")
+        self.assertEqual(code, 0, res)
+        self.run_sw("frames", "c2.json", "out", "--no-aw")
+        g = json.loads((self.dir / "out" / "cottage.gates.json").read_text())["place"]
+        self.assertTrue(g["pass"], g)
+        self.assertEqual(g["drawn_outside_silhouette"], 0)
+        same = self.built(still, "cottage-place-20f", "out")
+        walls = np.zeros((48, 48), dtype=bool)
+        walls[23:41, 8:41] = True
+        seam = walls & (still[..., 0] < 100)
+        log = walls & ~seam
+        # a log wall rises seam and log together: its dark seams never stand ahead of its logs
+        for j in range(20):
+            self.assertLess(abs(same[j][seam].mean() - same[j][log].mean()), 0.2, j)
+        # the two faces in turn: the left face's course goes down before the right face's
+        left, right = walls & (np.arange(48) < 24)[None, :], walls & (np.arange(48) >= 24)[None, :]
+        self.assertTrue(any(same[j][left].mean() > same[j][right].mean() + 0.05 for j in range(20)))
+        # boards from the front rake back, each whole from eave to ridge
+        roof = np.zeros((48, 48), dtype=bool)
+        roof[6:23, 6:43] = True
+        mid = [j for j in range(20) if 0.2 < same[j][roof].mean() < 0.8]
+        self.assertTrue(mid)
+        for j in mid:
+            cols = same[j][6:23, 6:43]
+            self.assertTrue(((cols.all(0)) | (~cols.any(0))).all(), j)
+            done = cols.all(0)
+            self.assertTrue(done[0] and not done[-1], j)
+            self.assertEqual(list(done), sorted(done, reverse=True), j)
+        shares = [same[j][still[..., 3] > 0].mean() for j in range(20)]
+        self.assertEqual(shares, sorted(shares))
+        # the timber-frame order on the same cabin raises the dark seams first
+        self.cabin(logs=False)
+        self.run_sw("assemble", "c.json", "c3.json", "--plan", "plan.json")
+        self.run_sw("frames", "c3.json", "out3", "--no-aw")
+        same = self.built(still, "cottage-place-20f", "out3")
+        self.assertTrue(any(same[j][seam].mean() > same[j][log].mean() + 0.3 for j in range(20)))
 
     def test_natural_assemble_needs_the_geometry(self):
         self.cottage()

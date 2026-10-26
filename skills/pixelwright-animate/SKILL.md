@@ -60,8 +60,10 @@ A natural building (timber, daub, thatch or tile; a village seen from above at a
 instead: `"vocabulary": "natural"` with the roof polygon, the ground diamond, the wall height and the eave and
 ridge lines; it raises stakes, footing, posts, walls course by course, rafters and the roof from the eave up, in
 colours sampled from the still (effects.md "Patterns", L-055). The roof must differ from the walls in material (thatch,
-tile or shingle over timber, daub or stone); a building whose walls and roof are the same wood needs another
-build order (L-056). Site lines are clipped to the finished silhouette by default (`clip`, L-057). Trace the
+tile or shingle over timber, daub or stone). A log building with a plank roof takes `"walls": "logs"` (whole
+courses, the faces in turn, no posts: the frame order would raise the dark seams before the logs) and `"roofOrder":
+"boards"` (boards side by side from the front rake), with the roof traced by hand as always (L-065, which replaces
+L-056's "needs another build order"). Site lines are clipped to the finished silhouette by default (`clip`, L-057). Trace the
 roof polygon by hand on an 8x grid: a colour mask of the thatch also takes the straw-toned daub and timber (L-059).
 Open-sided sheds (roof on posts over goods) take the same plan; no posts-only variant (L-064).
 

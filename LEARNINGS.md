@@ -676,7 +676,8 @@ house style, 128 px stills).
 - Evidence: three strips (thatch over daub; tile over half-timber with a stone oven dome; tile over half-timber with a
   chimney) passed every gate on the first run and read as a site going up; one same-wood log building was set aside.
 - Scope: skill
-- Status: active · helpful 2 · harmful 0 · last_confirmed 2026-10-25
+- Status: active · helpful 2 · harmful 0 · last_confirmed 2026-10-25 · log-and-plank buildings superseded by L-065
+  (a hand-traced roof works on them; what they lacked was a log build order)
 
 ### L-057 · 2026-10-25 · Temporary construction lines outside the finished silhouette read as chatter
 - Trigger: a viewer watching natural construction strips: 1 px rafters, laths, wall plates and string ran out over
@@ -786,3 +787,23 @@ house style, 128 px stills).
   out; awnings under the eave rose with the walls without help.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-25
+
+### L-065 · 2026-10-26 · A log wall is laid whole, a log at a time; a plank roof board by board
+- Trigger: a log cabin with a plank roof, set aside under L-056, was the next building to construct. The roof
+  outline traced fine by hand on an 8x grid (L-059 had replaced colour masks since); the natural plan itself was
+  wrong for it: its timber-then-infill split takes a log wall's dark seams as timber and raises them before the pale
+  logs, and its corner posts and wall plates belong to a frame the cabin does not have.
+- Hypothesis: a log wall has no frame and no fill: each course is one log, seam and face together, and the logs of
+  the two faces interlock at the corners, so they go down in turn. A plank roof is nailed on board by board across
+  the rafters, not laid in courses from the eave like thatch.
+- Rule: for a log building give the natural plan `"walls": "logs"` (course 3 px at 96 px art) and, for a plank roof,
+  `"roofOrder": "boards"`. Trace the roof polygon over the whole top rim, a couple of pixels into the sky: a rim
+  pixel left out of the polygon counts as gable and rises with the gable's logs as a stray line ahead of the roof.
+  A stone chimney at the apex is notched out of the roof polygon and rises with the gable.
+- Evidence: a painted log lodge (plank roof, antlers, a hide on the wall, a stone chimney) passed every gate on the
+  first run (rest frame identical, 0 new colours, 0 px outside the silhouette) and read at 1x and 3x as a cabin going
+  up log by log; the first trace sat 2 px under the top rim and showed a line floating at the rake in two frames,
+  fixed by moving the trace up. Test `test_natural_logs_lay_whole_courses_and_boards_from_the_front`; removing the
+  board order fails it.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-26
