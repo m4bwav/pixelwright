@@ -1,8 +1,8 @@
 ## installed
-pixelwright 0.7.0 from --plugin
+pixelwright 0.8.2 from --plugin
 Claude Code not used (--plugin)
 Python 3.9.25, numpy 2.0.2, Pillow 11.3.0 on Windows
-artwright aw.py 0.4.2
+artwright aw.py 0.7.0
 
 ## fixtures
 render.png: 132x132, 10103 colours
@@ -32,21 +32,21 @@ Columns: 4
 
 ## version
 $ python pxw.py --version
-0.7.0
+0.8.2
 $ echo $?
 0
 
 ## help
 $ python pxw.py --help
 usage: pxw.py [-h] [--version]
-              {make,snap,bg,palette,clean,crop,tile,palettes,frames,grid,mask,buildup,assemble,contact,pack,review,doctor}
+              {make,snap,bg,palette,clean,swap,crop,tile,palettes,frames,grid,mask,buildup,assemble,contact,pack,review,doctor}
               ...
 
 pxw.py (pixelwright): real pixel art made from a render, and sprite animation
 made in code from a still.
 
 positional arguments:
-  {make,snap,bg,palette,clean,crop,tile,palettes,frames,grid,mask,buildup,assemble,contact,pack,review,doctor}
+  {make,snap,bg,palette,clean,swap,crop,tile,palettes,frames,grid,mask,buildup,assemble,contact,pack,review,doctor}
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -75,7 +75,7 @@ $ echo $?
 $ python pxw.py doctor
 {
   "ok": true,
-  "version": "0.7.0",
+  "version": "0.8.2",
   "python": "3.9.25",
   "numpy": "2.0.2",
   "pillow": "11.3.0",
@@ -113,7 +113,7 @@ $ echo $?
 $ python pxw.py doctor
 {
   "ok": false,
-  "version": "0.7.0",
+  "version": "0.8.2",
   "python": "3.9.25",
   "numpy": null,
   "pillow": null,
@@ -195,7 +195,8 @@ $ python pxw.py make recipe.json out
         242,
         236
       ],
-      "cleared": 252
+      "cleared": 252,
+      "enclosed_cleared": 0
     },
     "palette": {
       "colours": 7,
@@ -231,9 +232,9 @@ $ python pxw.py make recipe.json out
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
-<plugin>\skills\pixelwright\scripts\pxw.py:2398: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2580: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
 $ echo $?
 0
@@ -281,7 +282,7 @@ $ python pxw.py snap render.png snapped.png
     0.71
   ]
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -310,7 +311,7 @@ $ python pxw.py snap frac.png frac-snapped.png
     0.93
   ]
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -335,7 +336,7 @@ $ python pxw.py snap painting.png painting-snapped.png
   "uniform_blocks": 1.0,
   "detected": true
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -364,7 +365,7 @@ $ python pxw.py snap render.png forced.png --scale 6 --offset 4,4
     null
   ]
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -379,9 +380,10 @@ $ python pxw.py bg snapped.png cleared.png
     242,
     236
   ],
-  "cleared": 252
+  "cleared": 252,
+  "enclosed_cleared": 0
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -395,7 +397,7 @@ $ python pxw.py bg cleared.png cleared2.png
   "cleared": 0,
   "note": "border already transparent"
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -426,7 +428,7 @@ $ python pxw.py palette cleared.png pico.png --palette pico-8
   "used": 8,
   "before": 221
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -440,7 +442,7 @@ $ python pxw.py clean pico.png clean.png --orphans --outline selective
   "orphans_fixed": 1,
   "outlined": 60
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -463,7 +465,7 @@ $ python pxw.py crop clean.png crop.png --pad 1 --size 32x32
     12
   ]
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -486,7 +488,7 @@ $ python pxw.py crop clean.png crop2.png --size pow2
     13
   ]
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -550,7 +552,8 @@ $ python pxw.py make recipe-full.json out-full
         242,
         236
       ],
-      "cleared": 252
+      "cleared": 252,
+      "enclosed_cleared": 0
     },
     "palette": {
       "colours": 7,
@@ -588,9 +591,9 @@ $ python pxw.py make recipe-full.json out-full
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
-<plugin>\skills\pixelwright\scripts\pxw.py:2398: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2580: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
 $ echo $?
 0
@@ -643,7 +646,8 @@ $ python pxw.py make recipe-clean-only.json out-clean
         242,
         236
       ],
-      "cleared": 252
+      "cleared": 252,
+      "enclosed_cleared": 0
     },
     "palette": {
       "colours": 7,
@@ -664,9 +668,9 @@ $ python pxw.py make recipe-clean-only.json out-clean
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
-<plugin>\skills\pixelwright\scripts\pxw.py:2398: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2580: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
 $ echo $?
 0
@@ -727,7 +731,8 @@ $ python pxw.py make recipe-painting.json out-painting
         178,
         198
       ],
-      "cleared": 4030
+      "cleared": 4030,
+      "enclosed_cleared": 0
     },
     "palette": {
       "colours": 8,
@@ -748,9 +753,9 @@ $ python pxw.py make recipe-painting.json out-painting
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
-<plugin>\skills\pixelwright\scripts\pxw.py:2398: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2580: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
 $ echo $?
 0
@@ -793,7 +798,7 @@ $ python pxw.py palette cleared.png q.png --palette pico-8 --gpl pico.gpl
   "used": 8,
   "before": 221
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -836,7 +841,7 @@ $ python pxw.py palette cleared.png hex.png --palette mine.hex
   "used": 5,
   "before": 221
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -855,7 +860,7 @@ $ python pxw.py palette cleared.png gpl.png --palette mine.gpl
   "used": 4,
   "before": 221
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -875,7 +880,7 @@ $ python pxw.py palette cleared.png set.png --palette from:chest.png
   "used": 4,
   "before": 221
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -896,7 +901,7 @@ $ python pxw.py palette cleared.png six.png --colours 6
   "used": 6,
   "before": 221
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -927,7 +932,7 @@ $ python pxw.py palette painting.png dithered.png --palette pico-8 --dither baye
   "used": 13,
   "before": 11918
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -958,7 +963,7 @@ $ python pxw.py palette painting.png banded.png --palette pico-8
   "used": 9,
   "before": 11918
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -984,7 +989,9 @@ $ echo $?
 ## palette bad dither
 $ python pxw.py palette cleared.png x.png --palette pico-8 --dither floyd
 usage: pxw.py palette [-h] [--palette PALETTE] [--colours COLOURS]
-                      [--dither {bayer2,bayer4,bayer8}] [--gpl GPL]
+                      [--dither {bayer2,bayer4,bayer8}]
+                      [--dither-space {srgb,linear}] [--max-step MAX_STEP]
+                      [--gpl GPL]
                       input out
 pxw.py palette: error: argument --dither: invalid choice: 'floyd' (choose from 'bayer2', 'bayer4', 'bayer8')
 $ echo $?
@@ -1044,7 +1051,8 @@ $ python pxw.py make recipe-set.json out-set
             242,
             236
           ],
-          "cleared": 252
+          "cleared": 252,
+          "enclosed_cleared": 0
         },
         "palette": {
           "colours": 5,
@@ -1123,9 +1131,9 @@ $ python pxw.py make recipe-set.json out-set
     }
   ]
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
-<plugin>\skills\pixelwright\scripts\pxw.py:2398: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2580: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
 $ echo $?
 0
@@ -1139,7 +1147,7 @@ $ python pxw.py tile grass.png grass-tile.png
   "seam_ratio": 0.991,
   "new_colours": 0
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
 $ echo $?
 0
@@ -1190,12 +1198,503 @@ $ python pxw.py make recipe-tile.json out-tile
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
-<plugin>\skills\pixelwright\scripts\pxw.py:2398: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2580: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
 $ echo $?
 0
+
+## fixture: smooth.jpg
+smooth.jpg: 768x768 JPEG, quality 55: random colours resized 8x bicubic and blurred
+
+## snap smooth
+$ python pxw.py snap smooth.jpg smooth-snapped.png
+{
+  "ok": true,
+  "out": "smooth-snapped.png",
+  "scale": [
+    1,
+    1
+  ],
+  "offset": [
+    0,
+    0
+  ],
+  "native": [
+    768,
+    768
+  ],
+  "uniform_blocks": 1.0,
+  "detected": true
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+0
+
+## snap smooth before 0.8.0
+$ python pxw.py snap smooth.jpg smooth-old.png
+{
+  "ok": true,
+  "out": "smooth-old.png",
+  "scale": [
+    57.0,
+    57.0
+  ],
+  "offset": [
+    26.0,
+    26.0
+  ],
+  "native": [
+    13,
+    13
+  ],
+  "uniform_blocks": 0.0,
+  "detected": true,
+  "coherence": [
+    1.0,
+    0.0
+  ]
+}
+<old-plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+0
+
+## old version
+$ python pxw.py --version
+0.7.0
+$ echo $?
+0
+
+## fixture: ring.png
+ring.png: 32x32, a 16x16 blue square with an 8x8 hole of the magenta ground in it, and one magenta pixel at 9,9
+
+## bg ring
+$ python pxw.py bg ring.png ring-bg.png
+{
+  "ok": true,
+  "out": "ring-bg.png",
+  "colour": [
+    255,
+    0,
+    255
+  ],
+  "cleared": 768,
+  "enclosed_cleared": 0
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+0
+
+## bg ring holes
+$ python pxw.py bg ring.png ring-holes.png --holes 4
+{
+  "ok": true,
+  "out": "ring-holes.png",
+  "colour": [
+    255,
+    0,
+    255
+  ],
+  "cleared": 832,
+  "enclosed_cleared": 64
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+0
+
+## bg ring: alpha
+ring-bg.png: hole alpha 255, pixel 9,9 alpha 255; ring-holes.png: hole alpha 0, pixel 9,9 alpha 255
+
+## fixture: grey.png
+grey.png: 16x16, every pixel 128,128,128; bw.hex: 000000 and ffffff
+
+## palette dither srgb
+$ python pxw.py palette grey.png grey-srgb.png --palette bw.hex --dither bayer4
+{
+  "ok": true,
+  "out": "grey-srgb.png",
+  "palette": [
+    "000000",
+    "ffffff"
+  ],
+  "used": 2,
+  "before": 1
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+0
+
+## palette dither srgb: white share
+grey-srgb.png: 192 of 256 pixels white (75.0%)
+
+## palette dither linear
+$ python pxw.py palette grey.png grey-linear.png --palette bw.hex --dither bayer4 --dither-space linear
+{
+  "ok": true,
+  "out": "grey-linear.png",
+  "palette": [
+    "000000",
+    "ffffff"
+  ],
+  "used": 2,
+  "before": 1
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+0
+
+## palette dither linear: white share
+grey-linear.png: 48 of 256 pixels white (18.8%)
+
+## palette dither max-step
+$ python pxw.py palette grey.png grey-capped.png --palette bw.hex --dither bayer4 --dither-space linear --max-step 0.12
+{
+  "ok": true,
+  "out": "grey-capped.png",
+  "palette": [
+    "000000",
+    "ffffff"
+  ],
+  "used": 1,
+  "before": 1
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+0
+
+## palette dither max-step: white share
+grey-capped.png: 256 of 256 pixels white (100.0%)
+
+## fixture: stairs.png
+stairs.png: 14x10, a diagonal of 12 pixels, two a row, each row one to the right
+
+## clean corners
+$ python pxw.py clean stairs.png stairs-clean.png --corners
+{
+  "ok": true,
+  "out": "stairs-clean.png",
+  "colours": 1,
+  "corners_fixed": 5
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+0
+
+## clean corners: rows
+row 0: #.......
+row 1: .#......
+row 2: ..#.....
+row 3: ...#....
+row 4: ....#...
+row 5: .....##.
+
+## clean corners on a box
+$ python pxw.py clean chest.png chest-corners.png --corners
+{
+  "ok": true,
+  "out": "chest-corners.png",
+  "colours": 5,
+  "corners_fixed": 0
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+0
+
+## file: night.json
+{"281824": "141428", "a46422": "523a3c", "c83438": "642848", "f8f0e2": "a8b0c8", "78401e": "3c2830"}
+
+## swap
+$ python pxw.py swap chest.png chest-night.png --map night.json
+{
+  "ok": true,
+  "out": [
+    "chest-night.png"
+  ],
+  "mapped": 5,
+  "unmapped": [],
+  "note": null
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+0
+
+## file: night-part.json
+{"281824": "141428", "a46422": "523a3c"}
+
+## swap unmapped
+$ python pxw.py swap chest.png chest-part.png --map night-part.json
+{
+  "ok": false,
+  "out": [
+    "chest-part.png"
+  ],
+  "mapped": 2,
+  "unmapped": [
+    "78401e",
+    "c83438",
+    "f8f0e2"
+  ],
+  "note": null
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+1
+
+## file: day.hex
+281824
+a46422
+c83438
+f8f0e2
+78401e
+
+## file: dusk.hex
+201428
+7a4a30
+9a2c40
+d8c8c0
+5a3424
+
+## swap by index
+$ python pxw.py swap chest.png chest-dusk.png --from day.hex --to dusk.hex
+{
+  "ok": true,
+  "out": [
+    "chest-dusk.png"
+  ],
+  "mapped": 5,
+  "unmapped": [],
+  "note": null
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+0
+
+## swap folder
+$ python pxw.py swap chests night-chests --map night.json
+{
+  "ok": true,
+  "out": [
+    "night-chests/f00.png",
+    "night-chests/f01.png"
+  ],
+  "mapped": 5,
+  "unmapped": [],
+  "note": null
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+$ echo $?
+0
+
+## file: recipe-fog.json
+{"id": "mushroom-mid", "input": "render.png", "palette": 8,
+ "fog": {"colour": "194,195,199", "amount": 0.4}, "crop": {"pad": 1, "size": "32x32"}}
+
+## make fog
+$ python pxw.py make recipe-fog.json out-fog
+{
+  "ok": true,
+  "id": "mushroom-mid",
+  "out": "out-fog/mushroom-mid.png",
+  "preview": "out-fog/mushroom-mid.x4.png",
+  "size": [
+    32,
+    32
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        132,
+        132
+      ],
+      "colours": 10103
+    },
+    "snap": {
+      "scale": [
+        6.0,
+        6.0
+      ],
+      "offset": [
+        3.998,
+        4.004
+      ],
+      "native": [
+        22,
+        22
+      ],
+      "uniform_blocks": 0.0,
+      "detected": true,
+      "coherence": [
+        0.713,
+        0.71
+      ]
+    },
+    "background": {
+      "colour": [
+        243,
+        242,
+        236
+      ],
+      "cleared": 252,
+      "enclosed_cleared": 0
+    },
+    "fog": {
+      "colour": "194,195,199",
+      "amount": 0.4
+    },
+    "palette": {
+      "colours": 6,
+      "used": 6,
+      "dither": null
+    },
+    "clean": {
+      "orphans_fixed": 0
+    },
+    "crop": {
+      "sprite": [
+        20,
+        19
+      ],
+      "canvas": [
+        32,
+        32
+      ],
+      "at": [
+        6,
+        12
+      ]
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 6,
+    "colours_outside_palette": 0,
+    "within_budget": true,
+    "size_ok": true,
+    "aw_pixel": {
+      "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+    }
+  }
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+<plugin>\skills\pixelwright\scripts\pxw.py:2580: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
+$ echo $?
+0
+
+## file: recipe-fog-far.json
+{"id": "mushroom-far", "input": "render.png", "palette": "pico-8",
+ "fog": {"colour": "194,195,199", "amount": 0.8}, "crop": {"pad": 1, "size": "32x32"}}
+
+## make fog far
+$ python pxw.py make recipe-fog-far.json out-fog-far
+{
+  "ok": true,
+  "id": "mushroom-far",
+  "out": "out-fog-far/mushroom-far.png",
+  "preview": "out-fog-far/mushroom-far.x4.png",
+  "size": [
+    32,
+    32
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        132,
+        132
+      ],
+      "colours": 10103
+    },
+    "snap": {
+      "scale": [
+        6.0,
+        6.0
+      ],
+      "offset": [
+        3.998,
+        4.004
+      ],
+      "native": [
+        22,
+        22
+      ],
+      "uniform_blocks": 0.0,
+      "detected": true,
+      "coherence": [
+        0.713,
+        0.71
+      ]
+    },
+    "background": {
+      "colour": [
+        243,
+        242,
+        236
+      ],
+      "cleared": 252,
+      "enclosed_cleared": 0
+    },
+    "fog": {
+      "colour": "194,195,199",
+      "amount": 0.8
+    },
+    "palette": {
+      "colours": 16,
+      "used": 1,
+      "dither": null
+    },
+    "clean": {
+      "orphans_fixed": 0
+    },
+    "crop": {
+      "sprite": [
+        20,
+        19
+      ],
+      "canvas": [
+        32,
+        32
+      ],
+      "at": [
+        6,
+        12
+      ]
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 1,
+    "colours_outside_palette": 0,
+    "within_budget": true,
+    "size_ok": true,
+    "aw_pixel": {
+      "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+    }
+  }
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
+<plugin>\skills\pixelwright\scripts\pxw.py:2580: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
+$ echo $?
+0
+
+## make fog: contrast
+luminance spread (standard deviation over opaque pixels): out/mushroom.png 70.3 (7 colours), out-fog/mushroom-mid.png 42.1 (6 colours), out-fog-far/mushroom-far.png 0.0 (1 colours)
 
 ## file: recipe-budget.json
 {"id": "mushroom", "input": "render.png", "palette": "pico-8", "budget": 4}
@@ -1245,7 +1744,8 @@ $ python pxw.py make recipe-budget.json out-budget
         242,
         236
       ],
-      "cleared": 252
+      "cleared": 252,
+      "enclosed_cleared": 0
     },
     "palette": {
       "colours": 16,
@@ -1266,9 +1766,9 @@ $ python pxw.py make recipe-budget.json out-budget
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
-<plugin>\skills\pixelwright\scripts\pxw.py:2398: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2580: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
 $ echo $?
 1
@@ -1277,7 +1777,7 @@ $ echo $?
 $ python pxw.py doctor
 {
   "ok": true,
-  "version": "0.7.0",
+  "version": "0.8.2",
   "python": "3.9.25",
   "numpy": "2.0.2",
   "pillow": "11.3.0",
@@ -1356,7 +1856,8 @@ $ python pxw.py make recipe.json out-aw
         242,
         236
       ],
-      "cleared": 252
+      "cleared": 252,
+      "enclosed_cleared": 0
     },
     "palette": {
       "colours": 7,
@@ -1398,9 +1899,9 @@ $ python pxw.py make recipe.json out-aw
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
-<plugin>\skills\pixelwright\scripts\pxw.py:2398: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2580: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
 $ echo $?
 0
@@ -1450,7 +1951,8 @@ $ python pxw.py make recipe-full.json out-full-aw
         242,
         236
       ],
-      "cleared": 252
+      "cleared": 252,
+      "enclosed_cleared": 0
     },
     "palette": {
       "colours": 7,
@@ -1519,9 +2021,9 @@ $ python pxw.py make recipe-full.json out-full-aw
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
-<plugin>\skills\pixelwright\scripts\pxw.py:2398: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2580: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
 $ echo $?
 0
@@ -1567,7 +2069,8 @@ $ python pxw.py make recipe-painting.json out-painting-aw
         178,
         198
       ],
-      "cleared": 4030
+      "cleared": 4030,
+      "enclosed_cleared": 0
     },
     "palette": {
       "colours": 8,
@@ -1594,9 +2097,9 @@ $ python pxw.py make recipe-painting.json out-painting-aw
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1994: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2097: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(a.astype(np.uint8), "RGBA").save(path)
-<plugin>\skills\pixelwright\scripts\pxw.py:2398: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:2580: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   return Image.fromarray(a, "RGBA").resize((a.shape[1] * z, a.shape[0] * z), Image.NEAREST)
 $ echo $?
 0
@@ -1666,9 +2169,9 @@ $ python pxw.py mask brief.json mask.png
   },
   "empty_regions": []
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1807: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1910: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   base = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1816: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1919: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   tint.putalpha(Image.fromarray((m * 110).astype(np.uint8), "L"))
 $ echo $?
 0
@@ -1709,15 +2212,15 @@ $ python pxw.py frames brief.json out-anim
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1689: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1792: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(f, "RGBA").save(p)
-<plugin>\skills\pixelwright\scripts\pxw.py:1693: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1796: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   sheet.paste(Image.fromarray(f, "RGBA"), (i * s.w, 0))
-<plugin>\skills\pixelwright\scripts\pxw.py:1679: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1700: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1803: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   stillImg = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1705: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1808: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   canvas.alpha_composite(Image.fromarray(f, "RGBA").resize((s.w * z, s.h * z), Image.NEAREST), (s.w * z + 16, 8))
 $ echo $?
 0
@@ -1796,6 +2299,22 @@ forge.gates.json
     "luma": 40
   },
   "noticeable": true,
+  "drawn_outside_silhouette": 8,
+  "flicker_pixels": 3,
+  "flicker_at": [
+    [
+      26,
+      0
+    ],
+    [
+      17,
+      1
+    ],
+    [
+      24,
+      3
+    ]
+  ],
   "pass": true,
   "frames": 10,
   "sheet": "out-anim/forge-use-10f.png",
@@ -1837,6 +2356,8 @@ forge.gates.json
     "luma": 40
   },
   "noticeable": true,
+  "drawn_outside_silhouette": 0,
+  "flicker_pixels": 0,
   "loop_seam_changed": 32,
   "loop_seam_ok": true,
   "pass": true,
@@ -1871,15 +2392,15 @@ $ python pxw.py frames brief.json out-use --only use
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1689: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1792: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(f, "RGBA").save(p)
-<plugin>\skills\pixelwright\scripts\pxw.py:1693: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1796: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   sheet.paste(Image.fromarray(f, "RGBA"), (i * s.w, 0))
-<plugin>\skills\pixelwright\scripts\pxw.py:1679: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1700: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1803: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   stillImg = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1705: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1808: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   canvas.alpha_composite(Image.fromarray(f, "RGBA").resize((s.w * z, s.h * z), Image.NEAREST), (s.w * z + 16, 8))
 $ echo $?
 0
@@ -1902,15 +2423,15 @@ $ python pxw.py frames brief.json out-again --only use
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1689: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1792: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(f, "RGBA").save(p)
-<plugin>\skills\pixelwright\scripts\pxw.py:1693: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1796: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   sheet.paste(Image.fromarray(f, "RGBA"), (i * s.w, 0))
-<plugin>\skills\pixelwright\scripts\pxw.py:1679: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1700: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1803: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   stillImg = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1705: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1808: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   canvas.alpha_composite(Image.fromarray(f, "RGBA").resize((s.w * z, s.h * z), Image.NEAREST), (s.w * z + 16, 8))
 $ echo $?
 0
@@ -1936,22 +2457,22 @@ $ python sw.py frames brief.json out-shim --only use
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1689: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1792: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(f, "RGBA").save(p)
-<plugin>\skills\pixelwright\scripts\pxw.py:1693: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1796: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   sheet.paste(Image.fromarray(f, "RGBA"), (i * s.w, 0))
-<plugin>\skills\pixelwright\scripts\pxw.py:1679: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1700: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1803: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   stillImg = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1705: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1808: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   canvas.alpha_composite(Image.fromarray(f, "RGBA").resize((s.w * z, s.h * z), Image.NEAREST), (s.w * z + 16, 8))
 $ echo $?
 0
 
 ## shim version
 $ python sw.py --version
-0.7.0
+0.8.2
 $ echo $?
 0
 
@@ -1959,7 +2480,7 @@ $ echo $?
 $ python sw.py doctor
 {
   "ok": true,
-  "version": "0.7.0",
+  "version": "0.8.2",
   "python": "3.9.25",
   "numpy": "2.0.2",
   "pillow": "11.3.0",
@@ -2007,7 +2528,7 @@ $ python pxw.py contact out-anim/forge-use-10f.png contact.png --frames 10
     32
   ]
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1679: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
 $ echo $?
 0
@@ -2065,15 +2586,15 @@ $ python pxw.py frames brief-built.json out-built --only place
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1689: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1792: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(f, "RGBA").save(p)
-<plugin>\skills\pixelwright\scripts\pxw.py:1693: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1796: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   sheet.paste(Image.fromarray(f, "RGBA"), (i * s.w, 0))
-<plugin>\skills\pixelwright\scripts\pxw.py:1679: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1700: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1803: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   stillImg = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1705: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1808: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   canvas.alpha_composite(Image.fromarray(f, "RGBA").resize((s.w * z, s.h * z), Image.NEAREST), (s.w * z + 16, 8))
 $ echo $?
 0
@@ -2117,15 +2638,15 @@ $ python pxw.py frames brief-assembled.json out-assembled --only place
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1689: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1792: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(f, "RGBA").save(p)
-<plugin>\skills\pixelwright\scripts\pxw.py:1693: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1796: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   sheet.paste(Image.fromarray(f, "RGBA"), (i * s.w, 0))
-<plugin>\skills\pixelwright\scripts\pxw.py:1679: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1700: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1803: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   stillImg = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1705: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1808: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   canvas.alpha_composite(Image.fromarray(f, "RGBA").resize((s.w * z, s.h * z), Image.NEAREST), (s.w * z + 16, 8))
 $ echo $?
 0
@@ -2171,15 +2692,15 @@ $ python pxw.py frames brief-weak.json out-weak
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1689: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1792: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(f, "RGBA").save(p)
-<plugin>\skills\pixelwright\scripts\pxw.py:1693: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1796: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   sheet.paste(Image.fromarray(f, "RGBA"), (i * s.w, 0))
-<plugin>\skills\pixelwright\scripts\pxw.py:1679: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1700: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1803: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   stillImg = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1705: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1808: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   canvas.alpha_composite(Image.fromarray(f, "RGBA").resize((s.w * z, s.h * z), Image.NEAREST), (s.w * z + 16, 8))
 $ echo $?
 1
@@ -2206,15 +2727,15 @@ $ python pxw.py frames brief-rest.json out-rest
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1689: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1792: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(f, "RGBA").save(p)
-<plugin>\skills\pixelwright\scripts\pxw.py:1693: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1796: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   sheet.paste(Image.fromarray(f, "RGBA"), (i * s.w, 0))
-<plugin>\skills\pixelwright\scripts\pxw.py:1679: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1700: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1803: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   stillImg = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1705: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1808: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   canvas.alpha_composite(Image.fromarray(f, "RGBA").resize((s.w * z, s.h * z), Image.NEAREST), (s.w * z + 16, 8))
 $ echo $?
 1
@@ -2254,15 +2775,15 @@ $ python pxw.py frames brief-smoke.json out-smoke
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1689: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1792: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(f, "RGBA").save(p)
-<plugin>\skills\pixelwright\scripts\pxw.py:1693: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1796: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   sheet.paste(Image.fromarray(f, "RGBA"), (i * s.w, 0))
-<plugin>\skills\pixelwright\scripts\pxw.py:1679: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1700: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1803: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   stillImg = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1705: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1808: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   canvas.alpha_composite(Image.fromarray(f, "RGBA").resize((s.w * z, s.h * z), Image.NEAREST), (s.w * z + 16, 8))
 $ echo $?
 1
@@ -2299,6 +2820,22 @@ $ echo $?
     "luma": 40
   },
   "noticeable": false,
+  "drawn_outside_silhouette": 15,
+  "flicker_pixels": 3,
+  "flicker_at": [
+    [
+      26,
+      1
+    ],
+    [
+      25,
+      2
+    ],
+    [
+      22,
+      3
+    ]
+  ],
   "loop_seam_changed": 17,
   "loop_seam_ok": false,
   "pass": false,
@@ -2328,12 +2865,123 @@ $ python pxw.py mask brief-empty.json mask2.png
     "screen"
   ]
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1807: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1910: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   base = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1816: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1919: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   tint.putalpha(Image.fromarray((m * 110).astype(np.uint8), "L"))
 $ echo $?
 1
+
+## file: brief-flicker.json animations
+{"use": {"frames": 10, "focal": "fire", "fps": 12, "max_flicker_pixels": 0, "tracks": [
+  {"effect": "pulse", "region": "fire", "hot": [255, 250, 220],
+   "curve": [0, 0.5, 1, 1, 0.8, 0.6, 0.4, 0.2, 0.1, 0]},
+  {"effect": "sparks", "region": "sky", "source": [19, 3, 24, 4], "bornFrames": [1, 2, 3],
+   "colours": [[255, 250, 220], [255, 150, 40], [200, 70, 20]]}]}}
+
+## frames flicker capped
+$ python pxw.py frames brief-flicker.json out-flicker
+{
+  "ok": false,
+  "id": "forge",
+  "gates": "out-flicker/forge.gates.json",
+  "animations": {
+    "use": {
+      "pass": false,
+      "frames": 10,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-flicker/forge-use-10f.png"
+    }
+  }
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:1792: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(f, "RGBA").save(p)
+<plugin>\skills\pixelwright\scripts\pxw.py:1796: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  sheet.paste(Image.fromarray(f, "RGBA"), (i * s.w, 0))
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
+<plugin>\skills\pixelwright\scripts\pxw.py:1803: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  stillImg = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
+<plugin>\skills\pixelwright\scripts\pxw.py:1808: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  canvas.alpha_composite(Image.fromarray(f, "RGBA").resize((s.w * z, s.h * z), Image.NEAREST), (s.w * z + 16, 8))
+$ echo $?
+1
+
+## file: out-flicker/forge.gates.json (use, flicker)
+{
+  "flicker_pixels": 3,
+  "flicker_at": [
+    [
+      26,
+      0
+    ],
+    [
+      17,
+      1
+    ],
+    [
+      24,
+      3
+    ]
+  ],
+  "pass": false
+}
+
+## file: brief-cadence.json animations
+{"slide": {"frames": 6, "focal": "fire", "tracks": [
+  {"effect": "shift", "part": "fire", "region": "front", "by": [8, 0], "curve": [0, 0.2, 0.4, 0.6, 0.8, 1]}]}}
+
+## frames cadence
+$ python pxw.py frames brief-cadence.json out-cadence
+{
+  "ok": true,
+  "id": "forge",
+  "gates": "out-cadence/forge.gates.json",
+  "animations": {
+    "slide": {
+      "pass": true,
+      "frames": 6,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-cadence/forge-slide-6f.png"
+    }
+  }
+}
+<plugin>\skills\pixelwright\scripts\pxw.py:1792: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(f, "RGBA").save(p)
+<plugin>\skills\pixelwright\scripts\pxw.py:1796: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  sheet.paste(Image.fromarray(f, "RGBA"), (i * s.w, 0))
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
+<plugin>\skills\pixelwright\scripts\pxw.py:1803: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  stillImg = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
+<plugin>\skills\pixelwright\scripts\pxw.py:1808: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  canvas.alpha_composite(Image.fromarray(f, "RGBA").resize((s.w * z, s.h * z), Image.NEAREST), (s.w * z + 16, 8))
+$ echo $?
+0
+
+## file: out-cadence/forge.gates.json (slide, cadence)
+{
+  "cadence_uneven": [
+    {
+      "track": 0,
+      "effect": "shift",
+      "steps": [
+        2,
+        1,
+        2,
+        1,
+        2
+      ]
+    }
+  ],
+  "pass": true
+}
 
 ## snap missing file
 $ python pxw.py snap nothing.png x.png
@@ -2347,7 +2995,7 @@ $ echo $?
 ## no command
 $ python pxw.py
 usage: pxw.py [-h] [--version]
-              {make,snap,bg,palette,clean,crop,tile,palettes,frames,grid,mask,buildup,assemble,contact,pack,review,doctor}
+              {make,snap,bg,palette,clean,swap,crop,tile,palettes,frames,grid,mask,buildup,assemble,contact,pack,review,doctor}
               ...
 pxw.py: error: the following arguments are required: cmd
 $ echo $?
@@ -2355,7 +3003,7 @@ $ echo $?
 
 ## streams
 python pxw.py: exit 2, stdout 0 lines, stderr 4 lines
-python pxw.py palette cleared.png x.png --palette pico-8 --dither floyd: exit 2, stdout 0 lines, stderr 4 lines
+python pxw.py palette cleared.png x.png --palette pico-8 --dither floyd: exit 2, stdout 0 lines, stderr 6 lines
 python pxw.py palette cleared.png x.png --palette pico-8 --colours 6: exit 2, stdout 4 lines, stderr 0 lines
 python pxw.py crop clean.png tiny.png --size 16x16: exit 1, stdout 4 lines, stderr 0 lines
 python pxw.py snap nothing.png x.png: exit 1, stdout 4 lines, stderr 0 lines
@@ -2396,22 +3044,22 @@ $ python pxw.py frames batch/forge/brief.json batch/forge/out --root batch/forge
     }
   }
 }
-<plugin>\skills\pixelwright\scripts\pxw.py:1689: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1792: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   Image.fromarray(f, "RGBA").save(p)
-<plugin>\skills\pixelwright\scripts\pxw.py:1693: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1796: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   sheet.paste(Image.fromarray(f, "RGBA"), (i * s.w, 0))
-<plugin>\skills\pixelwright\scripts\pxw.py:1679: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1782: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   im = Image.fromarray(f, "RGBA").resize((fw * z, fh * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1700: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1803: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   stillImg = Image.fromarray(np.round(s.still).astype(np.uint8), "RGBA").resize((s.w * z, s.h * z), Image.NEAREST)
-<plugin>\skills\pixelwright\scripts\pxw.py:1705: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+<plugin>\skills\pixelwright\scripts\pxw.py:1808: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
   canvas.alpha_composite(Image.fromarray(f, "RGBA").resize((s.w * z, s.h * z), Image.NEAREST), (s.w * z + 16, 8))
 $ echo $?
 0
 
 ## review
-$ python pxw.py review batch --port 8798
-{"ok": true, "url": "http://127.0.0.1:8798/", "picks": "<tmp>/run/batch/picks.json"}
+$ python pxw.py review batch --port 8799
+{"ok": true, "url": "http://127.0.0.1:<port>/", "picks": "<tmp>/run/batch/picks.json"}
 section: forge, use (10 frames)
 section: forge, idle (8 frames)
 section: forge, place (8 frames)
@@ -2439,10 +3087,10 @@ section: forge, idle (8 frames)
 section: forge, place (8 frames)
 
 ## review busy port
-$ python pxw.py review batch --port 8798
+$ python pxw.py review batch --port 8799
 {
   "ok": false,
-  "error": "port 8798 is in use; stop the server on it or pick another port",
+  "error": "port 8799 is in use; stop the server on it or pick another port",
   "detail": "[WinError 10048] Only one usage of each socket address (protocol/network address/port) is normally permitted"
 }
 $ echo $?
@@ -2456,14 +3104,14 @@ $ echo $?
 
 ## tests: animation
 $ python tests/test_pxw.py
-Ran 44 tests in <s>s
+Ran 50 tests in <s>s
 OK (skipped=4)
 $ echo $?
 0
 
 ## tests: make
 $ python tests/test_make.py
-Ran 27 tests in <s>s
+Ran 36 tests in <s>s
 OK
 $ echo $?
 0
@@ -2473,4 +3121,3 @@ $ python tests/check_skills.py
 ok
 $ echo $?
 0
-

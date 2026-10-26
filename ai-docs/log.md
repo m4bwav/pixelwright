@@ -95,3 +95,15 @@ fix (L-063).
 Four open-sided sheds made natural construction strips with the ordinary plan and passed every gate on the first
 run, so the skill drops the idea of a posts-only reading (L-064). L-059's hand-traced roofs confirmed on two more
 batches.
+
+## 2026-10-26: wiki updated to 0.8.2
+
+With the owner's approval, the wiki went from 0.7.0 to the `v0.8.2` release (tagged 2026-10-26 on `18e320c`, holding
+the untagged 0.7.1 to 0.8.1). The verification program gained `--old` and cases for every 0.8.x make option and the
+new animation reports; it ran against the installed plugin on Windows 3.14, and on `git archive v0.8.2` on Windows 3.9
+and Linux, with artwright 0.7.0. The old cases changed only in versions, help text, the new report fields and test
+counts (50 and 36). New wiki page Versions-And-Upgrading; Making-Pixel-Art, Palettes, Commands and Gates describe the
+snap chance test, holes, linear dither, corners, swap, fog, flicker and cadence. Wiki commit `bea16e8`, live 11 pages,
+0 failures. Four new findings for the maintainer (items 10 to 13 in `ai-docs/notes/2026-10-24-github-wiki.md`): the
+flicker gate counts moving sparks, `fog` 0.8 with PICO-8 flattens a sprite to one colour unnoticed by any gate,
+`flicker_at`'s form is undocumented, and the wiki's own eval sentence was stale.
