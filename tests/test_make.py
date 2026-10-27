@@ -491,6 +491,21 @@ class TestRound2(Base):
         lum = lambda a: (a[a[..., 3] > 0][:, :3] @ [0.2126, 0.7152, 0.0722]).std()
         self.assertLess(lum(self.load("out/far.png")), 0.5 * lum(draw_sprite()))
 
+    def test_heavy_fog_can_collapse_a_sparse_palette_without_failing(self):
+        a = np.zeros((8, 8, 4), np.uint8)
+        a[1:7, 1:4] = [255, 0, 77, 255]
+        a[1:7, 4:7] = [0, 228, 54, 255]
+        save(a, self.dir / "p.png")
+        rec = {"id": "far", "input": "p.png", "snap": False, "background": "none", "clean": False,
+               "palette": "pico-8", "fog": {"colour": "255,241,232", "amount": 0.99}}
+        (self.dir / "r.json").write_text(json.dumps(rec))
+        code, res = self.run_pxw("make", "r.json", "out", "--no-aw")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["gates"]["colours"], 1)
+        self.assertTrue(res["gates"]["within_budget"])
+        self.assertEqual(res["gates"]["colours_outside_palette"], 0)
+        self.assertTrue(np.array_equal(self.load("out/far.png")[..., 3], a[..., 3]))
+
 
 if __name__ == "__main__":
     unittest.main()

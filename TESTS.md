@@ -8,6 +8,19 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261026-1 · 2026-10-26 · unittest + structure checks · Windows · 55 animation tests and 37 make tests passed
+- Coordinating session ran `python tests/test_pxw.py`: 55 tests passed in 13.473 seconds.
+  `python tests/test_make.py`: 37 passed; a ResourceWarning was reported.
+  `python tests/check_skills.py` and `git diff --check` passed.
+- New fixtures cover moving pixels with steps above 1 px, colour-changing motion over transparency,
+  motion over opaque art, unchanged same-colour distractions, coordinate truncation, reverse blinks and loop
+  seams. The make fixture confirms heavy fog can collapse PICO-8 to one colour without failing the gates.
+- Initial fixture run had four errors because unused pulse tracks omitted their required `hot` colour.
+  Supplying it fixed the fixtures; no source workaround was needed.
+- The motion test confirms `gates` leaves its frame arrays byte-identical. Full old/new wiki-output and
+  released-archive checks are pending.
+- led to: C-20261026-2
+
 ### T-20261025-1 · 2026-10-25 · unittest + four painted strips · Windows 11, Python 3.14 · unit 72/72
 - `tests/test_pxw.py` with the new clip test (fails unclipped: the gate counts pixels over empty ground and sky),
   `tests/test_make.py` OK, `check_skills.py` OK.

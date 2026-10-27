@@ -930,6 +930,58 @@ class TestRound2Gates(Base):
         s, frames = self.make(anim)
         self.assertEqual(sw.gates(s, anim, frames, None)["cadence_uneven"][0]["steps"], [1, 2])
 
+    def test_travelling_pixels_are_not_flicker(self):
+        anim = {"frames": 3, "max_flicker_pixels": 0, "noticeable": {"share": 0},
+                "tracks": [{"effect": "pulse", "region": "sky", "hot": WARM}]}
+        s, _ = self.make(anim)
+        for points, colours in (
+                ([(1, 5), (4, 5), (7, 5)], [WARM] * 3),
+                ([(1, 1), (4, 4), (7, 8)], [WARM, DARK, CYAN]),
+                ([(31, 8), (28, 8), (25, 8)], [WARM] * 3)):
+            with self.subTest(points=points):
+                frames = [self.still.copy() for _ in points]
+                for f, (x, y), colour in zip(frames, points, colours):
+                    f[y, x] = colour + [255]
+                original = [f.tobytes() for f in frames]
+                s.still = frames[0].astype(np.float32)
+                g = sw.gates(s, anim, frames, 0)
+                self.assertEqual(g["flicker_pixels"], 0, g)
+                self.assertNotIn("flicker_at", g)
+                self.assertTrue(g["pass"], g)
+                self.assertEqual([f.tobytes() for f in frames], original)
+
+    def test_a_recolour_moving_over_opaque_art_is_not_flicker(self):
+        anim = {"frames": 3, "noticeable": {"share": 0},
+                "tracks": [{"effect": "pulse", "region": "body", "hot": WARM}]}
+        s, _ = self.make(anim)
+        frames = [self.still.copy() for _ in range(3)]
+        for f, x in zip(frames, (6, 9, 12)):
+            f[24, x] = CYAN + [255]
+        self.assertEqual(sw.gates(s, anim, frames, 0)["flicker_pixels"], 0)
+
+    def test_static_matches_do_not_hide_a_blink_and_locations_are_capped(self):
+        anim = {"frames": 3, "tracks": [{"effect": "pulse", "region": "sky", "hot": WARM}]}
+        s, _ = self.make(anim)
+        frames = [self.still.copy() for _ in range(3)]
+        frames[1][1, 3:31:3] = WARM + [255]
+        for f in frames:
+            f[1, 0] = WARM + [255]
+        g = sw.gates(s, anim, frames, None)
+        self.assertEqual(g["flicker_pixels"], 10)
+        self.assertEqual(g["flicker_at"], [[x, 1] for x in range(3, 25, 3)])
+        self.assertEqual(sw.gates(s, anim, frames, 0)["flicker_pixels"], 10)
+
+    def test_reverse_blink_and_loop_seam_are_still_reported(self):
+        anim = {"frames": 3, "tracks": [{"effect": "pulse", "region": "sky", "hot": WARM}]}
+        s, _ = self.make(anim)
+        frames = [self.still.copy() for _ in range(3)]
+        frames[0][2, 2] = WARM + [255]
+        frames[2][2, 2] = WARM + [255]
+        self.assertEqual(sw.gates(s, anim, frames, 0)["flicker_at"], [[2, 2]])
+        frames[2][2, 2] = 0
+        self.assertEqual(sw.gates(s, anim, frames, 0)["flicker_pixels"], 0)
+        self.assertEqual(sw.gates(s, anim, frames, None)["flicker_at"], [[2, 2]])
+
     def test_pixel_perfect_path_drops_l_corners_and_keeps_ends(self):
         path = [(0, 0), (1, 0), (1, 1), (2, 1), (2, 2), (2, 2), (3, 2), (3, 3)]
         out = sw._pixel_perfect(path)

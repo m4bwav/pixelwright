@@ -115,3 +115,25 @@ The natural construction plan gains a log build order (`walls: "logs"`) and a bo
 them). Piloted on a painted log lodge: every gate passed on the first run once the roof trace covered the top rim.
 
 - Tests: test_pxw (one new; removing the board order fails it), test_make, check_skills green.
+
+## 2026-10-26: 0.8.4 wiki findings follow-up
+
+Rechecked findings 10 to 12 against 0.8.3 source before editing; the natural log-wall and plank-roof changes
+were already present. The flicker gate now looks for a matching incoming and outgoing motion step beyond the
+immediate neighbours. Steps may differ by 1 px for rounding or acceleration. Over transparent sky it matches
+alpha, allowing a travelling spark to change colour; over opaque art it matches RGBA. This changes only the
+report and any explicit flicker cap, not generated frames.
+
+The recipe warns that heavy fog plus a sparse palette can collapse opaque colours while passing every gate.
+A fixture preserves that behaviour. Animation references now specify the `flicker_at` coordinate format and
+its lack of frame indices. Added INDEX and HANDOFF, which were absent, to keep the current state discoverable.
+
+- Validation: the coordinating session reports 55 animation tests passed (13.473 seconds), 37 make tests passed
+  (ResourceWarning), structure checks passed and `git diff --check` passed (T-20261026-1). The first animation
+  run had four fixture errors from omitted pulse `hot` fields; fixed before the passing run.
+- Publication: pending; the coordinating session owns terminal execution, commits and release. The wiki has
+  source-grounded prose edits in four pages; output examples and version footers await the released-archive run.
+- Skill freshness: everlast-resume and everwrite are current. wikiwright is due for refresh (2026-10-25);
+  refresh is outside this repository's scope and remains with the coordinating session. The plugin's existing
+  action-1 eval failure is an evidence-regex issue recorded in evergreen.json, unrelated to this gate fix.
+## [2026-10-26] index | rebuilt (2 entries)

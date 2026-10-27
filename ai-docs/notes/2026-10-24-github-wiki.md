@@ -95,7 +95,7 @@ Status after 0.6.2: 2, 5, 6 and 9 fixed in 0.6.1; 3, 4, 7 and 8 fixed in 0.6.2 (
 8. skills/pixelwright-make/references/recipe.md:18: the `clean` default reads as if it merged with what you write; a written `clean` object replaces it and orphan removal stops.
 9. skills/pixelwright-animate/references/brief.md:3 ("Checked 2026-10-23 against `pxw.py` 0.1.0") and effects.md:3 ("against `pxw.py` 0.5.0"): `pxw.py` first exists in 0.6.0; those versions were `sw.py`.
 
-Found in the 0.8.2 pass (not fixed; for the maintainer):
+Found in the 0.8.2 pass (10 to 12 addressed in the 0.8.4 source follow-up; released-archive wiki verification pending):
 
 10. skills/pixelwright/scripts/pxw.py, the flicker gate's comment "things that move on do not count": a spark that moves more than one pixel a frame is counted (3 on the forge's `use`, all sparks). Either the comment or the test is off; the timing reference does not say which animations should cap it.
 11. skills/pixelwright-make/references/recipe.md, `fog` row: "about 0.4 for a middle layer, 0.8 for the far one" carries no caveat; 0.8 with PICO-8 turned the whole mushroom into one colour and no gate noticed (the budget gate only caps colours).

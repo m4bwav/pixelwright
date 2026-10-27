@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.8.3"
+VERSION = "0.8.4"
 
 try:
     import numpy as np
@@ -1707,6 +1707,30 @@ def build_frames(s, anim):
 
 # ---- gates ----
 
+def _pixel_moves(a, b, c, y, x):
+    if b[y, x, 3] == 0:
+        return False
+    if a[y, x, 3] == 0 and c[y, x, 3] == 0:
+        # A spark can change colour as it travels over transparent sky.
+        before = (a[..., 3] > 0) & (b[..., 3] == 0)
+        after = (c[..., 3] > 0) & (b[..., 3] == 0)
+    else:
+        before = (a == b[y, x]).all(-1) & (a != b).any(-1)
+        after = (c == b[y, x]).all(-1) & (c != b).any(-1)
+    prev = np.argwhere(before)
+    if not len(prev) or not after.any():
+        return False
+    # Match the incoming and outgoing step, allowing one pixel for rounding or acceleration.
+    target = 2 * np.array([y, x]) - prev
+    h, w = after.shape
+    for dy, dx in [(0, 0)] + N8:
+        yy, xx = target[:, 0] + dy, target[:, 1] + dx
+        inside = (yy >= 0) & (yy < h) & (xx >= 0) & (xx < w)
+        if after[yy[inside], xx[inside]].any():
+            return True
+    return False
+
+
 def gates(s, anim, frames, restIndex):
     still = np.round(s.still).astype(np.uint8)
     union = np.zeros((s.h, s.w), dtype=bool)
@@ -1761,7 +1785,7 @@ def gates(s, anim, frames, restIndex):
     # vanish on the last frame read as chatter, not scaffolding
     siteOk = not any(t["effect"] == "site" for t in anim["tracks"]) or max(outsideSilhouette) == 0
     # a lone pixel that turns on and back off (or the reverse) over three frames, with no changed neighbour, reads
-    # as flicker at game size (R-P10, confirmed by two books); things that move on do not count
+    # as flicker at game size (R-P10, confirmed by two books); match motion beyond the immediate neighbours too
     seq = frames + frames[:2] if restIndex is None else frames
     flick = np.zeros((s.h, s.w), bool)
     for j in range(len(seq) - 2):
@@ -1770,6 +1794,9 @@ def gates(s, anim, frames, restIndex):
         lone = ch & ~(c != a).any(-1)
         for dy, dx in N8:
             lone &= ~(_nb(ch.astype(np.int8), dy, dx, 0) == 1)
+        for y, x in np.argwhere(lone):
+            if _pixel_moves(a, b, c, y, x):
+                lone[y, x] = False
         flick |= lone
     res["flicker_pixels"] = int(flick.sum())
     if flick.any():

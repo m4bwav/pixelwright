@@ -82,7 +82,8 @@ Every animation in `gates.json` must `pass`:
 | `drawn_outside_silhouette` | construction (`site`) only: 0 pixels on any frame where the still is fully transparent (L-057) |
 
 Two more numbers are reported, not failed: `flicker_pixels` (lone pixels that turn on and back off over three
-frames with no changed neighbour, located in `flicker_at`; a brief's `"max_flicker_pixels": 0` makes it a gate) and
+frames with no changed neighbour, excluding matched motion; `flicker_at` gives up to 8 unique `[x, y]` pairs,
+with no frame index; an animation's `"max_flicker_pixels": 0` makes it a gate) and
 `cadence_uneven` (a linear `scroll` or `shift` whose whole-pixel steps differ, such as 1, 2, 1, 1, 2: let the frame
 count divide the period or distance, so each frame moves the same whole number of pixels). Fix both unless the
 blink is the point.
