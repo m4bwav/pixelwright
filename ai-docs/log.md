@@ -137,3 +137,41 @@ its lack of frame indices. Added INDEX and HANDOFF, which were absent, to keep t
   refresh is outside this repository's scope and remains with the coordinating session. The plugin's existing
   action-1 eval failure is an evidence-regex issue recorded in evergreen.json, unrelated to this gate fix.
 ## [2026-10-26] index | rebuilt (2 entries)
+
+## 2026-10-26: 0.8.4 released; tag archive verified, wiki awaiting gates
+
+The coordinating session merged PR #17 as `f3b448ed` and published
+[v0.8.4](https://github.com/m4bwav/pixelwright/releases/tag/v0.8.4).
+The released-tag wiki verifier exited 0 with no stderr on Windows (Python 3.14.6, numpy 2.5.2, Pillow 12.3.0),
+using artwright 0.7.0. Its test sections show 55 animation tests (no skips), 37 make tests and structure checks
+passing. Forge and smoke still report 3 unmatched flicker locations each; numerical gate examples stay as
+recorded. The motion fix does not claim to track every particle.
+
+Wiki command versions, runtime versions and test counts now match that transcript. Installation and Python 3.9
+warning blocks keep their stated 0.8.2 provenance. Python 3.9, Linux, plugin installation and image regeneration
+were not repeated for 0.8.4. Next: retain the new transcript, run wiki gates and publish; record the exact wiki
+commit and live results, then merge the docs-only follow-up.
+
+## 2026-10-26: 0.8.4 wiki published, follow-up complete
+
+The [wiki](https://github.com/m4bwav/pixelwright/wiki) is published as commit
+`8a425d338f817a0f89cbd6a20b83787578dfdf35`. Final checks: 11 pages, 0 errors; 206 output blocks checked,
+0 missing, 1 historical-install skip; 1 snippet block, 6 commands, 0 missing; prose 0 strong and 41 weak.
+The live check found 11 pages, 0 failures and 23 anchors, 0 broken.
+
+This completes publication after [PR #17](https://github.com/m4bwav/pixelwright/pull/17), merge `f3b448ed`,
+and [release v0.8.4](https://github.com/m4bwav/pixelwright/releases/tag/v0.8.4).
+Earlier pending-publication entries above describe intermediate states and are superseded by this record.
+The coordinating session retains the exact released-tag verifier transcript as
+`ai-docs/notes/2026-10-26-wiki-verify-084.out.txt` with the docs-only follow-up.
+
+The archive passed 55 animation tests (none skipped), 37 make tests and structure checks. `diffout` found
+136 unchanged sections, 9 version/runtime/test-count changes and 3 removed installation/image sections.
+The historical install transcript is explicitly marked; the fragile old warning block was removed.
+Python 3.9, Linux, installation and image regeneration were not repeated.
+
+No further runtime change or release is owed here. The forge still reports 3 unmatched flicker locations;
+flicker is report-only unless capped, and cadence remains report-only. Calibration needs a hand-made pixel-art
+set from the owner. Deferred effects and palette work remain deferred. The coordinating session owns the
+docs-only record PR and worktree cleanup.
+## [2026-10-26] index | rebuilt (2 entries)

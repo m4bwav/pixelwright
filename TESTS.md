@@ -17,8 +17,17 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
   seams. The make fixture confirms heavy fog can collapse PICO-8 to one colour without failing the gates.
 - Initial fixture run had four errors because unused pulse tracks omitted their required `hot` colour.
   Supplying it fixed the fixtures; no source workaround was needed.
-- The motion test confirms `gates` leaves its frame arrays byte-identical. Full old/new wiki-output and
-  released-archive checks are pending.
+- The motion test confirms `gates` leaves its frame arrays byte-identical.
+- Released 0.8.4 archive: the coordinating session ran the wiki verifier with `--plugin`, artwright 0.7.0,
+  Windows, Python 3.14.6, numpy 2.5.2 and Pillow 12.3.0. Exit 0, no stderr. The transcript reports 55 animation
+  tests (none skipped), 37 make tests and structure checks passing. Forge and smoke still count 3 unmatched
+  flicker locations each.
+- Wiki published as `8a425d338f817a0f89cbd6a20b83787578dfdf35`: check 11 pages, 0 errors;
+  outputs 206 checked, 0 missing, 1 historical-install skip; snippets 1 block, 6 commands, 0 missing;
+  prose 0 strong, 41 weak; live 11 pages, 0 failures, 23 anchors, 0 broken.
+- `diffout`: 148 sections, 136 same, 9 changed, 3 removed. Changes were version/runtime values and test
+  counts; removed sections were installation and image regeneration. Transcript retained as
+  `ai-docs/notes/2026-10-26-wiki-verify-084.out.txt`.
 - led to: C-20261026-2
 
 ### T-20261025-1 · 2026-10-25 · unittest + four painted strips · Windows 11, Python 3.14 · unit 72/72

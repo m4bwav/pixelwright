@@ -1,0 +1,2882 @@
+## installed
+pixelwright 0.8.4 from --plugin
+Claude Code not used (--plugin)
+Python 3.14.6, numpy 2.5.2, Pillow 12.3.0 on Windows
+artwright aw.py 0.7.0
+
+## fixtures
+render.png: 132x132, 10103 colours
+frac.png: 110x110, 7 colours
+painting.png: 128x96, 11918 colours
+chest.png: 12x12, 5 colours
+grass.png: 16x16, 3 colours
+forge.png: 32x32, 5 colours
+
+## file: mine.hex
+1a1c2c
+5d275d
+b13e53
+ef7d57
+ffcd75
+f4f4f4
+
+## file: mine.gpl
+GIMP Palette
+Name: mine
+Columns: 4
+#
+ 26  28  44	ink
+177  62  83	red
+239 125  87	orange
+244 244 244	white
+
+## version
+$ python pxw.py --version
+0.8.4
+$ echo $?
+0
+
+## help
+$ python pxw.py --help
+usage: pxw.py [-h] [--version]
+              {make,snap,bg,palette,clean,swap,crop,tile,palettes,frames,grid,mask,buildup,assemble,contact,pack,review,doctor} ...
+
+pxw.py (pixelwright): real pixel art made from a render, and sprite animation
+made in code from a still.
+
+positional arguments:
+  {make,snap,bg,palette,clean,swap,crop,tile,palettes,frames,grid,mask,buildup,assemble,contact,pack,review,doctor}
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+$ echo $?
+0
+
+## help snap
+$ python pxw.py snap --help
+usage: pxw.py snap [-h] [--scale SCALE] [--offset OFFSET] [--max MAX]
+                   input out
+
+positional arguments:
+  input
+  out
+
+options:
+  -h, --help       show this help message and exit
+  --scale SCALE
+  --offset OFFSET  X,Y of the first block edge, with --scale
+  --max MAX
+$ echo $?
+0
+
+## doctor
+$ python pxw.py doctor
+{
+  "ok": true,
+  "version": "0.8.4",
+  "python": "3.14.6",
+  "numpy": "2.5.2",
+  "pillow": "12.3.0",
+  "missing": null,
+  "aw": null,
+  "effects": [
+    "arc",
+    "assemble",
+    "bands",
+    "bend",
+    "brighten",
+    "buildup",
+    "cart",
+    "darken",
+    "drone",
+    "dust",
+    "external",
+    "fill",
+    "glint",
+    "model_rotate",
+    "puffs",
+    "pulse",
+    "rotate",
+    "scroll",
+    "shift",
+    "site",
+    "sparks",
+    "spill"
+  ]
+}
+$ echo $?
+0
+
+## doctor without numpy
+$ python pxw.py doctor
+{
+  "ok": false,
+  "version": "0.8.4",
+  "python": "3.14.6",
+  "numpy": null,
+  "pillow": null,
+  "missing": "No module named 'numpy'",
+  "aw": null,
+  "effects": [
+    "arc",
+    "assemble",
+    "bands",
+    "bend",
+    "brighten",
+    "buildup",
+    "cart",
+    "darken",
+    "drone",
+    "dust",
+    "external",
+    "fill",
+    "glint",
+    "model_rotate",
+    "puffs",
+    "pulse",
+    "rotate",
+    "scroll",
+    "shift",
+    "site",
+    "sparks",
+    "spill"
+  ]
+}
+$ echo $?
+1
+
+## file: recipe.json
+{"id": "mushroom", "input": "render.png", "palette": 8, "crop": {"pad": 1, "size": "32x32"}}
+
+## make
+$ python pxw.py make recipe.json out
+{
+  "ok": true,
+  "id": "mushroom",
+  "out": "out/mushroom.png",
+  "preview": "out/mushroom.x4.png",
+  "size": [
+    32,
+    32
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        132,
+        132
+      ],
+      "colours": 10103
+    },
+    "snap": {
+      "scale": [
+        6.0,
+        6.0
+      ],
+      "offset": [
+        3.998,
+        4.004
+      ],
+      "native": [
+        22,
+        22
+      ],
+      "uniform_blocks": 0.0,
+      "detected": true,
+      "coherence": [
+        0.713,
+        0.71
+      ]
+    },
+    "background": {
+      "colour": [
+        243,
+        242,
+        236
+      ],
+      "cleared": 252,
+      "enclosed_cleared": 0
+    },
+    "palette": {
+      "colours": 7,
+      "used": 7,
+      "dither": null
+    },
+    "clean": {
+      "orphans_fixed": 13
+    },
+    "crop": {
+      "sprite": [
+        20,
+        19
+      ],
+      "canvas": [
+        32,
+        32
+      ],
+      "at": [
+        6,
+        12
+      ]
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 7,
+    "colours_outside_palette": 0,
+    "within_budget": true,
+    "size_ok": true,
+    "aw_pixel": {
+      "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+    }
+  }
+}
+$ echo $?
+0
+
+## make: result
+out/mushroom.png: 32x32, 7 colours, alpha values [0, 255]; files in out: mushroom.gpl, mushroom.make.json, mushroom.png, mushroom.x4.png
+
+## make: transparent pixels
+out/mushroom.png: 792 transparent pixels, stored as [(0, 0, 0, 0)]
+
+## file: out/mushroom.gpl
+GIMP Palette
+Name: mushroom
+Columns: 8
+#
+ 41  22  36	291624
+ 49  33  43	31212b
+181 156 127	b59c7f
+198  52  56	c63438
+231 213 179	e7d5b3
+233 103  94	e9675e
+248 236 222	f8ecde
+
+## snap render
+$ python pxw.py snap render.png snapped.png
+{
+  "ok": true,
+  "out": "snapped.png",
+  "scale": [
+    6.0,
+    6.0
+  ],
+  "offset": [
+    3.998,
+    4.004
+  ],
+  "native": [
+    22,
+    22
+  ],
+  "uniform_blocks": 0.0,
+  "detected": true,
+  "coherence": [
+    0.713,
+    0.71
+  ]
+}
+$ echo $?
+0
+
+## snap fractional
+$ python pxw.py snap frac.png frac-snapped.png
+{
+  "ok": true,
+  "out": "frac-snapped.png",
+  "scale": [
+    5.498,
+    5.498
+  ],
+  "offset": [
+    0.147,
+    0.173
+  ],
+  "native": [
+    20,
+    20
+  ],
+  "uniform_blocks": 1.0,
+  "detected": true,
+  "coherence": [
+    0.936,
+    0.93
+  ]
+}
+$ echo $?
+0
+
+## snap painting
+$ python pxw.py snap painting.png painting-snapped.png
+{
+  "ok": true,
+  "out": "painting-snapped.png",
+  "scale": [
+    1,
+    1
+  ],
+  "offset": [
+    0,
+    0
+  ],
+  "native": [
+    128,
+    96
+  ],
+  "uniform_blocks": 1.0,
+  "detected": true
+}
+$ echo $?
+0
+
+## snap forced
+$ python pxw.py snap render.png forced.png --scale 6 --offset 4,4
+{
+  "ok": true,
+  "out": "forced.png",
+  "scale": [
+    6.0,
+    6.0
+  ],
+  "offset": [
+    4.0,
+    4.0
+  ],
+  "native": [
+    22,
+    22
+  ],
+  "uniform_blocks": 0.0,
+  "detected": false,
+  "coherence": [
+    null,
+    null
+  ]
+}
+$ echo $?
+0
+
+## bg
+$ python pxw.py bg snapped.png cleared.png
+{
+  "ok": true,
+  "out": "cleared.png",
+  "colour": [
+    243,
+    242,
+    236
+  ],
+  "cleared": 252,
+  "enclosed_cleared": 0
+}
+$ echo $?
+0
+
+## bg transparent
+$ python pxw.py bg cleared.png cleared2.png
+{
+  "ok": true,
+  "out": "cleared2.png",
+  "colour": null,
+  "cleared": 0,
+  "note": "border already transparent"
+}
+$ echo $?
+0
+
+## palette pico-8
+$ python pxw.py palette cleared.png pico.png --palette pico-8
+{
+  "ok": true,
+  "out": "pico.png",
+  "palette": [
+    "000000",
+    "1d2b53",
+    "7e2553",
+    "008751",
+    "ab5236",
+    "5f574f",
+    "c2c3c7",
+    "fff1e8",
+    "ff004d",
+    "ffa300",
+    "ffec27",
+    "00e436",
+    "29adff",
+    "83769c",
+    "ff77a8",
+    "ffccaa"
+  ],
+  "used": 8,
+  "before": 221
+}
+$ echo $?
+0
+
+## clean
+$ python pxw.py clean pico.png clean.png --orphans --outline selective
+{
+  "ok": true,
+  "out": "clean.png",
+  "colours": 7,
+  "orphans_fixed": 1,
+  "outlined": 60
+}
+$ echo $?
+0
+
+## crop
+$ python pxw.py crop clean.png crop.png --pad 1 --size 32x32
+{
+  "ok": true,
+  "out": "crop.png",
+  "sprite": [
+    20,
+    19
+  ],
+  "canvas": [
+    32,
+    32
+  ],
+  "at": [
+    6,
+    12
+  ]
+}
+$ echo $?
+0
+
+## crop pow2
+$ python pxw.py crop clean.png crop2.png --size pow2
+{
+  "ok": true,
+  "out": "crop2.png",
+  "sprite": [
+    20,
+    19
+  ],
+  "canvas": [
+    32,
+    32
+  ],
+  "at": [
+    6,
+    13
+  ]
+}
+$ echo $?
+0
+
+## crop too small
+$ python pxw.py crop clean.png tiny.png --size 16x16
+{
+  "ok": false,
+  "error": "sprite is 20x19 (+0 pad); it does not fit 16x16"
+}
+$ echo $?
+1
+
+## file: recipe-full.json
+{"id": "mushroom", "input": "render.png", "palette": {"colours": 8},
+ "clean": {"orphans": true, "thin": true, "outline": "selective", "light": "top-left"},
+ "crop": {"pad": 1, "size": "32x32", "anchor": "bottom"}}
+
+## make full
+$ python pxw.py make recipe-full.json out-full
+{
+  "ok": true,
+  "id": "mushroom",
+  "out": "out-full/mushroom.png",
+  "preview": "out-full/mushroom.x4.png",
+  "size": [
+    32,
+    32
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        132,
+        132
+      ],
+      "colours": 10103
+    },
+    "snap": {
+      "scale": [
+        6.0,
+        6.0
+      ],
+      "offset": [
+        3.998,
+        4.004
+      ],
+      "native": [
+        22,
+        22
+      ],
+      "uniform_blocks": 0.0,
+      "detected": true,
+      "coherence": [
+        0.713,
+        0.71
+      ]
+    },
+    "background": {
+      "colour": [
+        243,
+        242,
+        236
+      ],
+      "cleared": 252,
+      "enclosed_cleared": 0
+    },
+    "palette": {
+      "colours": 7,
+      "used": 7,
+      "dither": null
+    },
+    "clean": {
+      "orphans_fixed": 13,
+      "doubles_thinned": 7,
+      "outlined": 60
+    },
+    "crop": {
+      "sprite": [
+        20,
+        19
+      ],
+      "canvas": [
+        32,
+        32
+      ],
+      "at": [
+        6,
+        12
+      ]
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 7,
+    "colours_outside_palette": 0,
+    "within_budget": true,
+    "size_ok": true,
+    "aw_pixel": {
+      "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+    }
+  }
+}
+$ echo $?
+0
+
+## file: recipe-clean-only.json
+{"id": "mushroom", "input": "render.png", "palette": 8, "clean": {"outline": "auto"}}
+
+## make clean without orphans
+$ python pxw.py make recipe-clean-only.json out-clean
+{
+  "ok": true,
+  "id": "mushroom",
+  "out": "out-clean/mushroom.png",
+  "preview": "out-clean/mushroom.x4.png",
+  "size": [
+    22,
+    22
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        132,
+        132
+      ],
+      "colours": 10103
+    },
+    "snap": {
+      "scale": [
+        6.0,
+        6.0
+      ],
+      "offset": [
+        3.998,
+        4.004
+      ],
+      "native": [
+        22,
+        22
+      ],
+      "uniform_blocks": 0.0,
+      "detected": true,
+      "coherence": [
+        0.713,
+        0.71
+      ]
+    },
+    "background": {
+      "colour": [
+        243,
+        242,
+        236
+      ],
+      "cleared": 252,
+      "enclosed_cleared": 0
+    },
+    "palette": {
+      "colours": 7,
+      "used": 7,
+      "dither": null
+    },
+    "clean": {
+      "outlined": 60
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 7,
+    "colours_outside_palette": 0,
+    "within_budget": true,
+    "aw_pixel": {
+      "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+    }
+  }
+}
+$ echo $?
+0
+
+## file: recipe-big.json
+{"id": "mushroom", "input": "render.png", "palette": "pico-8", "crop": {"size": "16x16"}}
+
+## make crop too small
+$ python pxw.py make recipe-big.json out-big
+{
+  "ok": false,
+  "error": "sprite is 20x19 (+0 pad); it does not fit 16x16"
+}
+$ echo $?
+1
+
+## file: recipe-painting.json
+{"id": "painting", "input": "painting.png", "palette": 8}
+
+## make painting
+$ python pxw.py make recipe-painting.json out-painting
+{
+  "ok": true,
+  "id": "painting",
+  "out": "out-painting/painting.png",
+  "preview": "out-painting/painting.x4.png",
+  "size": [
+    128,
+    96
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        128,
+        96
+      ],
+      "colours": 11918
+    },
+    "snap": {
+      "scale": [
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "native": [
+        128,
+        96
+      ],
+      "uniform_blocks": 1.0,
+      "detected": true
+    },
+    "background": {
+      "colour": [
+        35,
+        178,
+        198
+      ],
+      "cleared": 4030,
+      "enclosed_cleared": 0
+    },
+    "palette": {
+      "colours": 8,
+      "used": 8,
+      "dither": null
+    },
+    "clean": {
+      "orphans_fixed": 42
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 8,
+    "colours_outside_palette": 0,
+    "within_budget": true,
+    "aw_pixel": {
+      "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+    }
+  }
+}
+$ echo $?
+0
+
+## palettes
+$ python pxw.py palettes
+{
+  "ok": true,
+  "palettes": {
+    "pico-8": 16
+  },
+  "files": "any .hex, .txt or .gpl file, or from:<png>[,<png>...] for every colour of reference sprites"
+}
+$ echo $?
+0
+
+## palette gpl
+$ python pxw.py palette cleared.png q.png --palette pico-8 --gpl pico.gpl
+{
+  "ok": true,
+  "out": "q.png",
+  "palette": [
+    "000000",
+    "1d2b53",
+    "7e2553",
+    "008751",
+    "ab5236",
+    "5f574f",
+    "c2c3c7",
+    "fff1e8",
+    "ff004d",
+    "ffa300",
+    "ffec27",
+    "00e436",
+    "29adff",
+    "83769c",
+    "ff77a8",
+    "ffccaa"
+  ],
+  "used": 8,
+  "before": 221
+}
+$ echo $?
+0
+
+## file: pico.gpl
+GIMP Palette
+Name: q
+Columns: 8
+#
+  0   0   0	000000
+ 29  43  83	1d2b53
+126  37  83	7e2553
+  0 135  81	008751
+171  82  54	ab5236
+ 95  87  79	5f574f
+194 195 199	c2c3c7
+255 241 232	fff1e8
+255   0  77	ff004d
+255 163   0	ffa300
+255 236  39	ffec27
+  0 228  54	00e436
+ 41 173 255	29adff
+131 118 156	83769c
+255 119 168	ff77a8
+255 204 170	ffccaa
+
+## palette hex
+$ python pxw.py palette cleared.png hex.png --palette mine.hex
+{
+  "ok": true,
+  "out": "hex.png",
+  "palette": [
+    "1a1c2c",
+    "5d275d",
+    "b13e53",
+    "ef7d57",
+    "f4f4f4",
+    "ffcd75"
+  ],
+  "used": 5,
+  "before": 221
+}
+$ echo $?
+0
+
+## palette gpl file
+$ python pxw.py palette cleared.png gpl.png --palette mine.gpl
+{
+  "ok": true,
+  "out": "gpl.png",
+  "palette": [
+    "1a1c2c",
+    "b13e53",
+    "ef7d57",
+    "f4f4f4"
+  ],
+  "used": 4,
+  "before": 221
+}
+$ echo $?
+0
+
+## palette from
+$ python pxw.py palette cleared.png set.png --palette from:chest.png
+{
+  "ok": true,
+  "out": "set.png",
+  "palette": [
+    "281824",
+    "78401e",
+    "a46422",
+    "c83438",
+    "f8f0e2"
+  ],
+  "used": 4,
+  "before": 221
+}
+$ echo $?
+0
+
+## palette colours
+$ python pxw.py palette cleared.png six.png --colours 6
+{
+  "ok": true,
+  "out": "six.png",
+  "palette": [
+    "2b1b26",
+    "b59c7f",
+    "c63438",
+    "e7d5b3",
+    "e9675e",
+    "f8ecde"
+  ],
+  "used": 6,
+  "before": 221
+}
+$ echo $?
+0
+
+## palette dither
+$ python pxw.py palette painting.png dithered.png --palette pico-8 --dither bayer4
+{
+  "ok": true,
+  "out": "dithered.png",
+  "palette": [
+    "000000",
+    "1d2b53",
+    "7e2553",
+    "008751",
+    "ab5236",
+    "5f574f",
+    "c2c3c7",
+    "fff1e8",
+    "ff004d",
+    "ffa300",
+    "ffec27",
+    "00e436",
+    "29adff",
+    "83769c",
+    "ff77a8",
+    "ffccaa"
+  ],
+  "used": 13,
+  "before": 11918
+}
+$ echo $?
+0
+
+## palette plain
+$ python pxw.py palette painting.png banded.png --palette pico-8
+{
+  "ok": true,
+  "out": "banded.png",
+  "palette": [
+    "000000",
+    "1d2b53",
+    "7e2553",
+    "008751",
+    "ab5236",
+    "5f574f",
+    "c2c3c7",
+    "fff1e8",
+    "ff004d",
+    "ffa300",
+    "ffec27",
+    "00e436",
+    "29adff",
+    "83769c",
+    "ff77a8",
+    "ffccaa"
+  ],
+  "used": 9,
+  "before": 11918
+}
+$ echo $?
+0
+
+## palette both
+$ python pxw.py palette cleared.png x.png --palette pico-8 --colours 6
+{
+  "ok": false,
+  "error": "give exactly one of --palette and --colours"
+}
+$ echo $?
+2
+
+## palette missing
+$ python pxw.py palette cleared.png x.png --palette sweetie-16
+{
+  "ok": false,
+  "error": "palette not found: sweetie-16 (built-in: pico-8)"
+}
+$ echo $?
+1
+
+## palette bad dither
+$ python pxw.py palette cleared.png x.png --palette pico-8 --dither floyd
+usage: pxw.py palette [-h] [--palette PALETTE] [--colours COLOURS]
+                      [--dither {bayer2,bayer4,bayer8}]
+                      [--dither-space {srgb,linear}] [--max-step MAX_STEP]
+                      [--gpl GPL]
+                      input out
+pxw.py palette: error: argument --dither: invalid choice: 'floyd' (choose from 'bayer2', 'bayer4', 'bayer8')
+$ echo $?
+2
+
+## file: recipe-set.json
+{"sprites": [
+  {"id": "mushroom", "input": "render.png", "palette": "from:chest.png", "crop": {"pad": 1, "size": "32x32"}},
+  {"id": "chest", "input": "chest.png", "snap": false, "palette": "from:chest.png"}
+]}
+
+## make set
+$ python pxw.py make recipe-set.json out-set
+{
+  "ok": true,
+  "sprites": [
+    {
+      "ok": true,
+      "id": "mushroom",
+      "out": "out-set/mushroom.png",
+      "preview": "out-set/mushroom.x4.png",
+      "size": [
+        32,
+        32
+      ],
+      "steps": {
+        "input": {
+          "size": [
+            132,
+            132
+          ],
+          "colours": 10103
+        },
+        "snap": {
+          "scale": [
+            6.0,
+            6.0
+          ],
+          "offset": [
+            3.998,
+            4.004
+          ],
+          "native": [
+            22,
+            22
+          ],
+          "uniform_blocks": 0.0,
+          "detected": true,
+          "coherence": [
+            0.713,
+            0.71
+          ]
+        },
+        "background": {
+          "colour": [
+            243,
+            242,
+            236
+          ],
+          "cleared": 252,
+          "enclosed_cleared": 0
+        },
+        "palette": {
+          "colours": 5,
+          "used": 4,
+          "dither": null
+        },
+        "clean": {
+          "orphans_fixed": 0
+        },
+        "crop": {
+          "sprite": [
+            20,
+            19
+          ],
+          "canvas": [
+            32,
+            32
+          ],
+          "at": [
+            6,
+            12
+          ]
+        }
+      },
+      "gates": {
+        "alpha_binary": true,
+        "colours": 4,
+        "colours_outside_palette": 0,
+        "within_budget": true,
+        "size_ok": true,
+        "aw_pixel": {
+          "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+        }
+      }
+    },
+    {
+      "ok": true,
+      "id": "chest",
+      "out": "out-set/chest.png",
+      "preview": "out-set/chest.x4.png",
+      "size": [
+        12,
+        12
+      ],
+      "steps": {
+        "input": {
+          "size": [
+            12,
+            12
+          ],
+          "colours": 5
+        },
+        "background": {
+          "colour": null,
+          "cleared": 0,
+          "note": "border already transparent"
+        },
+        "palette": {
+          "colours": 5,
+          "used": 5,
+          "dither": null
+        },
+        "clean": {
+          "orphans_fixed": 0
+        }
+      },
+      "gates": {
+        "alpha_binary": true,
+        "colours": 5,
+        "colours_outside_palette": 0,
+        "within_budget": true,
+        "aw_pixel": {
+          "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+        }
+      }
+    }
+  ]
+}
+$ echo $?
+0
+
+## tile
+$ python pxw.py tile grass.png grass-tile.png
+{
+  "ok": true,
+  "out": "grass-tile.png",
+  "seam_ratio_before": 1.467,
+  "seam_ratio": 0.991,
+  "new_colours": 0
+}
+$ echo $?
+0
+
+## file: recipe-tile.json
+{"id": "grass", "input": "grass.png", "snap": false, "background": "none", "palette": "from:grass.png", "tile": true}
+
+## make tile
+$ python pxw.py make recipe-tile.json out-tile
+{
+  "ok": true,
+  "id": "grass",
+  "out": "out-tile/grass.png",
+  "preview": "out-tile/grass.x4.png",
+  "size": [
+    16,
+    16
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        16,
+        16
+      ],
+      "colours": 3
+    },
+    "palette": {
+      "colours": 3,
+      "used": 3,
+      "dither": null
+    },
+    "clean": {
+      "orphans_fixed": 20
+    },
+    "tile": {
+      "band": 4
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 3,
+    "colours_outside_palette": 0,
+    "within_budget": true,
+    "seam_ratio": 0.836,
+    "seam_ok": true,
+    "aw_pixel": {
+      "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+    }
+  }
+}
+$ echo $?
+0
+
+## fixture: smooth.jpg
+smooth.jpg: 768x768 JPEG, quality 55: random colours resized 8x bicubic and blurred
+
+## snap smooth
+$ python pxw.py snap smooth.jpg smooth-snapped.png
+{
+  "ok": true,
+  "out": "smooth-snapped.png",
+  "scale": [
+    1,
+    1
+  ],
+  "offset": [
+    0,
+    0
+  ],
+  "native": [
+    768,
+    768
+  ],
+  "uniform_blocks": 1.0,
+  "detected": true
+}
+$ echo $?
+0
+
+## snap smooth before 0.8.0
+$ python pxw.py snap smooth.jpg smooth-old.png
+{
+  "ok": true,
+  "out": "smooth-old.png",
+  "scale": [
+    57.0,
+    57.0
+  ],
+  "offset": [
+    26.0,
+    26.0
+  ],
+  "native": [
+    13,
+    13
+  ],
+  "uniform_blocks": 0.0,
+  "detected": true,
+  "coherence": [
+    1.0,
+    0.0
+  ]
+}
+$ echo $?
+0
+
+## old version
+$ python pxw.py --version
+0.7.0
+$ echo $?
+0
+
+## fixture: ring.png
+ring.png: 32x32, a 16x16 blue square with an 8x8 hole of the magenta ground in it, and one magenta pixel at 9,9
+
+## bg ring
+$ python pxw.py bg ring.png ring-bg.png
+{
+  "ok": true,
+  "out": "ring-bg.png",
+  "colour": [
+    255,
+    0,
+    255
+  ],
+  "cleared": 768,
+  "enclosed_cleared": 0
+}
+$ echo $?
+0
+
+## bg ring holes
+$ python pxw.py bg ring.png ring-holes.png --holes 4
+{
+  "ok": true,
+  "out": "ring-holes.png",
+  "colour": [
+    255,
+    0,
+    255
+  ],
+  "cleared": 832,
+  "enclosed_cleared": 64
+}
+$ echo $?
+0
+
+## bg ring: alpha
+ring-bg.png: hole alpha 255, pixel 9,9 alpha 255; ring-holes.png: hole alpha 0, pixel 9,9 alpha 255
+
+## fixture: grey.png
+grey.png: 16x16, every pixel 128,128,128; bw.hex: 000000 and ffffff
+
+## palette dither srgb
+$ python pxw.py palette grey.png grey-srgb.png --palette bw.hex --dither bayer4
+{
+  "ok": true,
+  "out": "grey-srgb.png",
+  "palette": [
+    "000000",
+    "ffffff"
+  ],
+  "used": 2,
+  "before": 1
+}
+$ echo $?
+0
+
+## palette dither srgb: white share
+grey-srgb.png: 192 of 256 pixels white (75.0%)
+
+## palette dither linear
+$ python pxw.py palette grey.png grey-linear.png --palette bw.hex --dither bayer4 --dither-space linear
+{
+  "ok": true,
+  "out": "grey-linear.png",
+  "palette": [
+    "000000",
+    "ffffff"
+  ],
+  "used": 2,
+  "before": 1
+}
+$ echo $?
+0
+
+## palette dither linear: white share
+grey-linear.png: 48 of 256 pixels white (18.8%)
+
+## palette dither max-step
+$ python pxw.py palette grey.png grey-capped.png --palette bw.hex --dither bayer4 --dither-space linear --max-step 0.12
+{
+  "ok": true,
+  "out": "grey-capped.png",
+  "palette": [
+    "000000",
+    "ffffff"
+  ],
+  "used": 1,
+  "before": 1
+}
+$ echo $?
+0
+
+## palette dither max-step: white share
+grey-capped.png: 256 of 256 pixels white (100.0%)
+
+## fixture: stairs.png
+stairs.png: 14x10, a diagonal of 12 pixels, two a row, each row one to the right
+
+## clean corners
+$ python pxw.py clean stairs.png stairs-clean.png --corners
+{
+  "ok": true,
+  "out": "stairs-clean.png",
+  "colours": 1,
+  "corners_fixed": 5
+}
+$ echo $?
+0
+
+## clean corners: rows
+row 0: #.......
+row 1: .#......
+row 2: ..#.....
+row 3: ...#....
+row 4: ....#...
+row 5: .....##.
+
+## clean corners on a box
+$ python pxw.py clean chest.png chest-corners.png --corners
+{
+  "ok": true,
+  "out": "chest-corners.png",
+  "colours": 5,
+  "corners_fixed": 0
+}
+$ echo $?
+0
+
+## file: night.json
+{"281824": "141428", "a46422": "523a3c", "c83438": "642848", "f8f0e2": "a8b0c8", "78401e": "3c2830"}
+
+## swap
+$ python pxw.py swap chest.png chest-night.png --map night.json
+{
+  "ok": true,
+  "out": [
+    "chest-night.png"
+  ],
+  "mapped": 5,
+  "unmapped": [],
+  "note": null
+}
+$ echo $?
+0
+
+## file: night-part.json
+{"281824": "141428", "a46422": "523a3c"}
+
+## swap unmapped
+$ python pxw.py swap chest.png chest-part.png --map night-part.json
+{
+  "ok": false,
+  "out": [
+    "chest-part.png"
+  ],
+  "mapped": 2,
+  "unmapped": [
+    "78401e",
+    "c83438",
+    "f8f0e2"
+  ],
+  "note": null
+}
+$ echo $?
+1
+
+## file: day.hex
+281824
+a46422
+c83438
+f8f0e2
+78401e
+
+## file: dusk.hex
+201428
+7a4a30
+9a2c40
+d8c8c0
+5a3424
+
+## swap by index
+$ python pxw.py swap chest.png chest-dusk.png --from day.hex --to dusk.hex
+{
+  "ok": true,
+  "out": [
+    "chest-dusk.png"
+  ],
+  "mapped": 5,
+  "unmapped": [],
+  "note": null
+}
+$ echo $?
+0
+
+## swap folder
+$ python pxw.py swap chests night-chests --map night.json
+{
+  "ok": true,
+  "out": [
+    "night-chests/f00.png",
+    "night-chests/f01.png"
+  ],
+  "mapped": 5,
+  "unmapped": [],
+  "note": null
+}
+$ echo $?
+0
+
+## file: recipe-fog.json
+{"id": "mushroom-mid", "input": "render.png", "palette": 8,
+ "fog": {"colour": "194,195,199", "amount": 0.4}, "crop": {"pad": 1, "size": "32x32"}}
+
+## make fog
+$ python pxw.py make recipe-fog.json out-fog
+{
+  "ok": true,
+  "id": "mushroom-mid",
+  "out": "out-fog/mushroom-mid.png",
+  "preview": "out-fog/mushroom-mid.x4.png",
+  "size": [
+    32,
+    32
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        132,
+        132
+      ],
+      "colours": 10103
+    },
+    "snap": {
+      "scale": [
+        6.0,
+        6.0
+      ],
+      "offset": [
+        3.998,
+        4.004
+      ],
+      "native": [
+        22,
+        22
+      ],
+      "uniform_blocks": 0.0,
+      "detected": true,
+      "coherence": [
+        0.713,
+        0.71
+      ]
+    },
+    "background": {
+      "colour": [
+        243,
+        242,
+        236
+      ],
+      "cleared": 252,
+      "enclosed_cleared": 0
+    },
+    "fog": {
+      "colour": "194,195,199",
+      "amount": 0.4
+    },
+    "palette": {
+      "colours": 6,
+      "used": 6,
+      "dither": null
+    },
+    "clean": {
+      "orphans_fixed": 0
+    },
+    "crop": {
+      "sprite": [
+        20,
+        19
+      ],
+      "canvas": [
+        32,
+        32
+      ],
+      "at": [
+        6,
+        12
+      ]
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 6,
+    "colours_outside_palette": 0,
+    "within_budget": true,
+    "size_ok": true,
+    "aw_pixel": {
+      "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+    }
+  }
+}
+$ echo $?
+0
+
+## file: recipe-fog-far.json
+{"id": "mushroom-far", "input": "render.png", "palette": "pico-8",
+ "fog": {"colour": "194,195,199", "amount": 0.8}, "crop": {"pad": 1, "size": "32x32"}}
+
+## make fog far
+$ python pxw.py make recipe-fog-far.json out-fog-far
+{
+  "ok": true,
+  "id": "mushroom-far",
+  "out": "out-fog-far/mushroom-far.png",
+  "preview": "out-fog-far/mushroom-far.x4.png",
+  "size": [
+    32,
+    32
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        132,
+        132
+      ],
+      "colours": 10103
+    },
+    "snap": {
+      "scale": [
+        6.0,
+        6.0
+      ],
+      "offset": [
+        3.998,
+        4.004
+      ],
+      "native": [
+        22,
+        22
+      ],
+      "uniform_blocks": 0.0,
+      "detected": true,
+      "coherence": [
+        0.713,
+        0.71
+      ]
+    },
+    "background": {
+      "colour": [
+        243,
+        242,
+        236
+      ],
+      "cleared": 252,
+      "enclosed_cleared": 0
+    },
+    "fog": {
+      "colour": "194,195,199",
+      "amount": 0.8
+    },
+    "palette": {
+      "colours": 16,
+      "used": 1,
+      "dither": null
+    },
+    "clean": {
+      "orphans_fixed": 0
+    },
+    "crop": {
+      "sprite": [
+        20,
+        19
+      ],
+      "canvas": [
+        32,
+        32
+      ],
+      "at": [
+        6,
+        12
+      ]
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 1,
+    "colours_outside_palette": 0,
+    "within_budget": true,
+    "size_ok": true,
+    "aw_pixel": {
+      "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+    }
+  }
+}
+$ echo $?
+0
+
+## make fog: contrast
+luminance spread (standard deviation over opaque pixels): out/mushroom.png 70.3 (7 colours), out-fog/mushroom-mid.png 42.1 (6 colours), out-fog-far/mushroom-far.png 0.0 (1 colours)
+
+## file: recipe-budget.json
+{"id": "mushroom", "input": "render.png", "palette": "pico-8", "budget": 4}
+
+## make over budget
+$ python pxw.py make recipe-budget.json out-budget
+{
+  "ok": false,
+  "id": "mushroom",
+  "out": "out-budget/mushroom.png",
+  "preview": "out-budget/mushroom.x4.png",
+  "size": [
+    22,
+    22
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        132,
+        132
+      ],
+      "colours": 10103
+    },
+    "snap": {
+      "scale": [
+        6.0,
+        6.0
+      ],
+      "offset": [
+        3.998,
+        4.004
+      ],
+      "native": [
+        22,
+        22
+      ],
+      "uniform_blocks": 0.0,
+      "detected": true,
+      "coherence": [
+        0.713,
+        0.71
+      ]
+    },
+    "background": {
+      "colour": [
+        243,
+        242,
+        236
+      ],
+      "cleared": 252,
+      "enclosed_cleared": 0
+    },
+    "palette": {
+      "colours": 16,
+      "used": 8,
+      "dither": null
+    },
+    "clean": {
+      "orphans_fixed": 1
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 7,
+    "colours_outside_palette": 0,
+    "within_budget": false,
+    "aw_pixel": {
+      "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+    }
+  }
+}
+$ echo $?
+1
+
+## doctor with artwright
+$ python pxw.py doctor
+{
+  "ok": true,
+  "version": "0.8.4",
+  "python": "3.14.6",
+  "numpy": "2.5.2",
+  "pillow": "12.3.0",
+  "missing": null,
+  "aw": "<artwright>/skills/artwright/scripts/aw.py",
+  "effects": [
+    "arc",
+    "assemble",
+    "bands",
+    "bend",
+    "brighten",
+    "buildup",
+    "cart",
+    "darken",
+    "drone",
+    "dust",
+    "external",
+    "fill",
+    "glint",
+    "model_rotate",
+    "puffs",
+    "pulse",
+    "rotate",
+    "scroll",
+    "shift",
+    "site",
+    "sparks",
+    "spill"
+  ]
+}
+$ echo $?
+0
+
+## make with artwright
+$ python pxw.py make recipe.json out-aw
+{
+  "ok": true,
+  "id": "mushroom",
+  "out": "out-aw/mushroom.png",
+  "preview": "out-aw/mushroom.x4.png",
+  "size": [
+    32,
+    32
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        132,
+        132
+      ],
+      "colours": 10103
+    },
+    "snap": {
+      "scale": [
+        6.0,
+        6.0
+      ],
+      "offset": [
+        3.998,
+        4.004
+      ],
+      "native": [
+        22,
+        22
+      ],
+      "uniform_blocks": 0.0,
+      "detected": true,
+      "coherence": [
+        0.713,
+        0.71
+      ]
+    },
+    "background": {
+      "colour": [
+        243,
+        242,
+        236
+      ],
+      "cleared": 252,
+      "enclosed_cleared": 0
+    },
+    "palette": {
+      "colours": 7,
+      "used": 7,
+      "dither": null
+    },
+    "clean": {
+      "orphans_fixed": 13
+    },
+    "crop": {
+      "sprite": [
+        20,
+        19
+      ],
+      "canvas": [
+        32,
+        32
+      ],
+      "at": [
+        6,
+        12
+      ]
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 7,
+    "colours_outside_palette": 0,
+    "within_budget": true,
+    "size_ok": true,
+    "aw_pixel": {
+      "clean_pixel_art": true,
+      "problems": [],
+      "near_duplicate_colour_pairs": 0,
+      "orphans": {
+        "count": 0,
+        "first": []
+      }
+    }
+  }
+}
+$ echo $?
+0
+
+## make full with artwright
+$ python pxw.py make recipe-full.json out-full-aw
+{
+  "ok": true,
+  "id": "mushroom",
+  "out": "out-full-aw/mushroom.png",
+  "preview": "out-full-aw/mushroom.x4.png",
+  "size": [
+    32,
+    32
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        132,
+        132
+      ],
+      "colours": 10103
+    },
+    "snap": {
+      "scale": [
+        6.0,
+        6.0
+      ],
+      "offset": [
+        3.998,
+        4.004
+      ],
+      "native": [
+        22,
+        22
+      ],
+      "uniform_blocks": 0.0,
+      "detected": true,
+      "coherence": [
+        0.713,
+        0.71
+      ]
+    },
+    "background": {
+      "colour": [
+        243,
+        242,
+        236
+      ],
+      "cleared": 252,
+      "enclosed_cleared": 0
+    },
+    "palette": {
+      "colours": 7,
+      "used": 7,
+      "dither": null
+    },
+    "clean": {
+      "orphans_fixed": 13,
+      "doubles_thinned": 7,
+      "outlined": 60
+    },
+    "crop": {
+      "sprite": [
+        20,
+        19
+      ],
+      "canvas": [
+        32,
+        32
+      ],
+      "at": [
+        6,
+        12
+      ]
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 7,
+    "colours_outside_palette": 0,
+    "within_budget": true,
+    "size_ok": true,
+    "aw_pixel": {
+      "clean_pixel_art": true,
+      "problems": [],
+      "near_duplicate_colour_pairs": 0,
+      "orphans": {
+        "count": 6,
+        "first": [
+          [
+            14,
+            12
+          ],
+          [
+            19,
+            13
+          ],
+          [
+            7,
+            19
+          ],
+          [
+            19,
+            24
+          ],
+          [
+            19,
+            27
+          ],
+          [
+            14,
+            30
+          ]
+        ]
+      }
+    }
+  }
+}
+$ echo $?
+0
+
+## make painting with artwright
+$ python pxw.py make recipe-painting.json out-painting-aw
+{
+  "ok": true,
+  "id": "painting",
+  "out": "out-painting-aw/painting.png",
+  "preview": "out-painting-aw/painting.x4.png",
+  "size": [
+    128,
+    96
+  ],
+  "steps": {
+    "input": {
+      "size": [
+        128,
+        96
+      ],
+      "colours": 11918
+    },
+    "snap": {
+      "scale": [
+        1,
+        1
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "native": [
+        128,
+        96
+      ],
+      "uniform_blocks": 1.0,
+      "detected": true
+    },
+    "background": {
+      "colour": [
+        35,
+        178,
+        198
+      ],
+      "cleared": 4030,
+      "enclosed_cleared": 0
+    },
+    "palette": {
+      "colours": 8,
+      "used": 8,
+      "dither": null
+    },
+    "clean": {
+      "orphans_fixed": 42
+    }
+  },
+  "gates": {
+    "alpha_binary": true,
+    "colours": 8,
+    "colours_outside_palette": 0,
+    "within_budget": true,
+    "aw_pixel": {
+      "clean_pixel_art": true,
+      "problems": [],
+      "near_duplicate_colour_pairs": 0,
+      "orphans": {
+        "count": 0,
+        "first": []
+      }
+    }
+  }
+}
+$ echo $?
+0
+
+## artwright: box-black.png
+box-black.png: transparent pixels stored as [0, 0, 0, 0], transitional_pixels 0.0, problems []
+
+## artwright: box-white.png
+box-white.png: transparent pixels stored as [255, 255, 255, 0], transitional_pixels 0.0, problems []
+
+## artwright: box-black.png --scale 1
+box-black.png with --scale 1: transitional_pixels 0.0, clean_pixel_art True, problems []
+
+## file: brief.json
+{
+  "id": "forge",
+  "still": "forge.png",
+  "motion": "Use: the fire flares and sparks leave the chimney. Idle: the fire flickers. Place: powers on.",
+  "extraColours": [[255, 250, 220]],
+  "regions": {
+    "fire":  {"rects": [[11, 21, 21, 30]], "select": "warm"},
+    "front": {"rects": [[4, 14, 28, 32]]},
+    "sky":   {"rects": [[0, 0, 32, 14]], "alpha": true}
+  },
+  "animations": {
+    "use": {"frames": 10, "focal": "fire", "fps": 12, "tracks": [
+      {"effect": "pulse", "region": "fire", "hot": [255, 250, 220],
+       "curve": [0, 0.5, 1, 1, 0.8, 0.6, 0.4, 0.2, 0.1, 0]},
+      {"effect": "spill", "region": "front", "source": [12, 24, 20, 30], "tint": [90, 50, 10], "radius": 8,
+       "curve": [0, 0.5, 1, 1, 0.8, 0.6, 0.4, 0.2, 0.1, 0]},
+      {"effect": "sparks", "region": "sky", "source": [19, 3, 24, 4], "bornFrames": [1, 2, 3],
+       "colours": [[255, 250, 220], [255, 150, 40], [200, 70, 20]]}
+    ]},
+    "idle": {"frames": 8, "rest": "none", "focal": "fire", "tracks": [
+      {"effect": "pulse", "region": "fire", "hot": [255, 250, 220],
+       "curve": [0.2, 0.6, 1, 0.6, 0.2, 0.5, 0.9, 0.5]}
+    ]},
+    "place": {"frames": 8, "focal": "fire", "tracks": [
+      {"effect": "darken", "region": "front", "curve": [1, 1, 0.9, 0.7, 0.4, 0.6, 0.2, 0]}
+    ]}
+  }
+}
+
+## grid
+$ python pxw.py grid forge.png grid.png
+{
+  "ok": true,
+  "out": "grid.png",
+  "size": [
+    32,
+    32
+  ],
+  "zoom": 8
+}
+$ echo $?
+0
+
+## mask
+$ python pxw.py mask brief.json mask.png
+{
+  "ok": true,
+  "out": "mask.png",
+  "pixels_per_region": {
+    "fire": 48,
+    "front": 432,
+    "sky": 448
+  },
+  "empty_regions": []
+}
+$ echo $?
+0
+
+## frames
+$ python pxw.py frames brief.json out-anim
+{
+  "ok": true,
+  "id": "forge",
+  "gates": "out-anim/forge.gates.json",
+  "animations": {
+    "use": {
+      "pass": true,
+      "frames": 10,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-anim/forge-use-10f.png"
+    },
+    "idle": {
+      "pass": true,
+      "frames": 8,
+      "rest_frame_identical": null,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-anim/forge-idle-8f.png"
+    },
+    "place": {
+      "pass": true,
+      "frames": 8,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-anim/forge-place-8f.png"
+    }
+  }
+}
+$ echo $?
+0
+
+## frames: files
+forge-idle-8f.contact.png
+forge-idle-8f.png
+forge-idle-8f.preview.png
+forge-idle-8f/f00.png
+forge-idle-8f/f01.png
+forge-idle-8f/f02.png
+forge-idle-8f/f03.png
+forge-idle-8f/f04.png
+forge-idle-8f/f05.png
+forge-idle-8f/f06.png
+forge-idle-8f/f07.png
+forge-place-8f.contact.png
+forge-place-8f.png
+forge-place-8f.preview.png
+forge-place-8f/f00.png
+forge-place-8f/f01.png
+forge-place-8f/f02.png
+forge-place-8f/f03.png
+forge-place-8f/f04.png
+forge-place-8f/f05.png
+forge-place-8f/f06.png
+forge-place-8f/f07.png
+forge-use-10f.contact.png
+forge-use-10f.png
+forge-use-10f.preview.png
+forge-use-10f/f00.png
+forge-use-10f/f01.png
+forge-use-10f/f02.png
+forge-use-10f/f03.png
+forge-use-10f/f04.png
+forge-use-10f/f05.png
+forge-use-10f/f06.png
+forge-use-10f/f07.png
+forge-use-10f/f08.png
+forge-use-10f/f09.png
+forge.gates.json
+
+## file: out-anim/forge.gates.json (use)
+{
+  "rest_frame": 0,
+  "rest_frame_identical": true,
+  "changed_outside_mask": 0,
+  "alpha_changed_outside_alpha_regions": 0,
+  "new_colours": 0,
+  "changed_share_per_frame": [
+    0.0,
+    0.072,
+    0.1379,
+    0.144,
+    0.1152,
+    0.0802,
+    0.0082,
+    0.0021,
+    0.0,
+    0.0
+  ],
+  "focal_mean_abs_luma_delta": [
+    0.0,
+    32.0,
+    53.4,
+    53.4,
+    53.4,
+    32.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "noticeable_thresholds": {
+    "share": 0.08,
+    "luma": 40
+  },
+  "noticeable": true,
+  "drawn_outside_silhouette": 8,
+  "flicker_pixels": 3,
+  "flicker_at": [
+    [
+      26,
+      0
+    ],
+    [
+      17,
+      1
+    ],
+    [
+      24,
+      3
+    ]
+  ],
+  "pass": true,
+  "frames": 10,
+  "sheet": "out-anim/forge-use-10f.png",
+  "preview": "out-anim/forge-use-10f.preview.png",
+  "aw_pixel_frames": {
+    "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+  }
+}
+
+## file: out-anim/forge.gates.json (idle)
+{
+  "rest_frame": null,
+  "rest_frame_identical": null,
+  "changed_outside_mask": 0,
+  "alpha_changed_outside_alpha_regions": 0,
+  "new_colours": 0,
+  "changed_share_per_frame": [
+    0.0,
+    0.0658,
+    0.0988,
+    0.0658,
+    0.0,
+    0.0658,
+    0.0988,
+    0.0658
+  ],
+  "focal_mean_abs_luma_delta": [
+    0.0,
+    32.0,
+    53.4,
+    32.0,
+    0.0,
+    32.0,
+    53.4,
+    32.0
+  ],
+  "noticeable_thresholds": {
+    "share": 0.08,
+    "luma": 40
+  },
+  "noticeable": true,
+  "drawn_outside_silhouette": 0,
+  "flicker_pixels": 0,
+  "loop_seam_changed": 32,
+  "loop_seam_ok": true,
+  "pass": true,
+  "frames": 8,
+  "sheet": "out-anim/forge-idle-8f.png",
+  "preview": "out-anim/forge-idle-8f.preview.png",
+  "aw_pixel_frames": {
+    "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+  }
+}
+
+## frames: checks
+sheet forge-use-10f.png: 320x32
+frame 0 equals forge.png byte for byte: True
+frames outside the regions changed: 0 pixels
+
+## frames only
+$ python pxw.py frames brief.json out-use --only use
+{
+  "ok": true,
+  "id": "forge",
+  "gates": "out-use/forge.gates.json",
+  "animations": {
+    "use": {
+      "pass": true,
+      "frames": 10,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-use/forge-use-10f.png"
+    }
+  }
+}
+$ echo $?
+0
+
+## frames again
+$ python pxw.py frames brief.json out-again --only use
+{
+  "ok": true,
+  "id": "forge",
+  "gates": "out-again/forge.gates.json",
+  "animations": {
+    "use": {
+      "pass": true,
+      "frames": 10,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-again/forge-use-10f.png"
+    }
+  }
+}
+$ echo $?
+0
+
+## frames: two runs
+out-use/forge-use-10f.png and out-again/forge-use-10f.png identical: True
+
+## shim
+$ python sw.py frames brief.json out-shim --only use
+{
+  "ok": true,
+  "id": "forge",
+  "gates": "out-shim/forge.gates.json",
+  "animations": {
+    "use": {
+      "pass": true,
+      "frames": 10,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-shim/forge-use-10f.png"
+    }
+  }
+}
+$ echo $?
+0
+
+## shim version
+$ python sw.py --version
+0.8.4
+$ echo $?
+0
+
+## shim doctor with old variable
+$ python sw.py doctor
+{
+  "ok": true,
+  "version": "0.8.4",
+  "python": "3.14.6",
+  "numpy": "2.5.2",
+  "pillow": "12.3.0",
+  "missing": null,
+  "aw": "<artwright>/skills/artwright/scripts/aw.py",
+  "effects": [
+    "arc",
+    "assemble",
+    "bands",
+    "bend",
+    "brighten",
+    "buildup",
+    "cart",
+    "darken",
+    "drone",
+    "dust",
+    "external",
+    "fill",
+    "glint",
+    "model_rotate",
+    "puffs",
+    "pulse",
+    "rotate",
+    "scroll",
+    "shift",
+    "site",
+    "sparks",
+    "spill"
+  ]
+}
+$ echo $?
+0
+
+## shim: same sheet
+out-shim/forge-use-10f.png identical to out-use/forge-use-10f.png: True
+
+## contact
+$ python pxw.py contact out-anim/forge-use-10f.png contact.png --frames 10
+{
+  "ok": true,
+  "out": "contact.png",
+  "frames": 10,
+  "frame_size": [
+    32,
+    32
+  ]
+}
+$ echo $?
+0
+
+## pack
+$ python pxw.py pack strip.png out-anim/forge-use-10f/f00.png out-anim/forge-use-10f/f03.png
+{
+  "ok": true,
+  "out": "strip.png",
+  "frames": 2,
+  "frame_size": [
+    32,
+    32
+  ]
+}
+$ echo $?
+0
+
+## pack sizes differ
+$ python pxw.py pack bad.png forge.png chest.png
+{
+  "ok": false,
+  "error": "frames differ in size: [(12, 12), (32, 32)]"
+}
+$ echo $?
+1
+
+## buildup
+$ python pxw.py buildup brief.json brief-built.json
+{
+  "ok": true,
+  "out": "brief-built.json",
+  "anim": "place",
+  "frames": 14,
+  "buildup_frames": 6
+}
+$ echo $?
+0
+
+## frames buildup
+$ python pxw.py frames brief-built.json out-built --only place
+{
+  "ok": true,
+  "id": "forge",
+  "gates": "out-built/forge.gates.json",
+  "animations": {
+    "place": {
+      "pass": true,
+      "frames": 14,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-built/forge-place-14f.png"
+    }
+  }
+}
+$ echo $?
+0
+
+## file: plan.json
+{"frames": 8,
+ "regions": {"p_chimney": {"rects": [[18, 4, 25, 14]]}, "p_body": {"rects": [[4, 14, 28, 32]]}},
+ "steps": [{"part": "p_body", "how": "weld", "dir": "up", "at": [0, 5]},
+           {"part": "p_chimney", "how": "crane", "at": [3, 8]}]}
+
+## assemble
+$ python pxw.py assemble brief.json brief-assembled.json --plan plan.json
+{
+  "ok": true,
+  "out": "brief-assembled.json",
+  "anim": "place",
+  "frames": 16,
+  "assemble_frames": 8,
+  "uncovered_pixels": 0,
+  "empty_parts": [],
+  "steps_ending_after_assembly": []
+}
+$ echo $?
+0
+
+## frames assembled
+$ python pxw.py frames brief-assembled.json out-assembled --only place
+{
+  "ok": true,
+  "id": "forge",
+  "gates": "out-assembled/forge.gates.json",
+  "animations": {
+    "place": {
+      "pass": true,
+      "frames": 16,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-assembled/forge-place-16f.png"
+    }
+  }
+}
+$ echo $?
+0
+
+## file: plan-short.json
+{"frames": 4, "regions": {"p_chimney": {"rects": [[18, 4, 25, 14]]}}, "steps": [{"part": "p_chimney", "how": "crane", "at": [0, 4]}]}
+
+## assemble uncovered
+$ python pxw.py assemble brief.json brief-partial.json --plan plan-short.json
+{
+  "ok": false,
+  "out": "brief-partial.json",
+  "anim": "place",
+  "frames": 12,
+  "assemble_frames": 4,
+  "uncovered_pixels": 432,
+  "empty_parts": [],
+  "steps_ending_after_assembly": []
+}
+$ echo $?
+1
+
+## file: brief-weak.json animations
+{"use": {"frames": 6, "focal": "fire", "tracks": [
+  {"effect": "pulse", "region": "fire", "hot": [255, 250, 220], "strength": 0.05,
+   "curve": [0, 0.5, 1, 1, 0.5, 0]}]}}
+
+## frames weak
+$ python pxw.py frames brief-weak.json out-weak
+{
+  "ok": false,
+  "id": "forge",
+  "gates": "out-weak/forge.gates.json",
+  "animations": {
+    "use": {
+      "pass": false,
+      "frames": 6,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": false,
+      "sheet": "out-weak/forge-use-6f.png"
+    }
+  }
+}
+$ echo $?
+1
+
+## file: brief-rest.json animations
+{"use": {"frames": 6, "focal": "fire", "tracks": [
+  {"effect": "pulse", "region": "fire", "hot": [255, 250, 220], "curve": [1, 1, 0.8, 0.5, 0.2, 0.1]}]}}
+
+## frames rest
+$ python pxw.py frames brief-rest.json out-rest
+{
+  "ok": false,
+  "id": "forge",
+  "gates": "out-rest/forge.gates.json",
+  "animations": {
+    "use": {
+      "pass": false,
+      "frames": 6,
+      "rest_frame_identical": false,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-rest/forge-use-6f.png"
+    }
+  }
+}
+$ echo $?
+1
+
+## file: brief-odd.json animations
+{"use": {"frames": 4, "tracks": [{"effect": "wobble", "region": "fire"}]}}
+
+## frames unknown effect
+$ python pxw.py frames brief-odd.json out-odd
+{
+  "ok": false,
+  "error": "use: unknown effect(s) ['wobble']; known: ['arc', 'assemble', 'bands', 'bend', 'brighten', 'buildup', 'cart', 'darken', 'drone', 'dust', 'external', 'fill', 'glint', 'model_rotate', 'puffs', 'pulse', 'rotate', 'scroll', 'shift', 'site', 'sparks', 'spill']"
+}
+$ echo $?
+1
+
+## file: brief-smoke.json animations
+{"smoke": {"frames": 8, "rest": "none", "focal": "sky", "tracks": [
+  {"effect": "puffs", "region": "sky", "source": [21, 4], "bornFrames": [0, 4], "life": 8,
+   "colours": [[214, 210, 220], [168, 164, 176]], "seed": 5}]}}
+
+## frames smoke loop
+$ python pxw.py frames brief-smoke.json out-smoke
+{
+  "ok": false,
+  "id": "forge",
+  "gates": "out-smoke/forge.gates.json",
+  "animations": {
+    "smoke": {
+      "pass": false,
+      "frames": 8,
+      "rest_frame_identical": null,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": false,
+      "sheet": "out-smoke/forge-smoke-8f.png"
+    }
+  }
+}
+$ echo $?
+1
+
+## file: out-smoke/forge.gates.json (smoke)
+{
+  "rest_frame": null,
+  "rest_frame_identical": null,
+  "changed_outside_mask": 0,
+  "alpha_changed_outside_alpha_regions": 0,
+  "new_colours": 0,
+  "changed_share_per_frame": [
+    0.0082,
+    0.0185,
+    0.0226,
+    0.0206,
+    0.0267,
+    0.0247,
+    0.0309,
+    0.0267
+  ],
+  "focal_mean_abs_luma_delta": [
+    1.3,
+    3.8,
+    4.6,
+    3.9,
+    4.6,
+    5.0,
+    6.1,
+    5.2
+  ],
+  "noticeable_thresholds": {
+    "share": 0.08,
+    "luma": 40
+  },
+  "noticeable": false,
+  "drawn_outside_silhouette": 15,
+  "flicker_pixels": 3,
+  "flicker_at": [
+    [
+      26,
+      1
+    ],
+    [
+      25,
+      2
+    ],
+    [
+      22,
+      3
+    ]
+  ],
+  "loop_seam_changed": 17,
+  "loop_seam_ok": false,
+  "pass": false,
+  "frames": 8,
+  "sheet": "out-smoke/forge-smoke-8f.png",
+  "preview": "out-smoke/forge-smoke-8f.preview.png",
+  "aw_pixel_frames": {
+    "skipped": "artwright's aw.py not found (set PIXELWRIGHT_AW)"
+  }
+}
+
+## file: brief-empty.json extra region
+{"screen": {"rects": [[4, 14, 10, 20]], "select": "cool"}}
+
+## mask empty
+$ python pxw.py mask brief-empty.json mask2.png
+{
+  "ok": false,
+  "out": "mask2.png",
+  "pixels_per_region": {
+    "fire": 48,
+    "front": 432,
+    "sky": 448,
+    "screen": 0
+  },
+  "empty_regions": [
+    "screen"
+  ]
+}
+$ echo $?
+1
+
+## file: brief-flicker.json animations
+{"use": {"frames": 10, "focal": "fire", "fps": 12, "max_flicker_pixels": 0, "tracks": [
+  {"effect": "pulse", "region": "fire", "hot": [255, 250, 220],
+   "curve": [0, 0.5, 1, 1, 0.8, 0.6, 0.4, 0.2, 0.1, 0]},
+  {"effect": "sparks", "region": "sky", "source": [19, 3, 24, 4], "bornFrames": [1, 2, 3],
+   "colours": [[255, 250, 220], [255, 150, 40], [200, 70, 20]]}]}}
+
+## frames flicker capped
+$ python pxw.py frames brief-flicker.json out-flicker
+{
+  "ok": false,
+  "id": "forge",
+  "gates": "out-flicker/forge.gates.json",
+  "animations": {
+    "use": {
+      "pass": false,
+      "frames": 10,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-flicker/forge-use-10f.png"
+    }
+  }
+}
+$ echo $?
+1
+
+## file: out-flicker/forge.gates.json (use, flicker)
+{
+  "flicker_pixels": 3,
+  "flicker_at": [
+    [
+      26,
+      0
+    ],
+    [
+      17,
+      1
+    ],
+    [
+      24,
+      3
+    ]
+  ],
+  "pass": false
+}
+
+## file: brief-cadence.json animations
+{"slide": {"frames": 6, "focal": "fire", "tracks": [
+  {"effect": "shift", "part": "fire", "region": "front", "by": [8, 0], "curve": [0, 0.2, 0.4, 0.6, 0.8, 1]}]}}
+
+## frames cadence
+$ python pxw.py frames brief-cadence.json out-cadence
+{
+  "ok": true,
+  "id": "forge",
+  "gates": "out-cadence/forge.gates.json",
+  "animations": {
+    "slide": {
+      "pass": true,
+      "frames": 6,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "out-cadence/forge-slide-6f.png"
+    }
+  }
+}
+$ echo $?
+0
+
+## file: out-cadence/forge.gates.json (slide, cadence)
+{
+  "cadence_uneven": [
+    {
+      "track": 0,
+      "effect": "shift",
+      "steps": [
+        2,
+        1,
+        2,
+        1,
+        2
+      ]
+    }
+  ],
+  "pass": true
+}
+
+## snap missing file
+$ python pxw.py snap nothing.png x.png
+{
+  "ok": false,
+  "error": "FileNotFoundError: [Errno 2] No such file or directory: 'nothing.png'"
+}
+$ echo $?
+1
+
+## no command
+$ python pxw.py
+usage: pxw.py [-h] [--version]
+              {make,snap,bg,palette,clean,swap,crop,tile,palettes,frames,grid,mask,buildup,assemble,contact,pack,review,doctor} ...
+pxw.py: error: the following arguments are required: cmd
+$ echo $?
+2
+
+## streams
+python pxw.py: exit 2, stdout 0 lines, stderr 3 lines
+python pxw.py palette cleared.png x.png --palette pico-8 --dither floyd: exit 2, stdout 0 lines, stderr 6 lines
+python pxw.py palette cleared.png x.png --palette pico-8 --colours 6: exit 2, stdout 4 lines, stderr 0 lines
+python pxw.py crop clean.png tiny.png --size 16x16: exit 1, stdout 4 lines, stderr 0 lines
+python pxw.py snap nothing.png x.png: exit 1, stdout 4 lines, stderr 0 lines
+
+## frames for review
+$ python pxw.py frames batch/forge/brief.json batch/forge/out --root batch/forge
+{
+  "ok": true,
+  "id": "forge",
+  "gates": "batch/forge/out/forge.gates.json",
+  "animations": {
+    "use": {
+      "pass": true,
+      "frames": 10,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "batch/forge/out/forge-use-10f.png"
+    },
+    "idle": {
+      "pass": true,
+      "frames": 8,
+      "rest_frame_identical": null,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "batch/forge/out/forge-idle-8f.png"
+    },
+    "place": {
+      "pass": true,
+      "frames": 8,
+      "rest_frame_identical": true,
+      "changed_outside_mask": 0,
+      "new_colours": 0,
+      "noticeable": true,
+      "sheet": "batch/forge/out/forge-place-8f.png"
+    }
+  }
+}
+$ echo $?
+0
+
+## review
+$ python pxw.py review batch --port 8799
+{"ok": true, "url": "http://127.0.0.1:8799/", "picks": "<tmp>/run/batch/picks.json"}
+section: forge, use (10 frames)
+section: forge, idle (8 frames)
+section: forge, place (8 frames)
+gate line: gates PASS: rest frame identical True, outside-mask changes 0, new colours 0, peak changed 14% of pixels, peak focal brightness change 53.4
+gate line: gates PASS: rest frame identical None, outside-mask changes 0, new colours 0, peak changed 10% of pixels, peak focal brightness change 53.4
+gate line: gates PASS: rest frame identical True, outside-mask changes 0, new colours 0, peak changed 80% of pixels, peak focal brightness change 71.3
+
+## review: picks saved
+POST /picks answered 204
+{
+  "updated": "<time>",
+  "items": {
+    "forge/use": {
+      "pick": "keep"
+    },
+    "forge/idle": {
+      "pick": "redo",
+      "note": "slower flicker"
+    }
+  }
+}
+
+## review: after picks
+section: forge, idle (8 frames)
+section: forge, place (8 frames)
+
+## review busy port
+$ python pxw.py review batch --port 8799
+{
+  "ok": false,
+  "error": "port 8799 is in use; stop the server on it or pick another port",
+  "detail": "[WinError 10048] Only one usage of each socket address (protocol/network address/port) is normally permitted"
+}
+$ echo $?
+1
+
+## ci check
+$ python check_makes.py
+failed: ['out-budget/mushroom.make.json']
+$ echo $?
+1
+
+## tests: animation
+$ python tests/test_pxw.py
+Ran 55 tests in <s>s
+OK
+$ echo $?
+0
+
+## tests: make
+$ python tests/test_make.py
+Ran 37 tests in <s>s
+OK
+$ echo $?
+0
+
+## tests: structure
+$ python tests/check_skills.py
+ok
+$ echo $?
+0
+
