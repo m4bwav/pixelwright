@@ -1,11 +1,11 @@
 ---
-title: GitHub wiki written for 0.6.0, published, and updated through 0.8.2
+title: GitHub wiki verified and published through 0.8.4
 kind: note
 date: 2026-10-24
 verified: 2026-10-26
 stale_after: 2027-04-24
-tags: [wiki, docs, 0.6.0, 0.6.1, 0.6.2, 0.7.0, 0.8.2, github]
-summary: "the wiki's eleven pages for pixelwright 0.8.2 (first written for 0.6.0), where they are, how every example was verified against the released plugin, the facts found on the way, the inaccuracies in the shipped docs, and how to update the wiki; read before touching the wiki or the files listed under inaccuracies"
+tags: [wiki, docs, 0.6.0, 0.6.1, 0.6.2, 0.7.0, 0.8.2, 0.8.4, github]
+summary: "eleven wiki pages verified against the 0.8.4 tag archive on Windows and published as 8a425d3; 206 checked outputs, zero missing, one historical-install skip; earlier cross-platform recordings, numbered findings and update procedure"
 ---
 
 # GitHub wiki for 0.6.0 and 0.6.1
@@ -24,6 +24,53 @@ Update to 0.7.0 (2026-10-24 local, Update mode, skipping a separate 0.6.3 wiki):
 
 Update to 0.8.2 (2026-10-26, Update mode, with the owner's approval): `v0.8.2` on `18e320c` (released 2026-10-26 12:05 UTC) holds 0.7.1 to 0.8.1 too, none of which was tagged. The program gained `--old` (an extracted older release, run as `old-pxw.py`) and 38 new sections: `snap` on a smooth JPEG (0.8.2 and 0.7.0), `bg --holes` on a ring, `--dither-space linear` and `--max-step` on a flat grey, `clean --corners` on a stair-step line and on the chest, `swap` (map, unmapped colours, palette index, folder), `fog` at 0.4 and 0.8, a capped `max_flicker_pixels` and a `shift` with uneven cadence. Runs: `--install` on Windows, Python 3.14.7 (numpy 2.5.4, Pillow 13.0.0), with `--images`; `--plugin` on `git archive v0.8.2` on Windows Python 3.9.25 (numpy 2.0.2, Pillow 11.3.0) and on Ubuntu on WSL (Python 3.14.4); all with `--old` on `git archive v0.7.0` and artwright 0.7.0's `skills/` tree (tag `v0.7.0`, the newest; its cases printed what 0.4.2 printed). A separate throwaway install matched `git archive v0.8.2` (`diff -rq`, only `.in_use`). `diffout` against the 0.7.0 outputs, old cases only: versions; `swap` in the usage text; `palette --help` two lines longer; `enclosed_cleared: 0` in every background step; `drawn_outside_silhouette` and `flicker_pixels` (with `flicker_at`) in every animation's gates; tests 44 to 50 and 27 to 36. No `pass` or `ok` changed; the three images byte-identical. Pages changed: Home, Getting-Started, Making-Pixel-Art (too few edges, enclosed holes, corners, swap, fog), Palettes (linear light and the cap), Animating-A-Sprite, Commands (swap, new options, exit rows), Gates (two table rows, Flicker and cadence), FAQ (the snap question), Coming-From-Spritewright, Development (tests, CI commit, the eval sentence, which was stale), sidebar, footer; new page Versions-And-Upgrading. Pages were written with `{{CASE:label}}` placeholders filled from the saved output by a scratch script (L-155). Gates: `check --version 0.8.2` 0 errors, 0 warnings; `outputs` 211 checked, 0 missing over the three outputs; `snippets` 1 checked, 0 missing, 6 commands; `tells.py --wiki` 0 strong. Published as wiki commit `bea16e8`; `live` 11 pages, 0 failures, 22 anchors 0 broken; the three images 200 at their sizes. From Git Bash, `wsl bash -l /mnt/c/...` fails (MSYS rewrites the path); call `wsl` from PowerShell.
 
+## 0.8.4 follow-up, verified archive and published wiki
+
+[PR #17](https://github.com/m4bwav/pixelwright/pull/17) merged as `f3b448ed`.
+[Release v0.8.4](https://github.com/m4bwav/pixelwright/releases/tag/v0.8.4) is live. It adds motion matching to
+the flicker gate and documents `flicker_at` and the fog caveat. The 0.8.3 log-wall and plank-roof changes were
+already shipped and were left intact.
+
+The coordinating session ran the existing verifier against the released 0.8.4 tag archive using `--plugin`,
+artwright 0.7.0 and port 8799. It exited 0 with no stderr. The transcript identifies Windows, Python 3.14.6,
+numpy 2.5.2 and Pillow 12.3.0. Its test sections report 55 animation tests, 37 make tests and structure checks
+passing, with no animation skips. The forge still reports 3 flicker locations and fails a cap of 0; its
+locations are not matched by the heuristic. The smoke case still reports 3 too. These numerical examples
+are unchanged. Motion matching is covered by the new synthetic regression fixtures, not a claim that every
+moving spark is now excluded.
+
+Wiki edits cover Home, Getting-Started, Making-Pixel-Art, Animating-A-Sprite, Gates, Coming-From-Spritewright,
+FAQ, Development, Versions-And-Upgrading, sidebar and footer. Current command/version/test output was updated
+from the new transcript. Getting-Started retains the explicitly historical 0.8.2 installation transcript,
+with an `outputs: skip` reason pointing to its saved 0.8.2 evidence. The fragile warning block and its source
+line number were removed; prose records the earlier Python 3.9 warning and the warning-free 0.8.4 run.
+Python 3.9, Linux, plugin installation and image regeneration were not repeated for 0.8.4.
+
+The [wiki](https://github.com/m4bwav/pixelwright/wiki) was published as commit
+`8a425d338f817a0f89cbd6a20b83787578dfdf35`. Final gates reported by the coordinating session:
+
+- `check`: 11 pages, 0 errors.
+- `outputs`: 206 checked, 0 missing, 1 historical-install skip.
+- `snippets`: 1 block, 6 commands, 0 missing.
+- Prose: 0 strong findings, 41 weak findings.
+- `live`: 11 pages, 0 failures; 23 anchors, 0 broken.
+
+Verification transcript filename: `2026-10-26-wiki-verify-084.out.txt`, beside this note. The coordinating
+session retains the exact released-tag transcript with the docs-only follow-up records.
+`diffout` against the saved 0.8.2 Windows output reported 148 sections: 136 same, 9 changed and 3 removed.
+Changes were versions, runtime versions and test counts; removed sections were the two installation sections
+and image regeneration. The installer and images were not re-run. None of the recorded forge or smoke gate
+numbers changed.
+
+The first wiki gate pass reported 9 output mismatches while the page reconciliation was in progress.
+The released transcript resolves the version, runtime and test-count mismatches; the historical install
+recording is marked explicitly and the old warning block is removed. The final gate results above include
+those corrections.
+
+Flicker remains report-only unless an animation sets `max_flicker_pixels`; cadence remains report-only.
+Calibrating thresholds needs a hand-made pixel-art set from the owner. The unmatched spark locations in the
+forge are documented limits of the heuristic, rather than a claim of full particle tracking.
+
 ## Where the pages are
 
 The wiki working copy `pixelwright.wiki/` (a sibling of this clone, outside this repository), branch `master`, remote `https://github.com/m4bwav/pixelwright.wiki.git`. The pages were drafted in `pixelwright.wiki-draft/` (a flat folder beside it) and copied in; edit the working copy from now on. Links between pages are plain markdown (`[Gates](Gates)`), no wikilinks.
@@ -37,7 +84,7 @@ Images (`check` and `live` do not look at them): each answered 200 with its imag
 ## Updating the wiki later
 
 1. `git -C pixelwright.wiki pull --ff-only`, then edit the pages.
-2. Re-verify from a folder outside the repository: `python ai-docs/notes/2026-10-24-wiki-verify.py --install --old <git archive of the previous release> --aw <artwright aw.py> --port <free port> --images <folder> > new.out.txt` (needs numpy, Pillow and `claude` on PATH), then `python <wikiwright>/scripts/wikiwright.py diffout ai-docs/notes/2026-10-24-wiki-verify.out.txt new.out.txt`. Every difference is a page to fix (exit 1 means differences). Do the same with `--plugin` on Python 3.9 and on Linux against `.py39.out.txt` and `.linux.out.txt`. Save the new outputs over the old.
+2. Re-verify from a folder outside the repository: `python ai-docs/notes/2026-10-24-wiki-verify.py --plugin <extracted new release tag archive> --old <git archive v0.7.0> --aw <released artwright aw.py> --port <free port> > new.out.txt` (needs numpy and Pillow), then `python <wikiwright>/scripts/wikiwright.py diffout ai-docs/notes/2026-10-26-wiki-verify-084.out.txt new.out.txt`. Every difference is a page to fix (exit 1 means differences). The 0.8.4 baseline uses artwright v0.7.0 and port 8799. Retain the saved 0.8.2 outputs for the historical install evidence and earlier cross-platform claims; they are not current-version runs. Use `--install` only when intentionally re-verifying installation, and `--images <folder>` when regenerating images.
 3. `wikiwright.py outputs pixelwright.wiki <every new output> --address ''`, `wikiwright.py snippets pixelwright.wiki ai-docs/notes/2026-10-24-wiki-verify.py`, `wikiwright.py check pixelwright.wiki --version <new>`, and everwrite's `tells.py --wiki`.
 4. Commit, `git push`, `wikiwright.py live`, and fetch the three image URLs. Pages that name the version: `_Footer.md`, `_Sidebar.md` and Home (release link), Home (release history paragraph and the 0.8.2 paragraph, run version), Versions-And-Upgrading (release table, the upgrade section names 0.7.0 and 0.8.2: add a row and a new upgrade section), Making-Pixel-Art, Palettes, Commands and Gates ("since 0.8.0/0.8.1" notes, and the 0.7.0 smooth-render output), FAQ (the snap question, the newest pair), Getting-Started (cache path, tag, artwright version), Gates and FAQ (the version pair the artwright verdict needs), Coming-From-Spritewright (0.6.0 rename, "two runs of 0.6.1"), Development (installed copy, release commit `49a8981`), Commands (the 0.6.2 change to missing files), FAQ (the traceback question), and every `doctor` and `--version` output.
 
@@ -95,7 +142,7 @@ Status after 0.6.2: 2, 5, 6 and 9 fixed in 0.6.1; 3, 4, 7 and 8 fixed in 0.6.2 (
 8. skills/pixelwright-make/references/recipe.md:18: the `clean` default reads as if it merged with what you write; a written `clean` object replaces it and orphan removal stops.
 9. skills/pixelwright-animate/references/brief.md:3 ("Checked 2026-10-23 against `pxw.py` 0.1.0") and effects.md:3 ("against `pxw.py` 0.5.0"): `pxw.py` first exists in 0.6.0; those versions were `sw.py`.
 
-Found in the 0.8.2 pass (10 to 12 addressed in the 0.8.4 source follow-up; released-archive wiki verification pending):
+Found in the 0.8.2 pass (10 to 12 addressed in 0.8.4; tag archive verified and wiki published as `8a425d3`):
 
 10. skills/pixelwright/scripts/pxw.py, the flicker gate's comment "things that move on do not count": a spark that moves more than one pixel a frame is counted (3 on the forge's `use`, all sparks). Either the comment or the test is off; the timing reference does not say which animations should cap it.
 11. skills/pixelwright-make/references/recipe.md, `fog` row: "about 0.4 for a middle layer, 0.8 for the far one" carries no caveat; 0.8 with PICO-8 turned the whole mushroom into one colour and no gate noticed (the budget gate only caps colours).
