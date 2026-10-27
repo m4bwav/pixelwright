@@ -4,6 +4,21 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261026-2 · 2026-10-26 · 0.8.4: moving pixels no longer fail the flicker cap; fog and report caveats
+- because: user request; wiki findings 10 to 12 in ai-docs/notes/2026-10-24-github-wiki.md
+- files: skills/pixelwright/scripts/pxw.py (_pixel_moves, gates, VERSION), .claude-plugin/plugin.json,
+  tests/test_pxw.py (TestRound2Gates), tests/test_make.py (TestRound2),
+  skills/pixelwright-animate/SKILL.md (Step 3), skills/pixelwright-animate/references/timing-and-gates.md (Gates),
+  skills/pixelwright-make/references/recipe.md (fog), ai-docs/
+- Intentional report bug fix: the flicker check matches a travelling pixel across three frames even when it
+  moves more than 1 px per frame. It allows a 1 px difference between incoming and outgoing steps; over clear
+  sky it matches alpha, so a spark may change colour, and over opaque art it matches RGBA. `flicker_pixels`
+  and `flicker_at` may shrink, and an animation capped with `max_flicker_pixels` may now pass. Unmatched motion
+  can still count. No effect or make step changes; image bytes stay the same.
+- `flicker_at` is documented as up to 8 unique `[x, y]` pairs in row order, without frame indices. Fog advice
+  now warns that a high amount with a sparse palette can flatten a sprite to one colour while every gate
+  passes. This is a caveat, with a regression fixture, rather than a new gate or a changed default.
+
 ### C-20261026-1 · 2026-10-26 · 0.8.3: log walls and plank roofs in natural plans; L-065
 - because: L-065 (L-056 superseded for log-and-plank buildings)
 - files: skills/pixelwright/scripts/pxw.py (SITE_TIMELINE, _site_geometry, _laid, _site_built, _site_items, fx_site,

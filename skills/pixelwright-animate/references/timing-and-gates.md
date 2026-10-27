@@ -40,6 +40,13 @@ The gates in SKILL.md step 3 are exact. Reasons:
   (a glint at 4.5% read as subtle). No published number exists (R-T9); move them by the reviewer's comments,
   per brief, not globally.
 - The human click review is the final gate; no metric catches a part that silently vanished (R-T7).
+- `flicker_pixels` counts unique locations over the animation, including the seam of a loop. `flicker_at`, when
+  present, samples up to 8 `[x, y]` pairs in row order (top to bottom, then left to right), with no frame index.
+  Inspect the frames to find the blink. A matching pixel travelling through three frames is excluded even when
+  its step exceeds 1 px; incoming and outgoing steps may differ by 1 px for rounding or acceleration. Over
+  transparent sky, the match uses alpha so a spark may change colour; over opaque art it uses exact RGBA.
+  This is a motion heuristic, not particle tracking. Set `max_flicker_pixels` on an animation only after reviewing
+  its frames; intentional blinks and unmatched motion can still count.
 
 ## Engines
 
