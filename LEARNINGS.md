@@ -837,3 +837,16 @@ house style, 128 px stills).
   outside the silhouette, 0 new colours; the gates never saw the gash.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-29
+
+### L-068 · 2026-10-30 · A round scaffold hides the build and reads as real scaffolding
+- Trigger: the game's owner asked for a circular scaffold that goes up before anything else, so the construction is
+  mostly hidden behind it.
+- Hypothesis: a ring of thick poles with ledgers and front boarding, standing on the ground and taken down tier by
+  tier, reads as scaffolding at 1x (not as chatter), and hiding the build behind it spares the frame-by-frame order
+  most of its scrutiny.
+- Rule: use `scaffold: "ring"`; keep poles a bay of about 16 px apart and the ring at 1.05 of the diamond, fitted to
+  the canvas. The first try (ring at 1.15, a pole every 9 px) ran off both canvas edges and read as a woven basket.
+- Evidence: on a 3x3 thatched house and an open brick shed (96 px), every gate passed with the scaffold's pixels
+  exempt, 0 new colours, last frame identical; the 3x contact row read as a scaffold after the spacing change.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-30

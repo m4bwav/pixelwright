@@ -731,6 +731,37 @@ class TestCommands(Base):
         self.assertGreater(g["drawn_outside_silhouette"], 0)
         self.assertFalse(g["pass"])
 
+    def test_natural_ring_scaffold_goes_up_first_hides_the_build_and_comes_down(self):
+        still, plan = self.cottage()
+        empty = still[..., 3] == 0
+        plan["scaffold"] = "ring"
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        code, res = self.run_sw("assemble", "c.json", "c2.json", "--plan", "plan.json")
+        self.assertEqual(code, 0, res)
+        self.run_sw("frames", "c2.json", "out", "--no-aw")
+        g = json.loads((self.dir / "out" / "cottage.gates.json").read_text())["place"]
+        self.assertTrue(g["pass"], g)
+        self.assertTrue(g["rest_frame_identical"])
+        self.assertEqual(g["new_colours"], 0)
+        sheet = self.sheet("cottage-place-20f")
+        frame = [sheet[:, j * 48:(j + 1) * 48] for j in range(20)]
+        outside = [int(((fr[..., 3] > 0) & empty).sum()) for fr in frame]
+        # the scaffold stands outside the finished silhouette early on, then is gone by the last frame
+        self.assertGreater(max(outside[:6]), 20)
+        self.assertEqual(outside[-1], 0)
+        self.assertLess(outside[-2], max(outside))
+        # mid-build the front walls are mostly hidden behind the boards: fewer still pixels show than without it
+        same = [(fr == still).all(-1) & (still[..., 3] > 0) for fr in frame]
+        plan.pop("scaffold")
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        self.run_sw("assemble", "c.json", "c3.json", "--plan", "plan.json")
+        self.run_sw("frames", "c3.json", "out3", "--no-aw")
+        bare = self.sheet("cottage-place-20f", "out3")
+        bare = [(bare[:, j * 48:(j + 1) * 48] == still).all(-1) & (still[..., 3] > 0) for j in range(20)]
+        front = np.zeros((48, 48), dtype=bool)
+        front[30:41, 8:41] = True
+        self.assertLess(same[12][front].mean(), bare[12][front].mean())
+
     def cabin(self, logs=True):
         """The cottage as a log cabin: pale logs with a dark seam every 3 rows, a roof of boards; `logs` sets the
         plan's `walls: "logs"` and `roofOrder: "boards"`."""

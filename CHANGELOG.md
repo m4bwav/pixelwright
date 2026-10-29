@@ -4,6 +4,14 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261030-1 · 2026-10-30 · 0.8.7: a round scaffold for natural construction
+- because: user request, L-068
+- files: skills/pixelwright/scripts/pxw.py (`_scaffold`, `fx_site`, `SITE_TIMELINE`, `SITE_KEYS`, silhouette gate),
+  tests/test_pxw.py (ring scaffold test), skills/pixelwright-animate/SKILL.md (Step 2), LEARNINGS.md (L-068),
+  .claude-plugin/plugin.json
+`"scaffold": "ring"` raises a ring of poles, ledgers and front boards first, builds behind it, and takes it down from
+the top; the silhouette gate exempts only the scaffold's own pixels.
+
 ### C-20261029-1 · 2026-10-29 · 0.8.6: the pit build order for dug sites
 - because: L-067
 - files: skills/pixelwright/scripts/pxw.py (`fx_site`, `_site_built`, `_site_geometry`, `_nearest_under`, natural plan

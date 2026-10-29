@@ -70,6 +70,11 @@ A dug site (quarry, clay pit: a rim round a sunken floor, no roof) takes `"walls
 instead of roof, eave and ridge, dug out from the centre; the rim laid round from the front corner; `props` (one
 region name or a list: crane, ladders, a hut) rise last, bottom up, and show the ground under them until then. Give
 a prop polygon over sand or stone a colour `select` (`wood`) so the polygon's ground stays ground (L-067).
+`"scaffold": "ring"` (any natural plan) puts a round scaffold up first: 2 px poles round a ring just outside the
+ground diamond, a ledger every 4 px, boards on the front half, so the building rises mostly hidden; it comes down
+from the top over the last frames. Its pixels are the only ones the silhouette gate lets stand outside the still.
+Tune with `"ring": {"ringRadius", "height", "lift", "bay", "boarded", "poles"}`; the ring shrinks to fit the
+canvas (L-068).
 
 ## Step 3: gates
 
