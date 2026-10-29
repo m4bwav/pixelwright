@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261028-1 · 2026-10-28 · 0.8.5: chimneys on the roof stay in the roof polygon
+- because: L-066 (refines L-056)
+- files: LEARNINGS.md (L-056 rule, L-066), skills/pixelwright/scripts/pxw.py (VERSION), .claude-plugin/plugin.json
+Docs only: notch a chimney out of the roof only when it reaches the ground.
+
 ### C-20261026-2 · 2026-10-26 · 0.8.4: moving pixels no longer fail the flicker cap; fog and report caveats
 - because: user request; wiki findings 10 to 12 in ai-docs/notes/2026-10-24-github-wiki.md
 - files: skills/pixelwright/scripts/pxw.py (_pixel_moves, gates, VERSION), .claude-plugin/plugin.json,

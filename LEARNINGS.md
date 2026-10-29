@@ -672,7 +672,7 @@ house style, 128 px stills).
 - Rule: before writing a natural plan, check at 8x that the roof's lower edge is a material change you can trace
   (thatch, tile or shingle over timber, daub or stone). If walls and roof are the same material, leave the building
   for another build order rather than guess the outline. A dome, chimney or porch of the wall material is fine: it
-  rises with the walls.
+  rises with the walls, if it stands on the ground (a chimney on the roof slope stays in the roof, L-066).
 - Evidence: three strips (thatch over daub; tile over half-timber with a stone oven dome; tile over half-timber with a
   chimney) passed every gate on the first run and read as a site going up; one same-wood log building was set aside.
 - Scope: skill
@@ -807,3 +807,17 @@ house style, 128 px stills).
   board order fails it.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-26
+
+### L-066 · 2026-10-28 · Notch a chimney out of the roof only if it reaches the ground
+- Trigger: a log building's stone chimney, notched out of the roof polygon as L-056 allows, appeared floating above
+  the half-built walls for several frames before the rafters, because it stands on the roof slope, not the ground.
+- Hypothesis: the wall rise reveals everything outside the roof polygon from the ground up to the wall height and
+  beyond; a stack whose base is on the roof has nothing under it until the roof is laid, so it hangs in the air.
+- Rule: before notching a chimney, lantern or belfry out of the roof, follow it down at 8x: notch it only when its
+  masonry runs to the ground diamond. When it sits on the roof, keep it inside the roof polygon so it arrives with
+  the roof covering.
+- Evidence: the floating stack was gone on re-run with the chimney inside the polygon, gates unchanged (0 px outside
+  the silhouette, 0 new colours); a 144 px building with a roof chimney and a lantern kept both in the roof and
+  read cleanly the first time.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-28
