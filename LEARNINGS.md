@@ -821,3 +821,19 @@ house style, 128 px stills).
   read cleanly the first time.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-28
+
+### L-067 · 2026-10-29 · A dug site is built from the floor out, its props last
+- Trigger: a quarry (a stone rim round a sunken floor, a crane and ladders, no roof) had no build order: the natural
+  plan needs a roof, eave and ridge, and raising the rim by height above the near ground line lifts the back of the
+  ring long before the front.
+- Hypothesis: a pit reads as built when the ground is cleared first, the rim is stacked round the ring like a wall
+  seen from above, and the tools arrive last. A prop's polygon also takes the ground beside it, so it leaves a hole
+  until it goes up unless that ground is filled in.
+- Rule: use `walls: "pit"`: trace the floor polygon and each prop, give a prop over sand or stone a colour select
+  (`wood`), and let unplaced props show the ground under them. Judge the 1x row: a gap in the floor or rim reads as a
+  mistake, not as work in progress.
+- Evidence: on a 96 px quarry the first pass left a green gash where the crane's polygon cut the floor; with
+  `select: "wood"` it became dotted holes; with the ground fill it was gone. Every gate passed on each pass, 0 px
+  outside the silhouette, 0 new colours; the gates never saw the gash.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-29

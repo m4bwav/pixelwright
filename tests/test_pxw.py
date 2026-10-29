@@ -789,6 +789,73 @@ class TestCommands(Base):
         same = self.built(still, "cottage-place-20f", "out3")
         self.assertTrue(any(same[j][seam].mean() > same[j][log].mean() + 0.3 for j in range(20)))
 
+    def pit(self):
+        """A 48x48 quarry seen from above at an angle: a grey stone rim round a sandy floor, a brown pole standing
+        on the floor."""
+        yy, xx = np.mgrid[0:48, 0:48]
+        r = np.hypot((xx - 24) / 22, (yy - 26) / 14)
+        a = np.zeros((48, 48, 4), dtype=np.uint8)
+        a[r <= 1] = [150, 150, 145, 255]
+        a[(r <= 1) & ((xx // 3 + yy // 3) % 2 == 0)] = [110, 110, 115, 255]
+        a[r <= 0.6] = [215, 190, 140, 255]
+        a[14:28, 30:32] = [110, 70, 35, 255]
+        Image.fromarray(a, "RGBA").save(self.dir / "pit.png")
+        (self.dir / "p.json").write_text(json.dumps({"id": "pit", "still": "pit.png", "motion": "dug on site",
+                                                     "regions": {}}))
+        plan = {"vocabulary": "natural", "frames": 20, "walls": "pit", "course": 3,
+                "regions": {"floor": {"poly": [[10, 26], [14, 19], [24, 17], [34, 19], [38, 26], [34, 33], [24, 35], [14, 33]]},
+                            "props": {"polys": [[[29, 13], [33, 13], [33, 28], [29, 28]]]}},
+                "floor": "floor", "props": "props",
+                "groundBase": {"left": {"x": 2, "y": 26}, "front": {"x": 24, "y": 40}, "right": {"x": 46, "y": 26}},
+                "wallHeight": 4}
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        return a, r
+
+    def test_natural_pit_digs_the_floor_then_rings_the_rim_then_props(self):
+        still, r = self.pit()
+        code, res = self.run_sw("assemble", "p.json", "p2.json", "--plan", "plan.json")
+        self.assertEqual(code, 0, res)
+        self.assertGreater(res["parts"]["floor"], 0)
+        self.assertGreater(res["parts"]["props"], 0)
+        self.assertEqual(res["parts"]["roof"], 0)
+        self.run_sw("frames", "p2.json", "out", "--no-aw")
+        g = json.loads((self.dir / "out" / "pit.gates.json").read_text())["place"]
+        self.assertTrue(g["pass"], g)
+        self.assertEqual(g["drawn_outside_silhouette"], 0)
+        same = self.built(still, "pit-place-20f", "out")
+        yy, xx = np.mgrid[0:48, 0:48]
+        prop = (yy >= 14) & (yy < 28) & (xx >= 30) & (xx < 32)
+        floor = (r <= 0.5) & ~((yy >= 13) & (yy < 28) & (xx >= 29) & (xx < 33))
+        rim = (r > 0.65) & (r <= 1)
+        front, back = rim & (yy > 30), rim & (yy < 20)
+        # the floor is dug before the rim stands, from the middle out
+        j = next(j for j in range(20) if same[j][floor].mean() > 0.9)
+        self.assertLess(same[j][rim].mean(), 0.5)
+        k = next(j for j in range(20) if 0.2 < same[j][floor].mean() < 0.8)
+        centre = floor & (r < 0.25)
+        self.assertGreater(same[k][centre].mean(), same[k][floor & (r > 0.4)].mean())
+        # the rim goes round from the front corner to the back
+        mid = [j for j in range(20) if 0.2 < same[j][rim].mean() < 0.8]
+        self.assertTrue(mid)
+        self.assertTrue(all(same[j][front].mean() >= same[j][back].mean() for j in mid))
+        # props last: none until the rim is nearly done, and bottom up
+        self.assertTrue(all(same[j][rim].mean() > 0.8 for j in range(20) if same[j][prop].any()))
+        # before it goes up a prop leaves no hole: its pixels show the floor and rim laid round it
+        sheet = self.sheet("pit-place-20f", "out")
+        j = next(j for j in range(20) if same[j][floor].mean() > 0.85 and same[j][rim].mean() > 0.94 and not same[j][prop].any())
+        self.assertTrue((sheet[:, j * 48:(j + 1) * 48, 3] > 0)[prop].all(), j)
+        p = next(j for j in range(20) if 0.2 < same[j][prop].mean() < 0.8)
+        self.assertGreater(same[p][prop & (yy > 22)].mean(), same[p][prop & (yy < 18)].mean())
+        shares = [same[j][still[..., 3] > 0].mean() for j in range(20)]
+        self.assertEqual(shares, sorted(shares))
+        # a pit needs its floor; it does not need a roof, eave or ridge
+        plan = json.loads((self.dir / "plan.json").read_text())
+        del plan["floor"]
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        code, res = self.run_sw("assemble", "p.json", "p3.json", "--plan", "plan.json")
+        self.assertEqual(code, 1)
+        self.assertIn("floor", json.dumps(res))
+
     def test_natural_assemble_needs_the_geometry(self):
         self.cottage()
         plan = json.loads((self.dir / "plan.json").read_text())

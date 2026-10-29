@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.8.5"
+VERSION = "0.8.6"
 
 try:
     import numpy as np
@@ -107,6 +107,7 @@ SELECTORS = {
     "warm": lambda h, s, v: ((h < 0.16) | (h > 0.95)) & (s > 0.40) & (v > 0.40),
     "cool": lambda h, s, v: (h > 0.45) & (h < 0.68) & (s > 0.30) & (v > 0.35),
     "bright": lambda h, s, v: v > 0.70,
+    "wood": lambda h, s, v: ((h < 0.16) | (h > 0.95)) & (s > 0.40) & (v > 0.20),
     "any": lambda h, s, v: np.ones_like(h, dtype=bool),
 }
 
@@ -164,9 +165,9 @@ class Sprite:
 
     def region_mask(self, r):
         m = self.rect_mask(r.get("rects", []))
-        if "poly" in r:
+        for poly in ([r["poly"]] if "poly" in r else []) + r.get("polys", []):
             pm = Image.new("L", (self.w, self.h), 0)
-            ImageDraw.Draw(pm).polygon([tuple(p) for p in r["poly"]], fill=255)
+            ImageDraw.Draw(pm).polygon([tuple(p) for p in poly], fill=255)
             m |= np.array(pm) > 0
         if "maskImage" in r:
             m |= np.array(Image.open(resolve(r["maskImage"], self.root, self.briefDir)).convert("L")) > 127
@@ -1021,7 +1022,8 @@ def fx_assemble(s, f, k, t, i):
 # Natural construction (`assemble` plan with "vocabulary": "natural"): a timber-framed, daubed, roofed building raised
 # on site from its ground diamond. Timeline keys and their defaults for a 30-frame strip; other lengths scale them.
 SITE_TIMELINE = {"stakes": [0, 10], "footing": [2, 6], "posts": [5, 10], "timber": [7, 13], "infill": [10, 17],
-                 "walls": [6, 17], "gable": [14, 18], "rafters": [15, 19], "roof": [19, 27], "ladder": [9, 27]}
+                 "walls": [6, 17], "gable": [14, 18], "rafters": [15, 19], "roof": [19, 27], "ladder": [9, 27],
+                 "dig": [2, 10], "props": [19, 27]}
 
 
 def _site_timeline(t):
@@ -1097,15 +1099,20 @@ def _site_geometry(s, t):
     height = np.clip(groundY - yy, 0, None)
     still = np.round(s.still).astype(np.uint8)
     rgb = still[..., :3].astype(float)
-    roof = s.regions[t["roof"]] & s.opaque
-    lumber = s.regions[t["lumber"]] & s.opaque if t.get("lumber") else np.zeros_like(roof)
-    walls = s.opaque & ~roof & ~lumber
+    none = np.zeros((s.h, s.w), dtype=bool)
+    roof = s.regions[t["roof"]] & s.opaque if t.get("roof") else none
+    lumber = s.regions[t["lumber"]] & s.opaque if t.get("lumber") else none
+    props = none.copy()
+    for name in ([t["props"]] if isinstance(t.get("props"), str) else t.get("props", [])):
+        props |= s.regions[name] & s.opaque
+    floor = s.regions[t["floor"]] & s.opaque & ~props if t.get("floor") else none
+    walls = s.opaque & ~roof & ~lumber & ~floor & ~props
     val = rgb.max(axis=2) / 255
     sat = (rgb.max(axis=2) - rgb.min(axis=2)) / np.maximum(rgb.max(axis=2), 1)
     timber = walls & ((val < t.get("timberValue", 0.55)) | ((sat > 0.5) & (val < 0.75)))
     infill = walls & ~timber
-    e0, e1 = (np.array(p, float) for p in t["eave"])
-    r0, r1 = (np.array(p, float) for p in t["ridge"])
+    e0, e1 = (np.array(p, float) for p in t.get("eave", [[L[0], L[1] - wallH], [R[0], R[1] - wallH]]))
+    r0, r1 = (np.array(p, float) for p in t.get("ridge", [[L[0], L[1] - wallH - 1], [R[0], R[1] - wallH - 1]]))
 
     def dist(p0, p1):
         d = p1 - p0
@@ -1118,6 +1125,14 @@ def _site_geometry(s, t):
     # position along the ridge from the front rake: boards are laid side by side, each from eave to ridge
     d = e1 - e0
     rake = ((xx - e0[0]) * d[0] + (yy - e0[1]) * d[1]) / np.hypot(*d)
+    # a pit: distance from the diamond's centre (0 centre, 1 its corners) and the way round from the front corner
+    # (0 front, 1 back), each face measured in its own iso axes so the ring is round on the ground
+    C = (L + R) / 2
+    u = ((xx - C[0]) * (R - L)[0] + (yy - C[1]) * (R - L)[1]) / np.dot(R - L, R - L) * 2
+    v = ((xx - C[0]) * (F - B)[0] + (yy - C[1]) * (F - B)[1]) / np.dot(F - B, F - B) * 2
+    radius = np.hypot(u, v)
+    around = np.abs(np.arctan2(u, v)) / math.pi
+    under = _nearest_under(props, s.opaque)
 
     def sample(mask, q):
         """The q-quantile colour by brightness; the whole still's when the part is (nearly) empty, never invented."""
@@ -1127,7 +1142,7 @@ def _site_geometry(s, t):
     stone = s.opaque & (sat < 0.22) & (val > 0.35) & (val < 0.8)
     seed = t.get("seed", 7)
     geo = dict(L=L, F=F, R=R, B=B, up=np.array([0, -wallH], float), wallH=wallH, height=height, roof=roof,
-               lumber=lumber, walls=walls, timber=timber, infill=infill, gable=walls & (height > wallH + 1),
+               lumber=lumber, floor=floor, props=props, radius=radius, around=around, under=under, walls=walls, timber=timber, infill=infill, gable=walls & (height > wallH + 1),
                slope=de / np.maximum(de + dr, 1e-6), e0=e0, e1=e1, r0=r0, r1=r1, along=along, rake=rake,
                left=xx <= F[0],
                blk=_hash01(xx // 3, yy // 3, seed), fine=_hash01(xx, yy, seed + 1), xx=xx, yy=yy,
@@ -1135,6 +1150,25 @@ def _site_geometry(s, t):
                          stone=sample(stone, 0.85), stone_dark=sample(stone, 0.15)))
     _CACHE[key] = geo
     return geo
+
+
+def _nearest_under(part, opaque):
+    """For each pixel of `part`, the flat index of a nearby opaque pixel outside it (grown in from its edge), else -1:
+    what stands under a prop before it is put up."""
+    h, w = part.shape
+    src = np.where(opaque & ~part, np.arange(h * w).reshape(h, w), -1)
+    todo = part.copy()
+    while todo.any():
+        grown = src.copy()
+        for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+            nb = np.roll(src, (dy, dx), axis=(0, 1))
+            take = todo & (grown < 0) & (nb >= 0)
+            grown[take] = nb[take]
+        if (grown == src).all():
+            break
+        todo &= grown < 0
+        src = grown
+    return np.where(part, src, -1)
 
 
 def _laid(p, n, order):
@@ -1163,11 +1197,29 @@ def _site_built(G, T, f, t=None):
         ng = max(1, int(math.ceil((gh - wallH - 1) / c)))
         jg = np.clip(np.ceil((h - wallH - 1) / c), 1, ng)
         m |= gable & _laid(_ramp(f, *T["gable"]), ng, jg - 1 + G["along"])
-    else:
+    elif t.get("walls") != "pit":
         m |= timber & ~gable & (h <= _ramp(f, *T["timber"]) * (wallH + 1) + blk * 2 - 1)
         m |= infill & ~gable & (h <= _ramp(f, *T["infill"]) * (wallH + 2) + blk * 3 - 1.5)
         m |= gable & timber & (h <= wallH + _ramp(f, *T["gable"]) * (gh - wallH + 1))
         m |= gable & (h <= wallH + _ramp(f, T["gable"][0] + 1, T["gable"][1] + 2) * (gh - wallH + 2) - blk * 2)
+    if t.get("walls") == "pit":
+        c = t.get("course", 3)
+        floor, props, rim, yy = G["floor"], G["props"], timber | infill, G["yy"]
+        reach = G["radius"][floor].max() if floor.any() else 1.0
+        m |= floor & (G["radius"] <= _ramp(f, *T["dig"]) * reach * 1.1 - G["fine"] * reach * 0.1)
+        # rim stones a `course` px block at a time, round the ring from the front corner both ways, low blocks first
+        bx, by = G["xx"] // c, yy // c
+        cell = _hash01(bx, by, 3)
+        n = int(math.ceil(1 / max(t.get("rimStep", 0.04), 1e-3)))
+        aroundC = np.zeros_like(G["around"])
+        for k in np.unique(np.stack([bx[rim], by[rim]]), axis=1).T:
+            sel = rim & (bx == k[0]) & (by == k[1])
+            aroundC[sel] = G["around"][sel].mean()
+        m |= rim & _laid(_ramp(f, *T["walls"]), n, np.floor(aroundC * (n - 1)) + cell * 0.9)
+        if props.any():
+            y0, y1 = yy[props].min(), yy[props].max()
+            m |= props & (yy >= y1 - _ramp(f, *T["props"]) * (y1 - y0 + 1) + G["fine"] * 0.5)
+        return m
     roof = G["roof"]
     if t.get("roofOrder") == "boards" and roof.any():
         rk = G["rake"] - G["rake"][roof].min()
@@ -1199,8 +1251,9 @@ def _site_items(s, G, T, t, f):
         if f >= T["stakes"][0] + 1:
             for a, b in [(L, F), (F, R), (R, B), (B, L)]:
                 items.append((_line(s, a, b) & ~_line(s, a, a) & ground, C["string"]))
+    pit = t.get("walls") == "pit"
     p = _ramp(f, *T["footing"])
-    if p > 0 and f < T["footing_gone"]:
+    if p > 0 and f < T["footing_gone"] and not pit:
         for j, (a, b) in enumerate([(L, F), (F, R), (R, B), (B, L)]):
             share = float(np.clip(4 * p - j, 0, 1))
             if share <= 0:
@@ -1211,7 +1264,7 @@ def _site_items(s, G, T, t, f):
             items.append((mk, C["stone_dark"]))
             items.append((mk & ((xx // 2 + yy) % 3 != 0) & (yy % 2 == (xx // 2) % 2), C["stone"]))
     p = _ramp(f, *T["posts"])
-    if p > 0 and f < T["frame_gone"] and t.get("walls") != "logs":
+    if p > 0 and f < T["frame_gone"] and t.get("walls") not in ("logs", "pit"):
         for c in [B, L, R, F]:
             items.append((_line(s, c + [0, -1], c + up * p, 2 if (c == F).all() else 1) & frame, C["timber"]))
         if p >= 1:
@@ -1219,7 +1272,7 @@ def _site_items(s, G, T, t, f):
             for a, b in [(B + up, L + up), (B + up, R + up), (L + up, F + up), (F + up, R + up)]:
                 items.append((_line(s, a, a + (b - a) * q) & frame, C["timber_lit"]))
     p = _ramp(f, *T["rafters"])
-    if p > 0 and f < T["frame_gone"]:
+    if p > 0 and f < T["frame_gone"] and not pit:
         e0, e1, r0, r1 = G["e0"], G["e1"], G["r0"], G["r1"]
         items.append((_line(s, r0, r0 + (r1 - r0) * p, 2) & roofing, C["timber_lit"]))
         n = t.get("rafters", 7)
@@ -1247,7 +1300,11 @@ def fx_site(s, f, k, t, i):
     course, the gable, the ridge pole, rafters and laths, the roof (`roof` region) laid from the `eave` line up to
     the `ridge` line, a `ladder` that leaves before the end. The `lumber` region (a plank pile) stands from frame 0.
     Site elements take colours sampled from the still, so a frame adds no colour. Frames 0 to `siteFrames` - 1;
-    the last of them is the still. Made by `pxw.py assemble` with a natural plan; put it last."""
+    the last of them is the still. Made by `pxw.py assemble` with a natural plan; put it last.
+    `walls: "pit"` builds a dug site instead (a quarry, a clay pit): stakes and string, the `floor` region dug out
+    from the diamond's centre, the rim's stones laid a `course` px block at a time round the ring from the front
+    corner, then the `props` regions (crane, ladders, a hut) rising bottom up; a prop not yet up shows the ground
+    under it."""
     n = t["siteFrames"]
     if i >= n - 1:
         return
@@ -1263,6 +1320,12 @@ def fx_site(s, f, k, t, i):
         f[mk, 3] = 255
     b = _site_built(G, T, i, t) & s.opaque
     f[b] = src[b]
+    if t.get("walls") == "pit":
+        # a prop not yet up shows the ground under it, once that ground is dug or laid
+        idx = G["under"]
+        show = G["props"] & ~b & (idx >= 0)
+        show[show] = b.reshape(-1)[idx[show]]
+        f[show] = src.reshape(-1, src.shape[-1])[idx[show]]
 
 
 def fx_arc(s, f, k, t, i):
@@ -2062,15 +2125,17 @@ def cmd_assemble(a):
 
 
 SITE_KEYS = ("roof", "lumber", "groundBase", "wallHeight", "timberValue", "eave", "ridge", "ladder", "rafters",
-             "timeline", "seed", "clip", "walls", "course", "roofOrder", "board")
+             "timeline", "seed", "clip", "walls", "course", "roofOrder", "board", "floor", "props", "rimStep")
 
 
 def _assemble_natural(a, brief, briefPath, plan):
     """A natural plan: {"vocabulary": "natural", "frames": N, "regions": {roof, lumber}, "roof": name, "lumber": name,
     "groundBase", "wallHeight", "eave", "ridge", "ladder", "rafters", "timeline", "timberValue", "seed", "fps",
-    "walls": "logs", "course", "roofOrder": "boards", "board"}.
+    "walls": "logs", "course", "roofOrder": "boards", "board"}. A pit (`"walls": "pit"`) needs "floor" (the dug floor
+    region) instead of roof, eave and ridge; "props" (crane, ladders, a hut) rise last, bottom up; "rimStep".
     Prefixes the animation (created when the brief has none by that name) with a `site` track."""
-    for key in ("roof", "groundBase", "wallHeight", "eave", "ridge"):
+    pit = plan.get("walls") == "pit"
+    for key in (("floor", "groundBase", "wallHeight") if pit else ("roof", "groundBase", "wallHeight", "eave", "ridge")):
         if key not in plan:
             fail(f"natural plan needs '{key}'")
     if "animations" not in brief and not any(isinstance(brief.get(kk), dict) for kk in ("use", "place")):
@@ -2098,11 +2163,11 @@ def _assemble_natural(a, brief, briefPath, plan):
     G = _site_geometry(s, track)
     T = _site_timeline(track)
     late = sorted(kk for kk, v in T.items() if (v if isinstance(v, int) else v[1]) > n - 1)
-    parts = {kk: int(G[kk].sum()) for kk in ("roof", "lumber", "timber", "infill", "gable")}
+    parts = {kk: int(G[kk].sum()) for kk in ("roof", "lumber", "timber", "infill", "gable", "floor", "props")}
     frames = build_frames(s, {"frames": n, "tracks": [track]})
     idle = [j for j in range(n - 1) if (frames[j] == frames[j + 1]).all()]
     Path(a.out).write_text(json.dumps(brief, indent=2), encoding="utf-8")
-    ok = parts["roof"] > 0 and parts["timber"] + parts["infill"] > 0 and not late
+    ok = (parts["floor"] if pit else parts["roof"]) > 0 and parts["timber"] + parts["infill"] > 0 and not late
     out(dict(ok=bool(ok), out=a.out, anim=a.anim, frames=anim["frames"], assemble_frames=n, vocabulary="natural",
              parts=parts, idle_frames=idle, timeline_ends_after_assembly=late,
              colours={kk: [int(v) for v in c] for kk, c in G["cols"].items()}), 0 if ok else 1)
