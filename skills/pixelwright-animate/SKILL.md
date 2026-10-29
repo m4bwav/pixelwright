@@ -66,6 +66,10 @@ courses, the faces in turn, no posts: the frame order would raise the dark seams
 L-056's "needs another build order"). Site lines are clipped to the finished silhouette by default (`clip`, L-057). Trace the
 roof polygon by hand on an 8x grid: a colour mask of the thatch also takes the straw-toned daub and timber (L-059).
 Open-sided sheds (roof on posts over goods) take the same plan; no posts-only variant (L-064).
+A dug site (quarry, clay pit: a rim round a sunken floor, no roof) takes `"walls": "pit"`: a `floor` region
+instead of roof, eave and ridge, dug out from the centre; the rim laid round from the front corner; `props` (one
+region name or a list: crane, ladders, a hut) rise last, bottom up, and show the ground under them until then. Give
+a prop polygon over sand or stone a colour `select` (`wood`) so the polygon's ground stays ground (L-067).
 
 ## Step 3: gates
 

@@ -4,6 +4,14 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261029-1 · 2026-10-29 · 0.8.6: the pit build order for dug sites
+- because: L-067
+- files: skills/pixelwright/scripts/pxw.py (`fx_site`, `_site_built`, `_site_geometry`, `_nearest_under`, natural plan
+  keys, `wood` selector, region `polys`), tests/test_pxw.py (pit test), skills/pixelwright-animate/SKILL.md (Step 2),
+  LEARNINGS.md (L-067), .claude-plugin/plugin.json
+`"walls": "pit"` digs the floor from the centre, lays the rim round from the front corner, then raises props bottom up,
+each prop showing the ground under it until it goes up. A region may list several polygons (`polys`).
+
 ### C-20261028-1 · 2026-10-28 · 0.8.5: chimneys on the roof stay in the roof polygon
 - because: L-066 (refines L-056)
 - files: LEARNINGS.md (L-056 rule, L-066), skills/pixelwright/scripts/pxw.py (VERSION), .claude-plugin/plugin.json
