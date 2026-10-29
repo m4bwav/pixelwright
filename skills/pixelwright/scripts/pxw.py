@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.8.6"
+VERSION = "0.8.7"
 
 try:
     import numpy as np
@@ -1023,7 +1023,8 @@ def fx_assemble(s, f, k, t, i):
 # on site from its ground diamond. Timeline keys and their defaults for a 30-frame strip; other lengths scale them.
 SITE_TIMELINE = {"stakes": [0, 10], "footing": [2, 6], "posts": [5, 10], "timber": [7, 13], "infill": [10, 17],
                  "walls": [6, 17], "gable": [14, 18], "rafters": [15, 19], "roof": [19, 27], "ladder": [9, 27],
-                 "dig": [2, 10], "props": [19, 27]}
+                 "dig": [2, 10], "props": [19, 27],
+                 "scaffold": [0, 6], "scaffold_gone": [23, 29]}
 
 
 def _site_timeline(t):
@@ -1230,6 +1231,72 @@ def _site_built(G, T, f, t=None):
     return m
 
 
+def _scaffold(s, G, T, t, f):
+    """A round scaffold (`scaffold: "ring"`) at frame f as (back, front) lists of (mask, colour): 2 px poles round a
+    ring just outside the ground diamond (`ringRadius`, 1 = its corners), a 1 px ledger every `lift` px, and boards
+    on the front half up to `boarded` of its height, so the building rises mostly hidden. It goes up tier by tier,
+    the back of the ring a little ahead of the front, over `scaffold`, and comes down from the top, boards first,
+    over `scaffold_gone`. The back half is drawn behind the building, the front half over it."""
+    if t.get("scaffold") != "ring":
+        return [], []
+    sc = t.get("ring", {})
+    L, F, R, B, C = G["L"], G["F"], G["R"], G["B"], G["cols"]
+    xx, yy = G["xx"], G["yy"]
+    O = (L + R) / 2
+    r = sc.get("ringRadius", 1.05)
+    roofH = G["height"][G["roof"]] if G["roof"].any() else np.array([G["wallH"] + 2.0])
+    H = float(sc.get("height", np.quantile(roofH, 0.5) if G["roof"].any() else G["wallH"] + 2))
+    lift = sc.get("lift", 4)
+    up = _ramp(f, *T["scaffold"])
+    down = _ramp(f, *T["scaffold_gone"])
+    if up <= 0 or down >= 1:
+        return [], []
+    th = np.linspace(0, 2 * math.pi, 720, endpoint=False)
+    pts = O + np.outer(r * np.sin(th), (R - L) / 2) + np.outer(r * np.cos(th), (F - B) / 2)
+    # the ring stays on the canvas: shrink it toward the diamond when it would run off an edge
+    far = max(np.abs(pts[:, 0] - O[0]).max() / max(min(O[0], s.w - 1 - O[0]) - 1, 1),
+              (pts[:, 1].max() - O[1]) / max(s.h - 2 - O[1], 1), 1.0)
+    pts = O + (pts - O) / far
+    front = np.cos(th) > 0
+    # each ring point's height limit: rising (back first), then falling from the top; boards go first
+    aroundP = 1 - np.abs(np.cos(th / 2))  # 0 front, 1 back
+    limUp = np.clip(up * 1.25 - (1 - aroundP) * 0.25, 0, 1) * H
+    lim = np.minimum(limUp, (1 - down) * H)
+    limBoard = np.minimum(limUp, np.clip(1 - down * 1.6, 0, 1) * H) * sc.get("boarded", 0.85)
+    back_items, front_items = [], []
+
+    def arc_mask(sel, height_of, rows):
+        """Pixels on the ring's half `sel`, lifted by each of `rows` px, where the point's limit allows."""
+        m = np.zeros((s.h, s.w), dtype=bool)
+        for q in rows:
+            ok = sel & (height_of >= q)
+            xs = np.round(pts[ok, 0]).astype(int)
+            ys = np.round(pts[ok, 1] - q).astype(int)
+            k = (xs >= 0) & (xs < s.w) & (ys >= 0) & (ys < s.h)
+            m[ys[k], xs[k]] = True
+        return m
+
+    ledgers = list(range(lift, int(H) + 1, lift)) or [int(H)]
+    span = np.abs(np.diff(pts, axis=0, append=pts[:1])).sum()
+    nPoles = sc.get("poles", max(6, int(round(span / sc.get("bay", 16) / 2)) * 2))
+    for half, items in ((~front, back_items), (front, front_items)):
+        items.append((arc_mask(half, lim, ledgers), C["timber_lit"]))
+        if half is front:
+            # boards: the front half closed off, two rows a board, dark joints between
+            for q in range(1, int(H * sc.get("boarded", 0.85)) + 1):
+                items.append((arc_mask(half, limBoard, [q]), C["timber"] if q % 3 == 0 else C["timber_lit"]))
+        for j in range(nPoles):
+            a = 2 * math.pi * j / nPoles
+            if (math.cos(a) > 0) != (half is front):
+                continue
+            k = int(round(a / (2 * math.pi) * len(th))) % len(th)
+            if lim[k] < 1:
+                continue
+            base = pts[k]
+            items.append((_line(s, base, base + [0, -lim[k]], 2), C["timber"]))
+    return back_items, front_items
+
+
 def _site_items(s, G, T, t, f):
     """Temporary site elements at frame f as (mask, colour), drawn under built pixels: corner stakes and string on
     the ground diamond, a fieldstone footing laid near edges first, corner posts and wall plates, the ridge pole,
@@ -1318,8 +1385,15 @@ def fx_site(s, f, k, t, i):
             mk = _drop_specks(mk)
         f[mk, :3] = col
         f[mk, 3] = 255
+    back, front = _scaffold(s, G, T, t, i)
+    for mk, col in back:
+        f[mk, :3] = col
+        f[mk, 3] = 255
     b = _site_built(G, T, i, t) & s.opaque
     f[b] = src[b]
+    for mk, col in front:
+        f[mk, :3] = col
+        f[mk, 3] = 255
     if t.get("walls") == "pit":
         # a prop not yet up shows the ground under it, once that ground is dug or laid
         idx = G["under"]
@@ -1823,6 +1897,15 @@ def gates(s, anim, frames, restIndex):
            "rest_frame_identical": None if restIndex is None else bool((frames[restIndex] == still).all())}
     outside = alphaBad = 0
     outsideSilhouette = []
+    # a ring scaffold is real scaffolding (poles with thickness, standing on the ground): its own pixels may stand
+    # outside the silhouette; nothing else may
+    scaffoldOk = np.zeros((s.h, s.w), dtype=bool)
+    for t in anim["tracks"]:
+        if t["effect"] == "site" and t.get("scaffold") == "ring":
+            G, T = _site_geometry(s, t), _site_timeline(t)
+            for j in range(t["siteFrames"]):
+                for mk, _ in sum(_scaffold(s, G, T, t, j), []):
+                    scaffoldOk |= mk
     newCols = set()
     changedShare, lumDelta = [], []
     focal = s.regions[anim.get("focal") or anim["tracks"][0]["region"]]
@@ -1831,7 +1914,7 @@ def gates(s, anim, frames, restIndex):
         diff = (f != still).any(-1)
         outside += int((diff & ~union).sum())
         alphaBad += int(((f[..., 3] != still[..., 3]) & ~alphaOk).sum())
-        outsideSilhouette.append(int(((f[..., 3] > 0) & (still[..., 3] == 0)).sum()))
+        outsideSilhouette.append(int(((f[..., 3] > 0) & (still[..., 3] == 0) & ~scaffoldOk).sum()))
         vis = f[..., 3] > 0
         newCols |= {tuple(c) for c in f[..., :3][vis].reshape(-1, 3)} - allowed
         changedShare.append(round(float(diff.sum()) / opaqueCount, 4))
@@ -2125,7 +2208,8 @@ def cmd_assemble(a):
 
 
 SITE_KEYS = ("roof", "lumber", "groundBase", "wallHeight", "timberValue", "eave", "ridge", "ladder", "rafters",
-             "timeline", "seed", "clip", "walls", "course", "roofOrder", "board", "floor", "props", "rimStep")
+             "timeline", "seed", "clip", "walls", "course", "roofOrder", "board", "floor", "props", "rimStep",
+             "scaffold", "ring")
 
 
 def _assemble_natural(a, brief, briefPath, plan):
