@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.8.7"
+VERSION = "0.8.8"
 
 try:
     import numpy as np
@@ -3063,7 +3063,7 @@ def review_items(root, decided):
     return items
 
 
-def review_page(root, extraPath, picksPath):
+def review_page(root, extraPath, picksPath, links=()):
     try:
         picks = json.loads(picksPath.read_text(encoding="utf-8"))["items"]
     except (OSError, ValueError, KeyError):
@@ -3100,6 +3100,9 @@ def review_page(root, extraPath, picksPath):
 {body}<input class=note placeholder="note (what to change)"></div></section>""")
     if not rows:
         rows.append("<p>Nothing left to review.</p>")
+    # --link: other pages that belong to this review (an askwright question set, its inbox)
+    linksHtml = "".join(f'<a href="{html.escape(u)}">{html.escape(t)}</a>' for u, t in links)
+    linksHtml = f'<nav class=links>{linksHtml}</nav>' if linksHtml else ""
     return f"""<!doctype html><html><head><meta charset=utf-8><title>Sprite review</title>
 <style>
 body{{background:#1b1b22;color:#ddd;font:15px system-ui,sans-serif;margin:0 auto;max-width:1100px;padding:16px}}
@@ -3115,8 +3118,9 @@ button{{background:#333;color:#eee;border:1px solid #555;border-radius:5px;paddi
 button.on{{background:#4a7;border-color:#4a7;color:#000}}
 .note{{flex:1;min-width:200px;background:#111;color:#eee;border:1px solid #555;padding:6px}}
 #status{{position:sticky;top:0;background:#1b1b22;padding:6px 0;color:#9c9}}
+.links a{{color:#9cf;margin-right:14px}}
 </style></head><body>
-<p>Previews show the still (left) and the animation (right) at 4x, pausing on the rest frame. Click for each item;
+{linksHtml}<p>Previews show the still (left) and the animation (right) at 4x, pausing on the rest frame. Click for each item;
 Redo takes a note. Every click saves. Say "done" in the chat when finished.</p>
 <div id=status>loading</div>
 {''.join(rows)}
@@ -3160,7 +3164,7 @@ def cmd_review(a):
 
         def do_GET(self):
             if self.path.split("?")[0] in ("/", "/index.html"):
-                body = review_page(root, extraPath, picksPath).encode("utf-8")
+                body = review_page(root, extraPath, picksPath, a.link or ()).encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Content-Length", str(len(body)))
@@ -3189,7 +3193,7 @@ def cmd_review(a):
             pass
 
     if a.print_page:
-        print(review_page(root, extraPath, picksPath))
+        print(review_page(root, extraPath, picksPath, a.link or ()))
         return
     class Server(ThreadingHTTPServer):
         # http.server reuses addresses, which on Windows lets a second server bind a busy port silently and
@@ -3321,6 +3325,8 @@ def main(argv=None):
     c.add_argument("dir")
     c.add_argument("--port", type=int, default=8765)
     c.add_argument("--extra")
+    c.add_argument("--link", nargs=2, action="append", metavar=("URL", "LABEL"),
+                   help="a link at the top of the page, e.g. the askwright question inbox; repeatable")
     c.add_argument("--print-page", action="store_true", help="print the page HTML and exit (for tests)")
     c.set_defaults(fn=cmd_review)
     c = sub.add_parser("doctor")

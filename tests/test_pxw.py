@@ -928,6 +928,15 @@ class TestCommands(Base):
         code, page = self.run_sw("review", ".", "--print-page")
         self.assertIn('data-key="still/x"', page)
 
+    def test_review_links(self):
+        self.frames(brief(use=PULSE))
+        code, page = self.run_sw("review", ".", "--print-page")
+        self.assertNotIn("<nav class=links>", page)
+        code, page = self.run_sw("review", ".", "--print-page", "--link", "http://127.0.0.1:9/sessions", "Questions <inbox>",
+                                 "--link", "http://127.0.0.1:9/", "Set")
+        self.assertIn('<nav class=links><a href="http://127.0.0.1:9/sessions">Questions &lt;inbox&gt;</a>'
+                      '<a href="http://127.0.0.1:9/">Set</a></nav>', page)
+
     def test_review_full_size_and_info_items(self):
         # paintings must not get the sprite's 3x pixel zoom, and an info card has a note but no pick buttons
         (self.dir / "review-extra.json").write_text(json.dumps([
