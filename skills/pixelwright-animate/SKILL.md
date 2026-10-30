@@ -70,6 +70,9 @@ A dug site (quarry, clay pit: a rim round a sunken floor, no roof) takes `"walls
 instead of roof, eave and ridge, dug out from the centre; the rim laid round from the front corner; `props` (one
 region name or a list: crane, ladders, a hut) rise last, bottom up, and show the ground under them until then. Give
 a prop polygon over sand or stone a colour `select` (`wood`) so the polygon's ground stays ground (L-067).
+Keep a prop to the part that stands against the sky: the ground shown under a waiting prop is stretched from the
+pixels below it and reads as streaks over a lumpy floor, so a frame or ladder lying on the floor or the rim goes
+with them instead (L-071).
 `"scaffold"` (any natural plan) puts a pole scaffold up first and takes it down from the top over the last frames.
 Match the footprint: `"walls"` for square and oblong buildings (poles just outside each wall, one on every corner,
 up to the eaves), `"ring"` only for round pits and towers. Both are open work: 2 px poles about 26 px apart, a

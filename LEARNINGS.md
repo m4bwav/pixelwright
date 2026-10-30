@@ -881,3 +881,16 @@ house style, 128 px stills).
   loops were static under the patch. Two placements were moved by eye (one clipped a tower, one floated).
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-30
+
+### L-071 · 2026-10-30 · A pit prop over a lumpy floor smears; keep props to what stands against the sky
+- Trigger: a round dug site with a shed on its rim, a wooden frame in the middle and a ladder down its side; with all
+  three as `props`, every frame before they rose showed vertical streaks where their polygons cut the clay. The gates
+  passed every run and saw none of it.
+- Hypothesis: the ground filled in under a waiting prop is stretched from the nearest built pixels; over a flat sand
+  floor that reads as ground, over a mottled clay rim it reads as smeared columns.
+- Rule: make a prop only of the part that stands against the sky (the shed above the rim line). Parts that lie on
+  the floor or the rim (a frame, a ladder) go with the dig or the rim. Judge the 1x and 3x rows, not the gates.
+- Evidence: three passes on one 96 px still: three props streaked in frames 5 to 23; dropping the frame cleared the
+  middle; cutting the shed polygon at the rim line and dropping the ladder cleared the rest. Gates passed all three.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-30
