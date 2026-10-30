@@ -4,6 +4,15 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261030-3 · 2026-10-30 · 0.8.9: a square scaffold for square buildings, lighter planking
+- because: user request, L-069
+- files: skills/pixelwright/scripts/pxw.py (`_scaffold`, `SCAFFOLD_SHAPES`, silhouette gate),
+  tests/test_pxw.py (walls scaffold test), skills/pixelwright-animate/SKILL.md (Step 2), LEARNINGS.md (L-069),
+  .claude-plugin/plugin.json
+`"scaffold": "walls"` follows the ground diamond with a pole on every corner and stops at the eaves; both shapes now
+lay a plank deck only at every second ledger, with ledgers 9 px and poles about 26 px apart, instead of boarding
+the front.
+
 ### C-20261030-2 · 2026-10-30 · 0.8.8: review --link
 - because: user request (link the pick page to the questions inbox)
 - files: skills/pixelwright/scripts/pxw.py (`review_page`, `review` arguments), tests/test_pxw.py (`test_review_links`),

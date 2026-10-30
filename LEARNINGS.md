@@ -850,3 +850,17 @@ house style, 128 px stills).
   exempt, 0 new colours, last frame identical; the 3x contact row read as a scaffold after the spacing change.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-30
+
+### L-069 · 2026-10-30 · Scaffolding follows the footprint, reaches the eaves, and stays open work
+- Trigger: the game's owner saw the ring scaffold on square buildings and said nobody builds a round scaffold round a
+  square house, and that the rows of planks were too many for a low-tech crew; the ring looked right only on round sites.
+- Hypothesis: a pre-industrial pole scaffold reads as real when it copies how one is put up: poles a little outside each
+  wall with one on every corner, ledgers about head height apart, planks only at the working levels, and no higher
+  than the eaves the roofers work from.
+- Rule: square and oblong buildings take `scaffold: "walls"` (the ground diamond at 1.05, a pole on each corner);
+  `"ring"` only for round pits and towers. Defaults: a ledger every 9 px, a bay of about 26 px, a 2 px deck at every
+  second ledger, and walls height = wall height + 3. A boarded front and a ledger every 4 px read as a crate.
+- Evidence: a 3x3 thatched house and a brick shed (96 px) read as pole scaffolds at 3x after the change; a round pit
+  takes one ledger and a ring of poles. All gates passed, last frame identical.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-30

@@ -731,6 +731,30 @@ class TestCommands(Base):
         self.assertGreater(g["drawn_outside_silhouette"], 0)
         self.assertFalse(g["pass"])
 
+    def test_natural_walls_scaffold_follows_the_square_footprint_and_stays_light(self):
+        still, plan = self.cottage()
+        empty = still[..., 3] == 0
+        drawn = {}
+        for shape in ("walls", "ring"):
+            plan["scaffold"] = shape
+            (self.dir / "plan.json").write_text(json.dumps(plan))
+            code, res = self.run_sw("assemble", "c.json", f"c-{shape}.json", "--plan", "plan.json")
+            self.assertEqual(code, 0, res)
+            self.run_sw("frames", f"c-{shape}.json", f"out-{shape}", "--no-aw")
+            g = json.loads((self.dir / f"out-{shape}" / "cottage.gates.json").read_text())["place"]
+            self.assertTrue(g["pass"], g)
+            sheet = self.sheet("cottage-place-20f", f"out-{shape}")
+            drawn[shape] = [(sheet[:, j * 48:(j + 1) * 48, 3] > 0) & empty for j in range(20)]
+            self.assertFalse(drawn[shape][-1].any())
+        # the walls scaffold hugs the diamond: at its peak it covers less open ground than the ring round it
+        peak = max(range(20), key=lambda j: drawn["walls"][j].sum())
+        self.assertGreater(drawn["walls"][peak].sum(), 10)
+        self.assertLess(drawn["walls"][peak].sum(), drawn["ring"][peak].sum())
+        # and it is open work, poles and ledgers with gaps, not a boarded wall: under half of its own box is drawn
+        ys, xs = np.nonzero(drawn["walls"][peak])
+        box = (ys.max() - ys.min() + 1) * (xs.max() - xs.min() + 1)
+        self.assertLess(drawn["walls"][peak].sum() / box, 0.5)
+
     def test_natural_ring_scaffold_goes_up_first_hides_the_build_and_comes_down(self):
         still, plan = self.cottage()
         empty = still[..., 3] == 0
