@@ -4,6 +4,12 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261030-5 · 2026-10-30 · 0.8.11: pit props only where they stand against the sky
+- because: L-071
+- files: skills/pixelwright-animate/SKILL.md (pit order), LEARNINGS.md (L-071), .claude-plugin/plugin.json,
+  skills/pixelwright/scripts/pxw.py (`VERSION`)
+Docs only: a prop over a lumpy floor streaks while it waits, so frames and ladders lying on the floor go with it.
+
 ### C-20261030-4 · 2026-10-30 · 0.8.10: adding a part to a still that already has strips
 - because: user request, L-070
 - files: skills/pixelwright-animate/SKILL.md (rules), LEARNINGS.md (L-070), .claude-plugin/plugin.json,
