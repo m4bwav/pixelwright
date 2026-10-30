@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.8.7"
+VERSION = "0.8.8"
 
 try:
     import numpy as np
@@ -1231,13 +1231,19 @@ def _site_built(G, T, f, t=None):
     return m
 
 
+SCAFFOLD_SHAPES = ("walls", "ring")
+
+
 def _scaffold(s, G, T, t, f):
-    """A round scaffold (`scaffold: "ring"`) at frame f as (back, front) lists of (mask, colour): 2 px poles round a
-    ring just outside the ground diamond (`ringRadius`, 1 = its corners), a 1 px ledger every `lift` px, and boards
-    on the front half up to `boarded` of its height, so the building rises mostly hidden. It goes up tier by tier,
-    the back of the ring a little ahead of the front, over `scaffold`, and comes down from the top, boards first,
-    over `scaffold_gone`. The back half is drawn behind the building, the front half over it."""
-    if t.get("scaffold") != "ring":
+    """A pole scaffold at frame f as (back, front) lists of (mask, colour). `scaffold: "walls"` follows the ground
+    diamond a little outside the walls, with a pole at every corner (square buildings); `scaffold: "ring"` stands on a
+    circle round it (round pits and towers). Both: 2 px poles (`ringRadius` sets the offset, 1 = on the corners), a
+    1 px ledger every `lift` px, and a 2 px plank deck on the front half at every `deckEvery`-th ledger, the working
+    levels only, as a real crew lays them. It goes up tier by tier, the back a little ahead of the front, over
+    `scaffold`, and comes down from the top, planks first, over `scaffold_gone`. The back half is drawn behind the
+    building, the front half over it."""
+    shape = t.get("scaffold")
+    if shape not in SCAFFOLD_SHAPES:
         return [], []
     sc = t.get("ring", {})
     L, F, R, B, C = G["L"], G["F"], G["R"], G["B"], G["cols"]
@@ -1245,14 +1251,17 @@ def _scaffold(s, G, T, t, f):
     O = (L + R) / 2
     r = sc.get("ringRadius", 1.05)
     roofH = G["height"][G["roof"]] if G["roof"].any() else np.array([G["wallH"] + 2.0])
-    H = float(sc.get("height", np.quantile(roofH, 0.5) if G["roof"].any() else G["wallH"] + 2))
-    lift = sc.get("lift", 4)
+    # walls: up to the eaves, where the roofers stand on its top deck; ring: round the middle of the roof
+    H = float(sc.get("height", G["wallH"] + 3 if shape == "walls" or not G["roof"].any() else np.quantile(roofH, 0.5)))
+    lift = sc.get("lift", 9)
     up = _ramp(f, *T["scaffold"])
     down = _ramp(f, *T["scaffold_gone"])
     if up <= 0 or down >= 1:
         return [], []
     th = np.linspace(0, 2 * math.pi, 720, endpoint=False)
-    pts = O + np.outer(r * np.sin(th), (R - L) / 2) + np.outer(r * np.cos(th), (F - B) / 2)
+    # "walls": the same angles pushed onto the diamond |u| + |v| = 1, so th = 0, pi/2, pi, 3pi/2 are its corners
+    norm = np.abs(np.sin(th)) + np.abs(np.cos(th)) if shape == "walls" else 1.0
+    pts = O + np.outer(r * np.sin(th) / norm, (R - L) / 2) + np.outer(r * np.cos(th) / norm, (F - B) / 2)
     # the ring stays on the canvas: shrink it toward the diamond when it would run off an edge
     far = max(np.abs(pts[:, 0] - O[0]).max() / max(min(O[0], s.w - 1 - O[0]) - 1, 1),
               (pts[:, 1].max() - O[1]) / max(s.h - 2 - O[1], 1), 1.0)
@@ -1262,7 +1271,7 @@ def _scaffold(s, G, T, t, f):
     aroundP = 1 - np.abs(np.cos(th / 2))  # 0 front, 1 back
     limUp = np.clip(up * 1.25 - (1 - aroundP) * 0.25, 0, 1) * H
     lim = np.minimum(limUp, (1 - down) * H)
-    limBoard = np.minimum(limUp, np.clip(1 - down * 1.6, 0, 1) * H) * sc.get("boarded", 0.85)
+    limBoard = np.minimum(limUp, np.clip(1 - down * 1.6, 0, 1) * H)
     back_items, front_items = [], []
 
     def arc_mask(sel, height_of, rows):
@@ -1278,13 +1287,17 @@ def _scaffold(s, G, T, t, f):
 
     ledgers = list(range(lift, int(H) + 1, lift)) or [int(H)]
     span = np.abs(np.diff(pts, axis=0, append=pts[:1])).sum()
-    nPoles = sc.get("poles", max(6, int(round(span / sc.get("bay", 16) / 2)) * 2))
+    # a pole on every corner of the diamond, so walls scaffolds keep the count a multiple of 4
+    step = 4 if shape == "walls" else 2
+    nPoles = sc.get("poles", max(4 if shape == "walls" else 6, int(round(span / sc.get("bay", 26) / step)) * step))
+    decks = ledgers[sc.get("deckEvery", 2) - 1::sc.get("deckEvery", 2)] or ledgers[-1:]
     for half, items in ((~front, back_items), (front, front_items)):
         items.append((arc_mask(half, lim, ledgers), C["timber_lit"]))
         if half is front:
-            # boards: the front half closed off, two rows a board, dark joints between
-            for q in range(1, int(H * sc.get("boarded", 0.85)) + 1):
-                items.append((arc_mask(half, limBoard, [q]), C["timber"] if q % 3 == 0 else C["timber_lit"]))
+            # planks: one 2 px deck at each working level, laid on its ledger, a dark edge under it
+            for q in decks:
+                items.append((arc_mask(half, limBoard, [q - 1]), C["timber"]))
+                items.append((arc_mask(half, limBoard, [q]), C["timber_lit"]))
         for j in range(nPoles):
             a = 2 * math.pi * j / nPoles
             if (math.cos(a) > 0) != (half is front):
@@ -1897,11 +1910,11 @@ def gates(s, anim, frames, restIndex):
            "rest_frame_identical": None if restIndex is None else bool((frames[restIndex] == still).all())}
     outside = alphaBad = 0
     outsideSilhouette = []
-    # a ring scaffold is real scaffolding (poles with thickness, standing on the ground): its own pixels may stand
+    # a pole scaffold is real scaffolding (poles with thickness, standing on the ground): its own pixels may stand
     # outside the silhouette; nothing else may
     scaffoldOk = np.zeros((s.h, s.w), dtype=bool)
     for t in anim["tracks"]:
-        if t["effect"] == "site" and t.get("scaffold") == "ring":
+        if t["effect"] == "site" and t.get("scaffold") in SCAFFOLD_SHAPES:
             G, T = _site_geometry(s, t), _site_timeline(t)
             for j in range(t["siteFrames"]):
                 for mk, _ in sum(_scaffold(s, G, T, t, j), []):
