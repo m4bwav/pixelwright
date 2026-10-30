@@ -114,7 +114,8 @@ pxw.py review <batch> --port 8765
 
 Run it in the background. Sections come from every `*.gates.json` under the folder; extra sections (pick one of
 several candidate stills, approve a text brief) come from `<batch>/review-extra.json`
-([references/brief.md](references/brief.md#review-extra)). Clicks save to `<batch>/picks.json` (`keep`, `redo`
+([references/brief.md](references/brief.md#review-extra)). `--link URL LABEL` (repeatable) puts links at the top of the page,
+such as the askwright question set or inbox for questions that go with this review. Clicks save to `<batch>/picks.json` (`keep`, `redo`
 with a note, `drop`, or a candidate value); decided items leave the page, `redo` stays. Send the human one
 message: the URL and "click, then say done". When they say done, read `picks.json` and act on every item.
 

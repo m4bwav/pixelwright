@@ -4,6 +4,12 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261030-2 · 2026-10-30 · 0.8.8: review --link
+- because: user request (link the pick page to the questions inbox)
+- files: skills/pixelwright/scripts/pxw.py (`review_page`, `review` arguments), tests/test_pxw.py (`test_review_links`),
+  skills/pixelwright-animate/SKILL.md (review), .claude-plugin/plugin.json
+`pxw.py review --link URL LABEL` (repeatable) adds escaped links at the top of the review page.
+
 ### C-20261030-1 · 2026-10-30 · 0.8.7: a round scaffold for natural construction
 - because: user request, L-068
 - files: skills/pixelwright/scripts/pxw.py (`_scaffold`, `fx_site`, `SITE_TIMELINE`, `SITE_KEYS`, silhouette gate),
