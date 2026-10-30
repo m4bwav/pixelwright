@@ -156,6 +156,9 @@ still's palette, and the same gates run. Details: [references/effects.md](refere
   Real scaffolding needs visible thickness and must read at 1x (L-057).
 - Smoke that should follow a game state (fuel, heat, season) is one reusable overlay strip at a chimney anchor, not
   painted into each sprite's loop (L-058).
+- Adding a part to a still that already has strips (a chimney, a sign): lift it from a sibling sprite with a
+  saturation mask, add its rectangle to the region it rests on (`polys`) and re-make the strips from the new still,
+  so the part arrives with that region; stamp an active loop only where the patch area never moves (L-070).
 - Particles are hard-edged palette pixels with a 2 to 3 frame trail, never soft blurred circles.
 - Preview timing from the APNG or the engine, never from a GIF (256 colours, 10 ms steps).
 - Painted art: a part is the object's own colour family inside a loose shape, never the bare shape (soft edges

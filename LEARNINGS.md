@@ -864,3 +864,20 @@ house style, 128 px stills).
   takes one ledger and a ring of poles. All gates passed, last frame identical.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-30
+
+### L-070 · 2026-10-30 · A part added to a shipped still is lifted from a donor, then every strip is re-made from it
+- Trigger: a set of painted stills already had placement and active strips when the owner asked for a chimney on
+  every heated building; patching only the still would make the chimney pop in on the strip's last frame.
+- Hypothesis: a part copied from another sprite of the same set matches its light, palette and scale with no render;
+  a saturation mask (stone is grey, thatch and shingle are not) lifts the part without its roof. Strips built from the
+  still rebuild toward the new still for free when the part's rectangle joins the region it rests on.
+- Rule: lift the donor part with a low-saturation mask (HLS saturation under about 0.22, alpha over 200), set its base
+  a few rows into the roof on the ridge or the near slope so it covers only roof, then add its rectangle (1 px margin)
+  to the roof region's `polys` and re-run the placement plan, not a per-frame stamp. In an active strip, stamp every
+  frame only after checking the patch area is identical to the still in all of them. Check the arrival at 2x: the
+  part must come with the roof covering, never before it (L-066).
+- Evidence: fifteen 96 px stills got a 9x16 stone stack from one donor; all fifteen strips re-made from the new stills
+  passed every gate first run (0 px outside the silhouette, no new colours, last frame identical); two 32-frame active
+  loops were static under the patch. Two placements were moved by eye (one clipped a tower, one floated).
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-30
