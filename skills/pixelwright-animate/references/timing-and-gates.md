@@ -21,6 +21,9 @@ Checked 2026-10-23. Sources are the `R-` entries in the plugin's RESEARCH.md.
   p. 232; Silber exercise 8.3). Walks: 8 frames typical, 16 smooth.
 - In-betweens favour a key: frames bunched near the start or end pose read as weight; evenly spaced ones read as
   mechanical (Azzi pp. 232-234).
+- Machine in-betweens (FILM or RIFE, comfyui-gen `h3_assemble.py interp`) are evenly spaced and blend colours.
+  Run them on the video before cutting and snapping frames, never on snapped pixel art, and then pick frames
+  that bunch near the keys rather than keeping every one.
 - A steady move needs a steady step: 8 px over 6 frames steps 1, 2, 1, 1, 2 and judders (Computer Graphics:
   Principles and Practice, section 18.2); 4 px over 8 frames stalls every other frame. Let the frame count divide
   the distance or the period. `cadence_uneven` reports it.
