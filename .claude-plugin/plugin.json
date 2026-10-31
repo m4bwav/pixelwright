@@ -1,6 +1,6 @@
 {
   "name": "pixelwright",
-  "version": "0.8.11",
+  "version": "0.8.12",
   "description": "Pixel art for AI agents, made and animated in code and proved by gates. Make: an AI render, PixelLab output or drawing becomes real pixel art (true-grid snap, background cleared, palette locked to PICO-8, a file or the set's own sprites, binary alpha, stray pixels, outlines, crop to engine size, seamless tiles). Animate: an existing still moves inside region masks (glows, sparks, parts, construction) with the rest frame equal to the still and nothing outside the mask changed, packed as sheets with previews and a click-to-pick review page. One Python CLI (pxw.py, numpy and Pillow). Formerly spritewright.",
   "author": {
     "name": "Mark Rogers",

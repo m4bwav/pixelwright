@@ -894,3 +894,16 @@ house style, 128 px stills).
   middle; cutting the shed polygon at the rim line and dropping the ladder cleared the rest. Gates passed all three.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-30
+
+### L-072 · 2026-10-30 · A fenced yard is a pit with a clear floor
+- Trigger: a fence round a bare (transparent) yard with a thatched hut at the back, built with the pit order; the
+  hut's area showed pale vertical columns in every frame before it rose. Gates passed.
+- Hypothesis: the ground grown into a waiting prop comes from the nearest pixel with any alpha; in a bare yard those
+  are alpha 1 to 3 speckles and a soft-edged ramp, stretched upward into columns.
+- Rule: a fence round bare ground takes the pit order (fence as rim, yard as floor, hut as prop) with
+  `"propGround": "clear"`, so the hut's area stays empty until it rises. Walls and thatch of the same straw tone rule
+  out the frame order (the roof must differ from the walls).
+- Evidence: one 96 px still, two passes: grown ground streaked frames 5 to 24; `clear` left a clean empty yard, gates
+  pass on both. Test `test_natural_pit_prop_ground_clear_leaves_a_waiting_prop_empty`.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-30

@@ -73,6 +73,9 @@ a prop polygon over sand or stone a colour `select` (`wood`) so the polygon's gr
 Keep a prop to the part that stands against the sky: the ground shown under a waiting prop is stretched from the
 pixels below it and reads as streaks over a lumpy floor, so a frame or ladder lying on the floor or the rim goes
 with them instead (L-071).
+A fenced yard (a coop, a pen: a fence round bare ground, a hut inside) takes the pit order too: the fence as the
+rim, the yard as the floor, the hut as the prop, with `"propGround": "clear"` so the hut's area stays empty until it
+rises (the grown ground there is only faint edge pixels and streaks; L-072).
 `"scaffold"` (any natural plan) puts a pole scaffold up first and takes it down from the top over the last frames.
 Match the footprint: `"walls"` for square and oblong buildings (poles just outside each wall, one on every corner,
 up to the eaves), `"ring"` only for round pits and towers. Both are open work: 2 px poles about 26 px apart, a

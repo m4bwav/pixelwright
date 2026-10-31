@@ -911,6 +911,26 @@ class TestCommands(Base):
         self.assertEqual(code, 1)
         self.assertIn("floor", json.dumps(res))
 
+    def test_natural_pit_prop_ground_clear_leaves_a_waiting_prop_empty(self):
+        still, r = self.pit()
+        plan = json.loads((self.dir / "plan.json").read_text())
+        plan["propGround"] = "clear"
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        code, res = self.run_sw("assemble", "p.json", "p2.json", "--plan", "plan.json")
+        self.assertEqual(code, 0, res)
+        self.run_sw("frames", "p2.json", "out", "--no-aw")
+        g = json.loads((self.dir / "out" / "pit.gates.json").read_text())["place"]
+        self.assertTrue(g["pass"], g)
+        same = self.built(still, "pit-place-20f", "out")
+        sheet = self.sheet("pit-place-20f", "out")
+        yy, xx = np.mgrid[0:48, 0:48]
+        prop = (yy >= 14) & (yy < 28) & (xx >= 30) & (xx < 32)
+        rim = (r > 0.65) & (r <= 1)
+        # with the floor and rim laid but the prop not yet up, its pixels are empty, not the ground grown in
+        j = next(j for j in range(20) if same[j][rim].mean() > 0.94 and not same[j][prop].any())
+        self.assertFalse((sheet[:, j * 48:(j + 1) * 48, 3] > 0)[prop].any(), j)
+        self.assertTrue(same[19][prop].all())
+
     def test_natural_assemble_needs_the_geometry(self):
         self.cottage()
         plan = json.loads((self.dir / "plan.json").read_text())

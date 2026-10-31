@@ -4,6 +4,13 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261030-6 · 2026-10-30 · 0.8.12: `propGround: "clear"` for a fenced yard
+- because: L-072
+- files: skills/pixelwright/scripts/pxw.py (`fx_site`, `SITE_KEYS`, `VERSION`), skills/pixelwright-animate/SKILL.md
+  (pit order), tests/test_pxw.py, LEARNINGS.md (L-072), .claude-plugin/plugin.json
+A pit plan can leave a waiting prop empty instead of growing the ground into it: a yard's floor is bare, so the grown
+ground was faint edge pixels stretched into columns.
+
 ### C-20261030-5 · 2026-10-30 · 0.8.11: pit props only where they stand against the sky
 - because: L-071
 - files: skills/pixelwright-animate/SKILL.md (pit order), LEARNINGS.md (L-071), .claude-plugin/plugin.json,

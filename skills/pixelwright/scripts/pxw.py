@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.8.11"
+VERSION = "0.8.12"
 
 try:
     import numpy as np
@@ -1384,7 +1384,7 @@ def fx_site(s, f, k, t, i):
     `walls: "pit"` builds a dug site instead (a quarry, a clay pit): stakes and string, the `floor` region dug out
     from the diamond's centre, the rim's stones laid a `course` px block at a time round the ring from the front
     corner, then the `props` regions (crane, ladders, a hut) rising bottom up; a prop not yet up shows the ground
-    under it."""
+    under it, or nothing with `propGround: "clear"` (a fenced yard whose floor is bare)."""
     n = t["siteFrames"]
     if i >= n - 1:
         return
@@ -1407,7 +1407,7 @@ def fx_site(s, f, k, t, i):
     for mk, col in front:
         f[mk, :3] = col
         f[mk, 3] = 255
-    if t.get("walls") == "pit":
+    if t.get("walls") == "pit" and t.get("propGround") != "clear":
         # a prop not yet up shows the ground under it, once that ground is dug or laid
         idx = G["under"]
         show = G["props"] & ~b & (idx >= 0)
@@ -2222,7 +2222,7 @@ def cmd_assemble(a):
 
 SITE_KEYS = ("roof", "lumber", "groundBase", "wallHeight", "timberValue", "eave", "ridge", "ladder", "rafters",
              "timeline", "seed", "clip", "walls", "course", "roofOrder", "board", "floor", "props", "rimStep",
-             "scaffold", "ring")
+             "scaffold", "ring", "propGround")
 
 
 def _assemble_natural(a, brief, briefPath, plan):
