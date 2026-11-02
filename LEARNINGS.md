@@ -923,3 +923,24 @@ house style, 128 px stills).
   `test_natural_pit_prop_order_each_raises_props_one_after_another`.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-01
+
+### L-074 · 2026-11-01 · A stone building takes no timber roof stage; a small structure takes no scaffold
+- Trigger: a reviewer rejected two strips made with the ordinary frame order: an all-stone furnace got rafters and a
+  wooden roof frame inside it, and a 48 px well got a pole ring scaffold. A first stone pass with the log order also
+  stood the stack's top rim early (a floating ring), and a well roof traced as a tight polygon left its outline
+  pixels to the rim, so they drew before the roof.
+- Hypothesis: the log order measures each course from the sloped ground diamond, so pixels over its low side count
+  as low; the part above `wallHeight` becomes gable on the gable timeline; and a polygon fill leaves out its own
+  boundary pixels.
+- Rule: a building of stone only (furnace, kiln, tower) takes `"walls": "logs"` with the whole mass as walls, the
+  stack's dark mouth as the only `roof`, `"rafters": 0`, eave and ridge lines laid outside the roof polygon (so no
+  ridge pole or laths draw), no ladder or scaffold, a near-flat `groundBase` (same corner x, y within 3 px) and
+  `wallHeight` above the top row so nothing counts as gable. A small structure (a well) takes no scaffold: the pit
+  order with the water as floor, the stone ring as rim, props in build order (posts with their gear, then the roof)
+  with `"propOrder": "each"` and `"propGround"` listing the roof. Trace a roof prop as a generous box over everything
+  above the eaves, posts starting just below it. Keeping the posts' lower parts with the rim made the bucket and
+  stubs stand in the water before the stones: worse.
+- Evidence: a 96 px furnace (three passes) and a 48 px well (five passes), judged on the 1x and 3x rows; the gates
+  passed every time.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-01

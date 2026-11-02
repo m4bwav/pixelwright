@@ -80,6 +80,10 @@ A camp (tents round a fire, no fence) takes the pit order with the clearing as t
 with `"propOrder": "each"`; `"propGround"` as a list (`["tent", "tent2"]`) clears only those, so a flame prop
 (`select: "warm"`) waits on its fire bed. Pixels outside the floor and props are rim and draw early: give strays
 between polygons to the floor or a prop. No scaffold round tents (L-073).
+A building of stone only (a furnace, a kiln) takes no timber roof stage: `"walls": "logs"`, the stack's mouth as the
+only `roof`, `"rafters": 0`, eave and ridge outside it, a near-flat `groundBase` and `wallHeight` above the top row.
+A small structure (a well) takes no scaffold: the pit order, posts then roof as props with `"propOrder": "each"`
+(L-074).
 `"scaffold"` (any natural plan) puts a pole scaffold up first and takes it down from the top over the last frames.
 Match the footprint: `"walls"` for square and oblong buildings (poles just outside each wall, one on every corner,
 up to the eaves), `"ring"` only for round pits and towers. Both are open work: 2 px poles about 26 px apart, a
