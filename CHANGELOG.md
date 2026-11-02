@@ -4,6 +4,13 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261101-2 · 2026-11-01 · 0.8.14: stone buildings and small structures (docs only)
+- because: L-074
+- files: skills/pixelwright-animate/SKILL.md (natural plans), LEARNINGS.md (L-074), .claude-plugin/plugin.json,
+  skills/pixelwright/scripts/pxw.py (`VERSION`)
+How to build an all-stone building without rafters or a roof frame, and a small well without a scaffold, from the
+existing log and pit orders.
+
 ### C-20261101-1 · 2026-11-01 · 0.8.13: props one at a time, `propGround` per prop
 - because: L-073
 - files: skills/pixelwright/scripts/pxw.py (`fx_site`, `SITE_KEYS`, `VERSION`), skills/pixelwright-animate/SKILL.md
