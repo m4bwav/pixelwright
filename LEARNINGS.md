@@ -944,3 +944,18 @@ house style, 128 px stills).
   passed every time.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-01
+
+### L-075 · 2026-11-01 · A fire is lit after the building stands; a stack mouth is laid with its rim
+- Trigger: a reviewer rejected a furnace strip built per L-074: its hearths glowed from the first course, and the
+  stack's dark mouth, traced as the only roof, landed four frames after its rim, so the rim showed as a hollow ring
+  over the sky. A well whose water was dug before its ring floated apart in the first frames.
+- Hypothesis: the site effect reveals the still's own pixels, glow included, in build order; a part laid on a later
+  timeline than the stones round it leaves a hole; a floor dug before its rim has nothing round it.
+- Rule: darken a fire or glow while the building goes up and light it last, from the bed up: swap its pixels for
+  the still's own dark stone colours matched by brightness rank (no new colours), inside a box round each hearth (a
+  colour mask alone takes reddish stones too), leaving partly transparent pixels alone. Lay a stack's mouth with its
+  rim (the plan's roof a few top pixels). In the pit order start the rim before the floor (`walls` [0, 12], `dig`
+  [9, 14]) when the floor is water or anything that cannot stand alone.
+- Evidence: a 96 px furnace and a 48 px well, two passes each after review, judged on the 1x and 3x rows.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-01
