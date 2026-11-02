@@ -76,6 +76,10 @@ with them instead (L-071).
 A fenced yard (a coop, a pen: a fence round bare ground, a hut inside) takes the pit order too: the fence as the
 rim, the yard as the floor, the hut as the prop, with `"propGround": "clear"` so the hut's area stays empty until it
 rises (the grown ground there is only faint edge pixels and streaks; L-072).
+A camp (tents round a fire, no fence) takes the pit order with the clearing as the floor and the props in build order
+with `"propOrder": "each"`; `"propGround"` as a list (`["tent", "tent2"]`) clears only those, so a flame prop
+(`select: "warm"`) waits on its fire bed. Pixels outside the floor and props are rim and draw early: give strays
+between polygons to the floor or a prop. No scaffold round tents (L-073).
 `"scaffold"` (any natural plan) puts a pole scaffold up first and takes it down from the top over the last frames.
 Match the footprint: `"walls"` for square and oblong buildings (poles just outside each wall, one on every corner,
 up to the eaves), `"ring"` only for round pits and towers. Both are open work: 2 px poles about 26 px apart, a

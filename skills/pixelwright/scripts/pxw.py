@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.8.12"
+VERSION = "0.8.13"
 
 try:
     import numpy as np
@@ -1104,8 +1104,11 @@ def _site_geometry(s, t):
     roof = s.regions[t["roof"]] & s.opaque if t.get("roof") else none
     lumber = s.regions[t["lumber"]] & s.opaque if t.get("lumber") else none
     props = none.copy()
+    propList, propNames = [], []
     for name in ([t["props"]] if isinstance(t.get("props"), str) else t.get("props", [])):
-        props |= s.regions[name] & s.opaque
+        propList.append(s.regions[name] & s.opaque & ~props)
+        propNames.append(name)
+        props |= propList[-1]
     floor = s.regions[t["floor"]] & s.opaque & ~props if t.get("floor") else none
     walls = s.opaque & ~roof & ~lumber & ~floor & ~props
     val = rgb.max(axis=2) / 255
@@ -1143,7 +1146,7 @@ def _site_geometry(s, t):
     stone = s.opaque & (sat < 0.22) & (val > 0.35) & (val < 0.8)
     seed = t.get("seed", 7)
     geo = dict(L=L, F=F, R=R, B=B, up=np.array([0, -wallH], float), wallH=wallH, height=height, roof=roof,
-               lumber=lumber, floor=floor, props=props, radius=radius, around=around, under=under, walls=walls, timber=timber, infill=infill, gable=walls & (height > wallH + 1),
+               lumber=lumber, floor=floor, props=props, propList=propList, propNames=propNames, radius=radius, around=around, under=under, walls=walls, timber=timber, infill=infill, gable=walls & (height > wallH + 1),
                slope=de / np.maximum(de + dr, 1e-6), e0=e0, e1=e1, r0=r0, r1=r1, along=along, rake=rake,
                left=xx <= F[0],
                blk=_hash01(xx // 3, yy // 3, seed), fine=_hash01(xx, yy, seed + 1), xx=xx, yy=yy,
@@ -1217,9 +1220,17 @@ def _site_built(G, T, f, t=None):
             sel = rim & (bx == k[0]) & (by == k[1])
             aroundC[sel] = G["around"][sel].mean()
         m |= rim & _laid(_ramp(f, *T["walls"]), n, np.floor(aroundC * (n - 1)) + cell * 0.9)
-        if props.any():
-            y0, y1 = yy[props].min(), yy[props].max()
-            m |= props & (yy >= y1 - _ramp(f, *T["props"]) * (y1 - y0 + 1) + G["fine"] * 0.5)
+        # props rise bottom up, together, or with "propOrder": "each" one after another in list order
+        each = t.get("propOrder") == "each"
+        p0, p1 = T["props"]
+        parts = [q for q in G["propList"] if q.any()] if each else [props]
+        for n, q in enumerate(parts):
+            if not q.any():
+                continue
+            a0 = p0 + (p1 - p0) * n / len(parts)
+            a1 = p0 + (p1 - p0) * (n + 1) / len(parts)
+            y0, y1 = yy[q].min(), yy[q].max()
+            m |= q & (yy >= y1 - _ramp(f, a0, a1) * (y1 - y0 + 1) + G["fine"] * 0.5)
         return m
     roof = G["roof"]
     if t.get("roofOrder") == "boards" and roof.any():
@@ -1384,7 +1395,8 @@ def fx_site(s, f, k, t, i):
     `walls: "pit"` builds a dug site instead (a quarry, a clay pit): stakes and string, the `floor` region dug out
     from the diamond's centre, the rim's stones laid a `course` px block at a time round the ring from the front
     corner, then the `props` regions (crane, ladders, a hut) rising bottom up; a prop not yet up shows the ground
-    under it, or nothing with `propGround: "clear"` (a fenced yard whose floor is bare)."""
+    under it, or nothing with `propGround: "clear"` (a fenced yard whose floor is bare) or for the props a
+    `propGround` list names; `propOrder: "each"` raises the props one after another."""
     n = t["siteFrames"]
     if i >= n - 1:
         return
@@ -1407,10 +1419,15 @@ def fx_site(s, f, k, t, i):
     for mk, col in front:
         f[mk, :3] = col
         f[mk, 3] = 255
-    if t.get("walls") == "pit" and t.get("propGround") != "clear":
-        # a prop not yet up shows the ground under it, once that ground is dug or laid
+    pg = t.get("propGround")
+    if t.get("walls") == "pit" and pg != "clear":
+        # a prop not yet up shows the ground under it, once that ground is dug or laid; "propGround" as a list of
+        # prop names leaves just those empty while they wait
         idx = G["under"]
         show = G["props"] & ~b & (idx >= 0)
+        for name, q in zip(G["propNames"], G["propList"]):
+            if isinstance(pg, list) and name in pg:
+                show &= ~q
         show[show] = b.reshape(-1)[idx[show]]
         f[show] = src.reshape(-1, src.shape[-1])[idx[show]]
 
@@ -2221,7 +2238,7 @@ def cmd_assemble(a):
 
 
 SITE_KEYS = ("roof", "lumber", "groundBase", "wallHeight", "timberValue", "eave", "ridge", "ladder", "rafters",
-             "timeline", "seed", "clip", "walls", "course", "roofOrder", "board", "floor", "props", "rimStep",
+             "timeline", "seed", "clip", "walls", "course", "roofOrder", "board", "floor", "props", "propOrder", "rimStep",
              "scaffold", "ring", "propGround")
 
 
