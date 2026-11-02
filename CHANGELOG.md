@@ -4,6 +4,13 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261101-1 · 2026-11-01 · 0.8.13: props one at a time, `propGround` per prop
+- because: L-073
+- files: skills/pixelwright/scripts/pxw.py (`fx_site`, `SITE_KEYS`, `VERSION`), skills/pixelwright-animate/SKILL.md
+  (pit order), tests/test_pxw.py, LEARNINGS.md (L-073), .claude-plugin/plugin.json
+`"propOrder": "each"` raises a pit plan's props in list order, each over its own slice of the timeline; `"propGround"`
+takes a list of prop names to leave empty while the others show grown ground.
+
 ### C-20261030-6 · 2026-10-30 · 0.8.12: `propGround: "clear"` for a fenced yard
 - because: L-072
 - files: skills/pixelwright/scripts/pxw.py (`fx_site`, `SITE_KEYS`, `VERSION`), skills/pixelwright-animate/SKILL.md

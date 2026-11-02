@@ -907,3 +907,19 @@ house style, 128 px stills).
   pass on both. Test `test_natural_pit_prop_ground_clear_leaves_a_waiting_prop_empty`.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-10-30
+
+### L-073 · 2026-11-01 · A camp is a pit whose props go up one at a time
+- Trigger: a clearing with two tents and a fire ring, built with the pit order: all three props rose as one bottom-up
+  wipe, the flame was lit before the tents stood, and `propGround: "clear"` left a hole showing grass where the
+  flame waited inside the stone ring. Pixels between the polygons fell into the rim and drew a thin arc and a stick
+  over the sky early on. Gates passed every time.
+- Hypothesis: props were one merged mask on one timeline, and the empty-or-grown choice was global; a tent over sky
+  wants empty, a flame over a fire bed wants the ground grown up from below.
+- Rule: list the props in build order with `"propOrder": "each"` (each takes an equal slice of the props timeline),
+  and give `"propGround"` a list of the props to leave empty (tents, huts over sky), so the rest show grown ground.
+  Narrow a flame prop with `select: "warm"`. Every opaque pixel outside the floor and props is rim: print the rim
+  mask and give stray pixels between polygons to the floor or the prop they touch. No scaffold round tents.
+- Evidence: one 96 px still, six passes judged on the 1x and 3x rows. Test
+  `test_natural_pit_prop_order_each_raises_props_one_after_another`.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-01

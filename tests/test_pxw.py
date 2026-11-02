@@ -931,6 +931,43 @@ class TestCommands(Base):
         self.assertFalse((sheet[:, j * 48:(j + 1) * 48, 3] > 0)[prop].any(), j)
         self.assertTrue(same[19][prop].all())
 
+    def test_natural_pit_prop_order_each_raises_props_one_after_another(self):
+        still, r = self.pit()
+        still[14:28, 16:18] = [110, 70, 35, 255]
+        Image.fromarray(still, "RGBA").save(self.dir / "pit.png")
+        plan = json.loads((self.dir / "plan.json").read_text())
+        plan["regions"]["pole2"] = {"polys": [[[15, 13], [19, 13], [19, 28], [15, 28]]]}
+        plan["props"] = ["props", "pole2"]
+        plan["propOrder"] = "each"
+        plan["propGround"] = "clear"
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        code, res = self.run_sw("assemble", "p.json", "p2.json", "--plan", "plan.json")
+        self.assertEqual(code, 0, res)
+        self.run_sw("frames", "p2.json", "out", "--no-aw")
+        g = json.loads((self.dir / "out" / "pit.gates.json").read_text())["place"]
+        self.assertTrue(g["pass"], g)
+        same = self.built(still, "pit-place-20f", "out")
+        yy, xx = np.mgrid[0:48, 0:48]
+        first = (yy >= 14) & (yy < 28) & (xx >= 30) & (xx < 32)
+        second = (yy >= 14) & (yy < 28) & (xx >= 16) & (xx < 18)
+        # the second prop does not start until the first stands whole, and both end up built
+        started = [j for j in range(20) if same[j][second].any()]
+        self.assertTrue(started)
+        self.assertTrue(same[started[0]][first].all(), started[0])
+        self.assertTrue(any(0 < same[j][first].mean() < 1 and not same[j][second].any() for j in range(20)))
+        self.assertTrue(same[19][first].all() and same[19][second].all())
+        # "propGround" as a list clears only the props it names: the second waits empty, the first shows ground
+        plan["propGround"] = ["pole2"]
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        self.run_sw("assemble", "p.json", "p2.json", "--plan", "plan.json")
+        self.run_sw("frames", "p2.json", "out2", "--no-aw")
+        same = self.built(still, "pit-place-20f", "out2")
+        sheet = self.sheet("pit-place-20f", "out2")
+        j = max(j for j in range(20) if not same[j][first].any())
+        alpha = sheet[:, j * 48:(j + 1) * 48, 3] > 0
+        self.assertTrue(alpha[first].all(), j)
+        self.assertFalse(alpha[second].any(), j)
+
     def test_natural_assemble_needs_the_geometry(self):
         self.cottage()
         plan = json.loads((self.dir / "plan.json").read_text())
