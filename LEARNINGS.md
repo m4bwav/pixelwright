@@ -1036,15 +1036,16 @@ house style, 128 px stills).
     built in order with no stray lines or smears.
   - Scope: skill
   - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-02
-### L-081 · 2026-11-03 · An upgrade strip starts from the old level, not from bare ground
-  - Trigger: a level 2 building got a construction strip that starts on an empty site, but in play the level 1
-    building is already standing when it upgrades, so the strip would pop the old one away on its first frame.
-  - Hypothesis: each level is its own painting (1 to 16% of pixels shared between levels in a 12-pair sample), so
-    there is nothing to keep; the move that reads is the old building coming down inside the scaffold, then the
-    usual build.
-  - Rule: for an upgrade, give the natural plan `before` (the previous level's still) and a `demolish` window after
-    the scaffold is up; start footing and walls as the old one reaches the ground. A straight horizontal cut looks
-    like a slice: keep the edge ragged.
-  - Evidence: a cottage-to-house pilot at 1x and 3x read as thatch pulled off, then the new frame rising; gates pass.
+### L-081 · 2026-11-03 · An upgrade strip builds the new level over the old one
+  - Trigger: a level 2 building's strip that started on an empty site would pop the standing level 1 away. The first
+    fix tore the old building down roof first, then built the new one; the reviewer did not want to see it go down
+    and up, and the scaffold's back half was drawn in front of the old building.
+  - Hypothesis: each level is its own painting (1 to 16% of pixels shared in a 12-pair sample), so nothing carries
+    over pixel for pixel, but an upgrade reads as work on the standing building, not a demolition.
+  - Rule: give the natural plan `before` (the previous level's still). The old building stays inside the new
+    silhouette until the new work covers it (no holes), only what sticks out past it is wiped from the ground up over
+    `wipe`, and the scaffold's back half draws behind it, front half in front. Keep the wipe edge ragged.
+  - Evidence: cottage-to-house pilot at 1x and 2x: the new frame rises round the cottage and the tiles cover the
+    thatch; no hole, scaffold round it; gates pass.
   - Scope: skill
-  - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-03
+  - Status: active · helpful 1 · harmful 1 (the teardown version) · last_confirmed 2026-11-03
