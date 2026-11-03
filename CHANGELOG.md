@@ -4,6 +4,13 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261102-1 · 2026-11-02 · 0.8.16: a still showing the working state gets a cold idle still (docs only)
+- because: L-076
+- files: skills/pixelwright-animate/SKILL.md (natural plans), LEARNINGS.md (L-076), .claude-plugin/plugin.json,
+  skills/pixelwright/scripts/pxw.py (`VERSION`)
+A lit still is the active loop's base; the idle tile and the construction strip end on a cold still grafted from an
+image edit in the still's own colours.
+
 ### C-20261101-3 · 2026-11-01 · 0.8.15: fires lit last, stack mouths with their rim (docs only)
 - because: L-075
 - files: skills/pixelwright-animate/SKILL.md (natural plans), LEARNINGS.md (L-075), .claude-plugin/plugin.json,
