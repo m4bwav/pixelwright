@@ -4,6 +4,12 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261103-4 · 2026-11-03 · 0.8.23: learning on old-roof scraps in upgrade strips
+- because: L-082
+- files: LEARNINGS.md, plugin.json, pxw.py (version)
+
+Docs only: what to check in the last frames of a strip built with `before`, and the missing gate.
+
 ### C-20261103-3 · 2026-11-03 · 0.8.22: an upgrade's back footing, string, post and plates stand behind the old building
 - because: L-081 (user report)
 - files: skills/pixelwright/scripts/pxw.py (`_site_items`, `fx_site`, `VERSION`), tests/test_pxw.py, LEARNINGS.md (L-081), .claude-plugin/plugin.json

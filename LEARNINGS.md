@@ -1051,3 +1051,9 @@ house style, 128 px stills).
     thatch; no hole, scaffold round it, back footing hidden by the cottage; gates pass.
   - Scope: skill
   - Status: active · helpful 1 · harmful 2 (the teardown version; the back footing drawn over the old building) · last_confirmed 2026-11-03
+
+### L-082 · 2026-11-03 · An upgrade's old roof leaves scraps after the new roof lands
+- Trigger: review of five upgrade strips built over a previous level at 3x. The late frames showed old-roof pixels and laths along the ridge, detached fragments in the sky, and rafters running past both silhouettes where a long wing changed the footprint. The gates passed all of it.
+- Hypothesis: old pixels stay while they are inside the new silhouette, so the roof reveal's ragged edge exposes them until the rest frame. Rafters follow the traced ridge and do not know where either silhouette ends.
+- Rule: with `before`, look at the last five frames at 3x. Once the roof has landed, show the still's own pixels in the roof region and clear detached fragments on earlier frames. Set `rafters` to 0 when they would cross open sky. A gate for detached fragments and for rafters outside the old-plus-new silhouette would catch this; none exists yet.
+- Evidence: all five strips had the scraps, fixed by a post-pass from frame 26 of 30, with the rest frame identical to the still. One strip with a changed footprint needed `rafters: 0`.
