@@ -1007,3 +1007,15 @@ house style, 128 px stills).
   read as deep, dark mouths at 1x and 4x.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-02
+
+### L-079 · 2026-11-02 · On a small dark opening, skip the radial fade
+- Trigger: the L-078 rim fade on a furnace mouth about 12 px wide was rejected as puckered: the depth steps drew
+  concentric rings that pinched toward the centre. The larger mouth beside it, same method, was liked.
+- Hypothesis: on a small hole every fade step is a visible one-pixel ring, so the gradient reads as a shape of its own
+  instead of depth.
+- Rule: below roughly 14 px across, use a 1 px reveal in the rim's stone at about half brightness, then a flat dark
+  back from the still's darkest stone, the bottom one or two rows slightly lighter as a floor. Keep L-078 for larger
+  openings.
+- Evidence: a 96 px furnace; the small arch re-made this way read as a plain stone opening at 1x and 6x.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-02
