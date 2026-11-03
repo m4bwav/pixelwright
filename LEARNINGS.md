@@ -977,3 +977,18 @@ house style, 128 px stills).
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-02
 
+### L-077 · 2026-11-02 · A changed still means every strip that rests on it is re-made and re-shown
+- Trigger: a still was repainted (dark openings given an interior) and installed. The construction strip was re-made,
+  but the review GIF built from the old frames was not, so the reviewer still saw the old art and asked whether the
+  animation had been forgotten.
+- Hypothesis: the still is the rest frame of several outputs (construction strip, any loop built on it, contact
+  sheets, review GIFs and pages), and each is a copy made earlier; the gate only checks the one strip just made.
+- Rule: after any change to a still, list everything that starts or ends on it (every `*Place`/use/active strip whose
+  rest frame is that still, plus every GIF, contact sheet or pick page showing those strips), re-make each in the same
+  change, run its gates (`rest_frame_identical` must pass against the new still), and re-publish the review media
+  before saying it is done. Never report a still change without the strips and media that show it.
+- Evidence: a 96 px furnace; the strip was re-made and passed, the shared GIF still showed black openings until it
+  was rebuilt from the new frames.
+- Scope: skill
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-02
+
