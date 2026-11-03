@@ -1019,3 +1019,20 @@ house style, 128 px stills).
 - Evidence: a 96 px furnace; the small arch re-made this way read as a plain stone opening at 1x and 6x.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-02
+
+### L-080 · 2026-11-02 · Low or wide sites: no scaffold, and no prop over painted ground
+  - Trigger: a construction batch with fenced yards and a shed on a long dock. The walls scaffold round a low fence
+    or round a dock and moored boat drew thin poles and ledgers far above anything in the still, reading as wire. In a
+    yard with painted grass, a prop with the default ground fill left vertical smears under it until it rose; with
+    `propGround: "clear"` it left a bare hole in the grass instead.
+  - Hypothesis: the scaffold is sized from the ground diamond and the eave, so on a footprint much wider than it is
+    tall it is mostly empty frame. The ground fill can only guess what the prop hides, and painted grass shows the
+    guess.
+  - Rule: leave the scaffold off fenced yards, docks and anything under about a third as tall as it is wide. In a
+    pit-order yard whose floor is painted, make a building that stands on the floor part of the rim (it rises with
+    the fence) and keep props for things against the sky, such as trees, with `propGround` naming only them. Keep
+    `"clear"` for yards whose floor is bare.
+  - Evidence: two 192 px yards and a 96 px dock re-made this way; at 1x and 3x the fence, cottage and tree read as
+    built in order with no stray lines or smears.
+  - Scope: skill
+  - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-02
