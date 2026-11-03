@@ -84,7 +84,8 @@ A building of stone only (a furnace, a kiln) takes no timber roof stage: `"walls
 only `roof`, `"rafters": 0`, eave and ridge outside it, a near-flat `groundBase` and `wallHeight` above the top row.
 A small structure (a well) takes no scaffold: the pit order, posts then roof as props with `"propOrder": "each"`
 (L-074). Fires and glows stay dark until the building stands and light last; a stack's mouth is laid with
-its rim; a water floor is filled after its ring is started (L-075).
+its rim; a water floor is filled after its ring is started (L-075). A lit still is the active loop's base, not the
+idle one: graft an edit's cold hearths in the still's colours and end the construction on that (L-076).
 `"scaffold"` (any natural plan) puts a pole scaffold up first and takes it down from the top over the last frames.
 Match the footprint: `"walls"` for square and oblong buildings (poles just outside each wall, one on every corner,
 up to the eaves), `"ring"` only for round pits and towers. Both are open work: 2 px poles about 26 px apart, a

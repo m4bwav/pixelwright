@@ -959,3 +959,21 @@ house style, 128 px stills).
 - Evidence: a 96 px furnace and a 48 px well, two passes each after review, judged on the 1x and 3x rows.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-01
+
+### L-076 · 2026-11-02 · A still that shows the working state is not the idle still
+- Trigger: a reviewer said a furnace was shown lit while idle. Its only still had glowing mouths, the active loop
+  brightened them, and the construction strip (L-075) lit them on its last frame, so an idle furnace looked busy.
+- Hypothesis: a painter draws the building at its most characteristic, which for a fire, a mill or a smoking
+  chimney is the working state; the engine shows the still whenever the building is not working.
+- Rule: before animating, ask whether the still shows the working state (fire, glow, smoke, open sluice). If so,
+  make a cold idle still and use it as the base tile and the construction strip's last frame, with no lighting step;
+  the lit art stays the active loop's base. Make the cold parts with an image edit of the painting ("put the fires
+  out; keep everything else the same") and graft only the changed regions back: the edit repaints the whole picture
+  (lighter, outlined), so take the boxes round each hearth and any vent, widened to the firelight on nearby stone,
+  scale the edit's brightness so its stone matches the still's stone, and give each pixel the nearest-brightness
+  colour from the still's own neutral stone in those boxes. Nothing outside the boxes moves and no colour is new.
+- Evidence: a 96 px furnace; four edits at 1 MP, all kept the arches; rank mapping left the openings too light,
+  brightness matching gave dark, empty mouths; a first box missed the firelit ledge and a glowing vent.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-02
+
