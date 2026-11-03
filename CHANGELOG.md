@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261103-3 · 2026-11-03 · 0.8.22: an upgrade's back footing, string, post and plates stand behind the old building
+- because: L-081 (user report)
+- files: skills/pixelwright/scripts/pxw.py (`_site_items`, `fx_site`, `VERSION`), tests/test_pxw.py, LEARNINGS.md (L-081), .claude-plugin/plugin.json
+Site pieces on the B corner and the R-B and B-L edges are tagged as back and drawn before the old still; front pieces still draw over it.
+
 ### C-20261103-2 · 2026-11-03 · 0.8.21: upgrades build over the old level; the scaffold's back half stands behind it
 - because: L-081 (revised: user request)
 - files: skills/pixelwright/scripts/pxw.py (`fx_site`, `_site_old`, `SITE_TIMELINE`, `VERSION`), skills/pixelwright-animate/SKILL.md, tests/test_pxw.py, LEARNINGS.md (L-081), .claude-plugin/plugin.json

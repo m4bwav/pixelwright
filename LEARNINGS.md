@@ -1044,8 +1044,10 @@ house style, 128 px stills).
     over pixel for pixel, but an upgrade reads as work on the standing building, not a demolition.
   - Rule: give the natural plan `before` (the previous level's still). The old building stays inside the new
     silhouette until the new work covers it (no holes), only what sticks out past it is wiped from the ground up over
-    `wipe`, and the scaffold's back half draws behind it, front half in front. Keep the wipe edge ragged.
+    `wipe`, and everything on the back half of the new site (scaffold, footing, string, corner post and plates on
+    the B corner and the R-B and B-L edges) draws behind it, the front half in front. Keep the wipe edge ragged.
+    Every new layer added to an upgrade needs the same front or back call: the old building is a depth layer.
   - Evidence: cottage-to-house pilot at 1x and 2x: the new frame rises round the cottage and the tiles cover the
-    thatch; no hole, scaffold round it; gates pass.
+    thatch; no hole, scaffold round it, back footing hidden by the cottage; gates pass.
   - Scope: skill
-  - Status: active · helpful 1 · harmful 1 (the teardown version) · last_confirmed 2026-11-03
+  - Status: active · helpful 1 · harmful 2 (the teardown version; the back footing drawn over the old building) · last_confirmed 2026-11-03
