@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.8.21"
+VERSION = "0.8.22"
 
 try:
     import numpy as np
@@ -1362,7 +1362,8 @@ def _scaffold(s, G, T, t, f):
 def _site_items(s, G, T, t, f):
     """Temporary site elements at frame f as (mask, colour), drawn under built pixels: corner stakes and string on
     the ground diamond, a fieldstone footing laid near edges first, corner posts and wall plates, the ridge pole,
-    rafters and laths, a ladder."""
+    rafters and laths, a ladder. A third element, True, marks a piece on the back half (the B corner, the R-B and B-L
+    edges), which an upgrade draws behind the old building."""
     L, F, R, B, up, C = G["L"], G["F"], G["R"], G["B"], G["up"], G["cols"]
     xx, yy = G["xx"], G["yy"]
     items = []
@@ -1376,10 +1377,10 @@ def _site_items(s, G, T, t, f):
         n = _ramp(f, T["stakes"][0], T["stakes"][0] + 2)
         for j, c in enumerate([L, F, R, B]):
             if n * 4 >= j + 1 or f >= T["stakes"][0] + 2:
-                items.append((_line(s, c, c + [0, -3]) & ground, C["timber"]))
+                items.append((_line(s, c, c + [0, -3]) & ground, C["timber"], j == 3))
         if f >= T["stakes"][0] + 1:
-            for a, b in [(L, F), (F, R), (R, B), (B, L)]:
-                items.append((_line(s, a, b) & ~_line(s, a, a) & ground, C["string"]))
+            for j, (a, b) in enumerate([(L, F), (F, R), (R, B), (B, L)]):
+                items.append((_line(s, a, b) & ~_line(s, a, a) & ground, C["string"], j >= 2))
     pit = t.get("walls") == "pit"
     p = _ramp(f, *T["footing"])
     if p > 0 and f < T["footing_gone"] and not pit:
@@ -1390,16 +1391,16 @@ def _site_items(s, G, T, t, f):
             end = a + (b - a) * share
             mk = _line(s, a, end, 2) | _line(s, a + [0, -1], end + [0, -1], 2) | _line(s, a + [0, -2], end + [0, -2], 1)
             mk &= ground
-            items.append((mk, C["stone_dark"]))
-            items.append((mk & ((xx // 2 + yy) % 3 != 0) & (yy % 2 == (xx // 2) % 2), C["stone"]))
+            items.append((mk, C["stone_dark"], j >= 2))
+            items.append((mk & ((xx // 2 + yy) % 3 != 0) & (yy % 2 == (xx // 2) % 2), C["stone"], j >= 2))
     p = _ramp(f, *T["posts"])
     if p > 0 and f < T["frame_gone"] and t.get("walls") not in ("logs", "pit"):
-        for c in [B, L, R, F]:
-            items.append((_line(s, c + [0, -1], c + up * p, 2 if (c == F).all() else 1) & frame, C["timber"]))
+        for j, c in enumerate([B, L, R, F]):
+            items.append((_line(s, c + [0, -1], c + up * p, 2 if (c == F).all() else 1) & frame, C["timber"], j == 0))
         if p >= 1:
             q = _ramp(f, T["posts"][1], T["posts"][1] + 2)
-            for a, b in [(B + up, L + up), (B + up, R + up), (L + up, F + up), (F + up, R + up)]:
-                items.append((_line(s, a, a + (b - a) * q) & frame, C["timber_lit"]))
+            for j, (a, b) in enumerate([(B + up, L + up), (B + up, R + up), (L + up, F + up), (F + up, R + up)]):
+                items.append((_line(s, a, a + (b - a) * q) & frame, C["timber_lit"], j < 2))
     p = _ramp(f, *T["rafters"])
     if p > 0 and f < T["frame_gone"] and not pit:
         e0, e1, r0, r1 = G["e0"], G["e1"], G["r0"], G["r1"]
@@ -1453,10 +1454,21 @@ def fx_site(s, f, k, t, i):
         for mk, col in back:
             f[mk, :3] = col
             f[mk, 3] = 255
-        f[standing] = bf[standing]
-    for mk, col in _site_items(s, G, T, t, i):
+    items = []
+    for mk, col, *back_ in _site_items(s, G, T, t, i):
         if t.get("clip", True):
             mk = _drop_specks(mk)
+        items.append((mk, col, bool(back_ and back_[0])))
+    if bf is not None:
+        # the back half of the new work (back footing, string, corner post, plates) stands behind the old building
+        for mk, col, back_ in items:
+            if back_:
+                f[mk, :3] = col
+                f[mk, 3] = 255
+        f[standing] = bf[standing]
+    for mk, col, back_ in items:
+        if bf is not None and back_:
+            continue
         f[mk, :3] = col
         f[mk, 3] = 255
     if bf is None:

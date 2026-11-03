@@ -755,6 +755,19 @@ class TestCommands(Base):
         # poles and ledgers cross it
         up = next(j for j in range(20) if (fr[j][..., 3] > 0)[still[..., 3] == 0].sum() > 20)
         self.assertGreater(blue[up][4:30].sum(), 0.85 * blue[0][4:30].sum())
+        # the back half of the new work (back footing, string, corner post, plates) stands behind the old building:
+        # against the same strip with the footing held back, the early frames differ over the old one only in front
+        plan["timeline"] = {"stakes": [0, 0], "footing": [12, 13]}
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        self.run_sw("assemble", "c.json", "c3.json", "--plan", "plan.json")
+        self.run_sw("frames", "c3.json", "out3", "--no-aw")
+        bare = self.sheet("cottage-place-20f", "out3")
+        early = range(1, 4)  # footing laid, walls not started
+        diff = [(fr[j] != bare[:, j * 48:(j + 1) * 48]).any(-1) for j in early]
+        self.assertTrue(any(d.any() for d in diff))
+        for d in diff:
+            ys, xs = np.nonzero(d & (old[..., 3] > 0))
+            self.assertFalse(len(ys) and ys.min() < 38, list(zip(ys, xs))[:6])
         # never a hole: wherever the new building is not up yet, the old one still shows
         for j in range(19):
             self.assertFalse(((fr[j][..., 3] == 0) & (old[..., 3] > 0) & (still[..., 3] > 0)).any(), j)
