@@ -73,16 +73,14 @@ a prop polygon over sand or stone a colour `select` (`wood`) so the polygon's gr
 Keep a prop to the part that stands against the sky: the ground shown under a waiting prop is stretched from the
 pixels below it and reads as streaks over a lumpy floor, so a frame or ladder lying on the floor or the rim goes
 with them instead (L-071).
-A fenced yard (a coop, a pen: a fence round bare ground, a hut inside) takes the pit order too: the fence as the
-rim, the yard as the floor, the hut as the prop, with `"propGround": "clear"` so the hut's area stays empty until it
-rises (the grown ground there is only faint edge pixels and streaks; L-072).
+A fenced yard (a coop, a pen: a fence round bare ground, a hut inside) takes the pit order too: the fence as the rim,
+the yard as the floor, the hut as the prop, with `"propGround": "clear"` so the hut's area stays empty until it rises
+(L-072).
 A camp (tents round a fire, no fence) takes the pit order with the clearing as the floor and the props in build order
-with `"propOrder": "each"`; `"propGround"` as a list (`["tent", "tent2"]`) clears only those, so a flame prop
-(`select: "warm"`) waits on its fire bed. Pixels outside the floor and props are rim and draw early: give strays
-between polygons to the floor or a prop. No scaffold round tents (L-073).
-An upgrade (the building is standing at the old level when it plays) takes `"before": "<old level still>.png"`
-(same canvas): the strip opens on the old building, which comes down from the top over the `demolish` window with a
-ragged edge behind the scaffold; time `footing` and `walls` to start as it reaches the ground (L-081).
+with `"propOrder": "each"`; `"propGround"` as a list (`["tent", "tent2"]`) clears only those, so a flame prop waits on
+its fire bed. Give strays between polygons to the floor or a prop (they are rim and draw early). No scaffold round
+tents (L-073).
+An upgrade: `"before": "<old level still>.png"` opens on the old building and takes it down over `demolish` (L-081).
 A building of stone only (a furnace, a kiln) takes no timber roof stage: `"walls": "logs"`, the stack's mouth as the
 only `roof`, `"rafters": 0`, eave and ridge outside it, a near-flat `groundBase` and `wallHeight` above the top row.
 A small structure (a well) takes no scaffold: the pit order, posts then roof as props with `"propOrder": "each"`
