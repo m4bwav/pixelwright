@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261103-2 · 2026-11-03 · 0.8.21: upgrades build over the old level; the scaffold's back half stands behind it
+- because: L-081 (revised: user request)
+- files: skills/pixelwright/scripts/pxw.py (`fx_site`, `_site_old`, `SITE_TIMELINE`, `VERSION`), skills/pixelwright-animate/SKILL.md, tests/test_pxw.py, LEARNINGS.md (L-081), .claude-plugin/plugin.json
+No teardown: the old still stays inside the new silhouette until the new work covers it, what sticks out past it is wiped from the ground up over `wipe`, and the scaffold's back half draws behind the old building. `demolish` is gone.
+
 ### C-20261103-1 · 2026-11-03 · 0.8.20: upgrade strips (`before`: the old level comes down, the new one rises)
 - because: L-081
 - files: skills/pixelwright/scripts/pxw.py (`fx_site`, `_site_old`, `SITE_TIMELINE`, gates, `VERSION`), skills/pixelwright-animate/SKILL.md, tests/test_pxw.py, LEARNINGS.md (L-081), .claude-plugin/plugin.json

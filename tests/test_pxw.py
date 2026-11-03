@@ -731,12 +731,12 @@ class TestCommands(Base):
         self.assertGreater(g["drawn_outside_silhouette"], 0)
         self.assertFalse(g["pass"])
 
-    def test_natural_upgrade_opens_on_the_old_still_takes_it_down_from_the_top_and_ends_on_the_new(self):
+    def test_natural_upgrade_builds_over_the_old_still_and_wipes_it_from_the_ground_up(self):
         still, plan = self.cottage()
         old = np.zeros((48, 48, 4), dtype=np.uint8)
         old[2:41, 12:36] = [90, 110, 160, 255]  # a taller, narrower old building in colours the new still lacks
         Image.fromarray(old, "RGBA").save(self.dir / "old.png")
-        plan.update({"before": "old.png", "timeline": {"stakes": [0, 0], "demolish": [0, 8]}})
+        plan.update({"before": "old.png", "scaffold": "walls", "timeline": {"stakes": [0, 0]}})
         (self.dir / "plan.json").write_text(json.dumps(plan))
         code, res = self.run_sw("assemble", "c.json", "c2.json", "--plan", "plan.json")
         self.assertEqual(code, 0, res)
@@ -746,13 +746,20 @@ class TestCommands(Base):
         sheet = self.sheet("cottage-place-20f")
         fr = [sheet[:, j * 48:(j + 1) * 48] for j in range(20)]
         blue = [((f[..., :3] == [90, 110, 160]).all(-1) & (f[..., 3] > 0)) for f in fr]
-        # frame 0 is the old building (the first footing stones may sit over its foot); it comes down from the top: its top rows go before its bottom ones
         self.assertGreater(blue[0].sum(), 0.98 * (old[..., 3] > 0).sum())
-        mid = next(j for j in range(1, 9) if 0.2 * blue[0].sum() < blue[j].sum() < 0.7 * blue[0].sum())
-        self.assertFalse(blue[mid][2:6].any())
-        self.assertTrue(blue[mid][36:41].any())
-        # gone by the end of the demolition, and the strip ends on the new still
-        self.assertFalse(blue[9].any())
+        # never taken down: while most of it shows, its top above the new roof is still there
+        for j in range(20):
+            if blue[j].sum() > 0.3 * blue[0].sum():
+                self.assertTrue(blue[j][2:6].any(), j)
+        # the scaffold's back half stands behind it: with the scaffold up and the build not started, only the front
+        # poles and ledgers cross it
+        up = next(j for j in range(20) if (fr[j][..., 3] > 0)[still[..., 3] == 0].sum() > 20)
+        self.assertGreater(blue[up][4:30].sum(), 0.85 * blue[0][4:30].sum())
+        # never a hole: wherever the new building is not up yet, the old one still shows
+        for j in range(19):
+            self.assertFalse(((fr[j][..., 3] == 0) & (old[..., 3] > 0) & (still[..., 3] > 0)).any(), j)
+        # what sticks out past the new building is wiped by the end, and the strip ends on the new still
+        self.assertFalse((blue[-2] & (still[..., 3] == 0)).any())
         self.assertTrue((fr[-1] == still).all())
 
     def test_natural_walls_scaffold_follows_the_square_footprint_and_stays_light(self):

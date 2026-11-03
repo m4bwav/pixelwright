@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.8.20"
+VERSION = "0.8.21"
 
 try:
     import numpy as np
@@ -1024,7 +1024,7 @@ def fx_assemble(s, f, k, t, i):
 SITE_TIMELINE = {"stakes": [0, 10], "footing": [2, 6], "posts": [5, 10], "timber": [7, 13], "infill": [10, 17],
                  "walls": [6, 17], "gable": [14, 18], "rafters": [15, 19], "roof": [19, 27], "ladder": [9, 27],
                  "dig": [2, 10], "props": [19, 27],
-                 "scaffold": [0, 6], "scaffold_gone": [23, 29], "demolish": [2, 9]}
+                 "scaffold": [0, 6], "scaffold_gone": [23, 29]}
 
 
 _BEFORE_CACHE = {}
@@ -1044,8 +1044,9 @@ def _site_before(s, t):
 
 
 def _site_old(s, t, T, f):
-    """The part of the `before` still still standing at frame f: it comes down from the top, a row band at a time,
-    over `demolish`, behind the scaffold."""
+    """The part of the `before` still still showing at frame f. It is never taken down: the new building is raised
+    over it and covers it, and what sticks out past the new silhouette is wiped away from the ground up over `wipe` (default: from the walls' start to
+    the roof's end), so the old level stays until the new one stands round and over it."""
     b = _site_before(s, t)
     if b is None:
         return None, None
@@ -1053,13 +1054,15 @@ def _site_old(s, t, T, f):
     rows = np.nonzero(old.any(1))[0]
     if not len(rows):
         return b, old
-    k = _ramp(f, *T["demolish"])
+    k = _ramp(f, *T.get("wipe", [T["walls"][0], T["roof"][1]]))
     if k <= 0:
         return b, old
-    cut = rows.min() + (rows.max() + 1 - rows.min()) * k
-    # a ragged edge, a few px per column, so it reads as boards and thatch pulled off, not a ruler-straight slice
+    cut = rows.max() + 3 - (rows.max() + 5 - rows.min()) * k  # 2 px past each end, past the ragged edge
+    # a ragged edge, a few px per column, so the wipe never reads as a ruler-straight slice
     rag = np.array([_hash01(x, 7, t.get("seed", 1)) for x in range(s.w)]) * 4 - 2
-    return b, old & (np.arange(s.h)[:, None] >= cut + rag[None, :])
+    # inside the new silhouette the old level stays until the new work covers it, so no hole ever opens; the wipe
+    # clears only what sticks out past the new building
+    return b, old & ((np.arange(s.h)[:, None] < cut + rag[None, :]) | s.opaque)
 
 
 def _site_timeline(t):
@@ -1432,9 +1435,9 @@ def fx_site(s, f, k, t, i):
     corner, then the `props` regions (crane, ladders, a hut) rising bottom up; a prop not yet up shows the ground
     under it, or nothing with `propGround: "clear"` (a fenced yard whose floor is bare) or for the props a
     `propGround` list names; `propOrder: "each"` raises the props one after another.
-    `before` (a PNG path, same canvas) makes it an upgrade: the strip opens on that previous level's still, which comes
-    down from the top over `demolish` behind the scaffold while the new building rises; set the build's timeline keys
-    after `demolish`."""
+    `before` (a PNG path, same canvas) makes it an upgrade: the strip opens on that previous level's still and the new
+    building is raised over it, the old one standing in front of the scaffold's back half and wiped away from the
+    ground up over `wipe` as the new one rises."""
     n = t["siteFrames"]
     if i >= n - 1:
         return
@@ -1443,20 +1446,23 @@ def fx_site(s, f, k, t, i):
     src = f.copy()
     f[s.opaque] = 0
     f[~s.opaque] = s.still[~s.opaque]
+    back, front = _scaffold(s, G, T, t, i)
     bf, standing = _site_old(s, t, T, i)
     if bf is not None:
+        # an upgrade: the scaffold's back half stands behind the old building, the new work goes on over it
+        for mk, col in back:
+            f[mk, :3] = col
+            f[mk, 3] = 255
         f[standing] = bf[standing]
     for mk, col in _site_items(s, G, T, t, i):
         if t.get("clip", True):
             mk = _drop_specks(mk)
-        if bf is not None:
-            mk = mk & ~standing
         f[mk, :3] = col
         f[mk, 3] = 255
-    back, front = _scaffold(s, G, T, t, i)
-    for mk, col in back:
-        f[mk, :3] = col
-        f[mk, 3] = 255
+    if bf is None:
+        for mk, col in back:
+            f[mk, :3] = col
+            f[mk, 3] = 255
     b = _site_built(G, T, i, t) & s.opaque
     f[b] = src[b]
     for mk, col in front:
