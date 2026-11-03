@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.8.19"
+VERSION = "0.8.20"
 
 try:
     import numpy as np
@@ -1024,7 +1024,42 @@ def fx_assemble(s, f, k, t, i):
 SITE_TIMELINE = {"stakes": [0, 10], "footing": [2, 6], "posts": [5, 10], "timber": [7, 13], "infill": [10, 17],
                  "walls": [6, 17], "gable": [14, 18], "rafters": [15, 19], "roof": [19, 27], "ladder": [9, 27],
                  "dig": [2, 10], "props": [19, 27],
-                 "scaffold": [0, 6], "scaffold_gone": [23, 29]}
+                 "scaffold": [0, 6], "scaffold_gone": [23, 29], "demolish": [2, 9]}
+
+
+_BEFORE_CACHE = {}
+
+
+def _site_before(s, t):
+    """The previous level's still for an upgrade (`before`: a PNG path, the same canvas as the still), or None."""
+    path = t.get("before")
+    if not path:
+        return None
+    if path not in _BEFORE_CACHE:
+        b = np.array(Image.open(path).convert("RGBA"))
+        if b.shape[:2] != (s.h, s.w):
+            raise SystemExit(f"before {path} is {b.shape[1]}x{b.shape[0]}, the still is {s.w}x{s.h}")
+        _BEFORE_CACHE[path] = b
+    return _BEFORE_CACHE[path]
+
+
+def _site_old(s, t, T, f):
+    """The part of the `before` still still standing at frame f: it comes down from the top, a row band at a time,
+    over `demolish`, behind the scaffold."""
+    b = _site_before(s, t)
+    if b is None:
+        return None, None
+    old = b[..., 3] > 0
+    rows = np.nonzero(old.any(1))[0]
+    if not len(rows):
+        return b, old
+    k = _ramp(f, *T["demolish"])
+    if k <= 0:
+        return b, old
+    cut = rows.min() + (rows.max() + 1 - rows.min()) * k
+    # a ragged edge, a few px per column, so it reads as boards and thatch pulled off, not a ruler-straight slice
+    rag = np.array([_hash01(x, 7, t.get("seed", 1)) for x in range(s.w)]) * 4 - 2
+    return b, old & (np.arange(s.h)[:, None] >= cut + rag[None, :])
 
 
 def _site_timeline(t):
@@ -1396,7 +1431,10 @@ def fx_site(s, f, k, t, i):
     from the diamond's centre, the rim's stones laid a `course` px block at a time round the ring from the front
     corner, then the `props` regions (crane, ladders, a hut) rising bottom up; a prop not yet up shows the ground
     under it, or nothing with `propGround: "clear"` (a fenced yard whose floor is bare) or for the props a
-    `propGround` list names; `propOrder: "each"` raises the props one after another."""
+    `propGround` list names; `propOrder: "each"` raises the props one after another.
+    `before` (a PNG path, same canvas) makes it an upgrade: the strip opens on that previous level's still, which comes
+    down from the top over `demolish` behind the scaffold while the new building rises; set the build's timeline keys
+    after `demolish`."""
     n = t["siteFrames"]
     if i >= n - 1:
         return
@@ -1405,9 +1443,14 @@ def fx_site(s, f, k, t, i):
     src = f.copy()
     f[s.opaque] = 0
     f[~s.opaque] = s.still[~s.opaque]
+    bf, standing = _site_old(s, t, T, i)
+    if bf is not None:
+        f[standing] = bf[standing]
     for mk, col in _site_items(s, G, T, t, i):
         if t.get("clip", True):
             mk = _drop_specks(mk)
+        if bf is not None:
+            mk = mk & ~standing
         f[mk, :3] = col
         f[mk, 3] = 255
     back, front = _scaffold(s, G, T, t, i)
@@ -1931,6 +1974,13 @@ def gates(s, anim, frames, restIndex):
     # outside the silhouette; nothing else may
     scaffoldOk = np.zeros((s.h, s.w), dtype=bool)
     for t in anim["tracks"]:
+        bf = _site_before(s, t) if t["effect"] == "site" else None
+        if bf is not None:
+            # an upgrade's old building stands outside the new silhouette until it comes down
+            scaffoldOk |= bf[..., 3] > 0
+            union |= bf[..., 3] > 0
+            alphaOk |= bf[..., 3] > 0
+            allowed |= {tuple(int(v) for v in c) for c in bf[..., :3][bf[..., 3] > 0].reshape(-1, 3)}
         if t["effect"] == "site" and t.get("scaffold") in SCAFFOLD_SHAPES:
             G, T = _site_geometry(s, t), _site_timeline(t)
             for j in range(t["siteFrames"]):
@@ -2239,7 +2289,7 @@ def cmd_assemble(a):
 
 SITE_KEYS = ("roof", "lumber", "groundBase", "wallHeight", "timberValue", "eave", "ridge", "ladder", "rafters",
              "timeline", "seed", "clip", "walls", "course", "roofOrder", "board", "floor", "props", "propOrder", "rimStep",
-             "scaffold", "ring", "propGround")
+             "scaffold", "ring", "propGround", "before")
 
 
 def _assemble_natural(a, brief, briefPath, plan):

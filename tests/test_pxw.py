@@ -731,6 +731,30 @@ class TestCommands(Base):
         self.assertGreater(g["drawn_outside_silhouette"], 0)
         self.assertFalse(g["pass"])
 
+    def test_natural_upgrade_opens_on_the_old_still_takes_it_down_from_the_top_and_ends_on_the_new(self):
+        still, plan = self.cottage()
+        old = np.zeros((48, 48, 4), dtype=np.uint8)
+        old[2:41, 12:36] = [90, 110, 160, 255]  # a taller, narrower old building in colours the new still lacks
+        Image.fromarray(old, "RGBA").save(self.dir / "old.png")
+        plan.update({"before": "old.png", "timeline": {"stakes": [0, 0], "demolish": [0, 8]}})
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        code, res = self.run_sw("assemble", "c.json", "c2.json", "--plan", "plan.json")
+        self.assertEqual(code, 0, res)
+        self.run_sw("frames", "c2.json", "out", "--no-aw")
+        g = json.loads((self.dir / "out" / "cottage.gates.json").read_text())["place"]
+        self.assertTrue(g["pass"], g)
+        sheet = self.sheet("cottage-place-20f")
+        fr = [sheet[:, j * 48:(j + 1) * 48] for j in range(20)]
+        blue = [((f[..., :3] == [90, 110, 160]).all(-1) & (f[..., 3] > 0)) for f in fr]
+        # frame 0 is the old building (the first footing stones may sit over its foot); it comes down from the top: its top rows go before its bottom ones
+        self.assertGreater(blue[0].sum(), 0.98 * (old[..., 3] > 0).sum())
+        mid = next(j for j in range(1, 9) if 0.2 * blue[0].sum() < blue[j].sum() < 0.7 * blue[0].sum())
+        self.assertFalse(blue[mid][2:6].any())
+        self.assertTrue(blue[mid][36:41].any())
+        # gone by the end of the demolition, and the strip ends on the new still
+        self.assertFalse(blue[9].any())
+        self.assertTrue((fr[-1] == still).all())
+
     def test_natural_walls_scaffold_follows_the_square_footprint_and_stays_light(self):
         still, plan = self.cottage()
         empty = still[..., 3] == 0

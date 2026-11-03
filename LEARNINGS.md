@@ -1036,3 +1036,15 @@ house style, 128 px stills).
     built in order with no stray lines or smears.
   - Scope: skill
   - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-02
+### L-081 · 2026-11-03 · An upgrade strip starts from the old level, not from bare ground
+  - Trigger: a level 2 building got a construction strip that starts on an empty site, but in play the level 1
+    building is already standing when it upgrades, so the strip would pop the old one away on its first frame.
+  - Hypothesis: each level is its own painting (1 to 16% of pixels shared between levels in a 12-pair sample), so
+    there is nothing to keep; the move that reads is the old building coming down inside the scaffold, then the
+    usual build.
+  - Rule: for an upgrade, give the natural plan `before` (the previous level's still) and a `demolish` window after
+    the scaffold is up; start footing and walls as the old one reaches the ground. A straight horizontal cut looks
+    like a slice: keep the edge ragged.
+  - Evidence: a cottage-to-house pilot at 1x and 3x read as thatch pulled off, then the new frame rising; gates pass.
+  - Scope: skill
+  - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-03
