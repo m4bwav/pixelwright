@@ -992,3 +992,18 @@ house style, 128 px stills).
 - Scope: skill
 - Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-02
 
+### L-078 · 2026-11-02 · Fill a dark opening by fading its rim inward, not by inventing a back wall
+- Trigger: a cold furnace's flat black openings were filled with a painted interior (staggered brick courses, mortar,
+  an ash floor). The reviewer said it looked like a bad painting of a wall stuck in the hole; what they wanted was the
+  existing arch and jambs carried on into the dark.
+- Hypothesis: at sprite scale a drawn back wall reads as a flat surface right behind the opening, so the hole loses its
+  depth, and a regular pattern (courses, mortar) looks mechanical next to the painted stone. A gradient from the rim's
+  own colours to near black reads as depth with no new detail to judge.
+- Rule: for a dark opening (door, kiln or furnace mouth, window, cave), give each dark pixel the colour of the nearest
+  rim pixel dimmed by its distance inside (a falloff over most of the opening's half-width, roughly 0.8 at 1 px down to
+  under 0.1), a little darker under the top and a little lighter toward the floor, snapped to the still's palette. Add
+  no pattern the painting did not already have.
+- Evidence: a 96 px furnace with two arched mouths; the brick version was rejected, and the rim fade (10 px falloff)
+  read as deep, dark mouths at 1x and 4x.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-02

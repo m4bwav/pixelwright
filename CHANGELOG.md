@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261102-3 · 2026-11-02 · 0.8.18: fill a dark opening by fading its rim inward (docs only)
+- because: L-078, user request
+- files: LEARNINGS.md (L-078), .claude-plugin/plugin.json, skills/pixelwright/scripts/pxw.py (`VERSION`)
+A dark opening gets its rim's own colours fading into black with depth, not a drawn back wall or pattern.
+
 ### C-20261102-2 · 2026-11-02 · 0.8.17: a changed still re-makes every strip and review media resting on it (docs only)
 - because: L-077, user request
 - files: skills/pixelwright-animate/SKILL.md (natural plans), LEARNINGS.md (L-077), .claude-plugin/plugin.json,
