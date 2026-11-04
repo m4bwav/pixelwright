@@ -4,6 +4,12 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261104-1 · 2026-11-04 · 0.9.0: pixel type reference from Arcade Game Typography
+- because: user request (pre-approved book changes); the plugin had nothing on fonts
+- files: skills/pixelwright-make/references/pixel-type.md, skills/pixelwright-make/SKILL.md, plugin.json, pxw.py (version)
+
+Grid, drawing, character set, physical size, scaling up. No new commands.
+
 ### C-20261103-4 · 2026-11-03 · 0.8.23: learning on old-roof scraps in upgrade strips
 - because: L-082
 - files: LEARNINGS.md, plugin.json, pxw.py (version)
