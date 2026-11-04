@@ -1057,3 +1057,15 @@ house style, 128 px stills).
 - Hypothesis: old pixels stay while they are inside the new silhouette, so the roof reveal's ragged edge exposes them until the rest frame. Rafters follow the traced ridge and do not know where either silhouette ends.
 - Rule: with `before`, look at the last five frames at 3x. Once the roof has landed, show the still's own pixels in the roof region and clear detached fragments on earlier frames. Set `rafters` to 0 when they would cross open sky. A gate for detached fragments and for rafters outside the old-plus-new silhouette would catch this; none exists yet.
 - Evidence: all five strips had the scraps, fixed by a post-pass from frame 26 of 30, with the rest frame identical to the still. One strip with a changed footprint needed `rafters: 0`.
+
+### L-083 · 2026-11-03 · A catch-all `rest` weld can crash assemble on an empty part
+- Trigger: `pxw.py frames` raised IndexError in `_torch` on three buildings.
+- Hypothesis: a final `rest` weld step had no pixels left because the other parts already covered the silhouette.
+- Rule: drop the catch-all `rest` weld when the other parts cover the silhouette. `assemble` could reject empty parts.
+- Evidence: all three passed with the empty step skipped; `uncovered_pixels` stayed 0.
+
+### L-084 · 2026-11-03 · `sparks` `vy` must be a range
+- Trigger: TypeError with `vy: -1.5`.
+- Hypothesis: the effect unpacks `[min, max]`, and `references/effects.md` does not say so.
+- Rule: pass `vy` as `[min, max]`.
+- Evidence: `vy: [-2.0, -1.0]` passed.
