@@ -79,7 +79,7 @@ the yard as the floor, the hut as the prop, with `"propGround": "clear"` so the 
 A camp (tents round a fire, no fence) takes the pit order, the clearing as floor, and the props in build order with
 `"propOrder": "each"`; `"propGround"` as a list clears only those, so a flame prop waits on its fire bed. Give strays
 between polygons to the floor or a prop (they are rim and draw early). No scaffold round tents (L-073). An upgrade:
-`"before": "<old level still>.png"` builds the new one over the old, which stays until covered (L-081). `"roofFaces": [[eaveA, eaveB, ridgeB, ridgeA], ...]` frames a non-gable roof per face (L-085).
+`"before": "<old level still>.png"` builds the new one over the old, which stays until covered (L-081). `"roofFaces": [[eaveA, eaveB, ridgeB, ridgeA], ...]` frames a non-gable roof per face (L-086).
 A building of stone only (a furnace, a kiln) takes no timber roof stage: `"walls": "logs"`, the stack's mouth as the
 only `roof`, `"rafters": 0`, eave and ridge outside it, a near-flat `groundBase` and `wallHeight` above the top row.
 A small structure (a well) takes no scaffold: the pit order, posts then roof as props with `"propOrder": "each"`

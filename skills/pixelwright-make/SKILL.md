@@ -112,6 +112,10 @@ time, then `make` again.
 - Never smooth-resize pixel art; every scale in this skill is nearest-neighbour.
 - Never answer "is this AI-made" from the pixels.
 
+## Lettering
+
+A font, score digits or menu text on a pixel grid: read [references/pixel-type.md](references/pixel-type.md) before drawing. The snap and palette steps above still apply to each sheet.
+
 ## Maintenance
 
 Evergreen unit at the plugin root: `evergreen.json`, [RESEARCH.md](../../RESEARCH.md),

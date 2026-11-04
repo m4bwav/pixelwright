@@ -1070,7 +1070,7 @@ house style, 128 px stills).
 - Rule: pass `vy` as `[min, max]`.
 - Evidence: `vy: [-2.0, -1.0]` passed.
 
-### L-085 · 2026-11-04 · One rafter grid only fits a two-sided roof
+### L-086 · 2026-11-04 · One rafter grid only fits a two-sided roof
 - Trigger: a reviewer saw that the top frame on hipped, L-shaped and courtyard roofs matched neither the old building nor the new one.
 - Hypothesis: one eave and one ridge make a single flat plane of parallel lines, which is the shape of one slope of a gable and nothing else.
 - Rule: for any roof that is not a plain gable, give the plan `roofFaces`, one `[eaveA, eaveB, ridgeB, ridgeA]` per visible face, traced on the new still and checked with an overlay. Two ridge points can meet for a hip. Skip spires and tower caps. Rafters may stand over open sky when the new roof will fill it, since they then preview the new shape.
