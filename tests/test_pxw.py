@@ -677,6 +677,26 @@ class TestCommands(Base):
         (self.dir / "plan.json").write_text(json.dumps(plan))
         return a, plan
 
+    def test_roof_faces_frame_only_the_traced_faces(self):
+        def render(extra):
+            _, plan = self.cottage()
+            plan.update(extra)
+            (self.dir / "plan.json").write_text(json.dumps(plan))
+            code, res = self.run_sw("assemble", "c.json", "c2.json", "--plan", "plan.json")
+            self.assertEqual(code, 0, res)
+            code, res = self.run_sw("frames", "c2.json", "out", "--no-aw")
+            g = json.loads((self.dir / "out" / "cottage.gates.json").read_text())["place"]
+            self.assertTrue(g["pass"], g)
+            return self.sheet("cottage-place-20f").copy()
+
+        bare = render({"roofFaces": [[[8, 22], [9, 22], [9, 21], [8, 21]]]})
+        face = render({"roofFaces": [[[8, 22], [20, 22], [20, 8], [8, 8]]]})
+        grid = render({"rafters": 7})
+        cols = lambda sheet: {x % 48 for x in np.nonzero((sheet != bare)[6:18].any(-1).any(0))[0]}
+        self.assertTrue(cols(face), "the face draws a frame")
+        self.assertLessEqual(max(cols(face)), 21)
+        self.assertGreater(max(cols(grid)), 30)
+
     def test_natural_assemble_builds_up_from_the_ground_and_ends_on_still(self):
         still, plan = self.cottage()
         code, res = self.run_sw("assemble", "c.json", "c2.json", "--plan", "plan.json")

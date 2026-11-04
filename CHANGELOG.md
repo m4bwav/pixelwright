@@ -4,6 +4,12 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261104-1 · 2026-11-04 · 0.8.24: `roofFaces` frames a complex roof one face at a time
+- because: L-085 (user report)
+- files: pxw.py (natural site rafters), pixelwright-animate SKILL.md, tests, LEARNINGS.md
+
+A hipped, L-shaped or courtyard roof gets its ridge, rafters and laths per traced face instead of one eave and ridge grid.
+
 ### C-20261103-4 · 2026-11-03 · 0.8.23: learning on old-roof scraps in upgrade strips
 - because: L-082
 - files: LEARNINGS.md, plugin.json, pxw.py (version)
