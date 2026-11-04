@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261104-1 · 2026-11-04 · 0.9.1: `roofFaces` frames a complex roof one face at a time
+- because: L-086 (user report)
+- files: pxw.py (natural site rafters), pixelwright-animate SKILL.md, tests, LEARNINGS.md
+
+A hipped, L-shaped or courtyard roof gets its ridge, rafters and laths per traced face instead of one eave and ridge grid.
 ### C-20261104-1 · 2026-11-04 · 0.9.0: pixel type reference from Arcade Game Typography
 - because: user request (pre-approved book changes); the plugin had nothing on fonts
 - files: skills/pixelwright-make/references/pixel-type.md, skills/pixelwright-make/SKILL.md, plugin.json, pxw.py (version)

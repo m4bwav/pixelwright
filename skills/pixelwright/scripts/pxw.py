@@ -43,7 +43,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.9.0"
+VERSION = "0.9.1"
 
 try:
     import numpy as np
@@ -1403,16 +1403,21 @@ def _site_items(s, G, T, t, f):
                 items.append((_line(s, a, a + (b - a) * q) & frame, C["timber_lit"], j < 2))
     p = _ramp(f, *T["rafters"])
     if p > 0 and f < T["frame_gone"] and not pit:
-        e0, e1, r0, r1 = G["e0"], G["e1"], G["r0"], G["r1"]
-        items.append((_line(s, r0, r0 + (r1 - r0) * p, 2) & roofing, C["timber_lit"]))
-        n = t.get("rafters", 7)
-        for j in range(n):
-            if p * n >= j + 1:
-                u = j / (n - 1)
-                items.append((_line(s, e0 + (e1 - e0) * u, r0 + (r1 - r0) * u) & roofing, C["timber"]))
-        if p >= 1:
-            for u in (0.3, 0.6):
-                items.append((_line(s, e0 + (r0 - e0) * u, e1 + (r1 - e1) * u) & roofing, C["timber_lit"]))
+        faces = [[np.array(q, float) for q in face] for face in t.get("roofFaces", [])]
+        spans = faces or [[G["e0"], G["e1"], G["r1"], G["r0"]]]
+        for k_, (e0, e1, r1, r0) in enumerate(spans):
+            q = _ramp(p * len(spans), k_, k_ + 1)
+            if q <= 0:
+                continue
+            items.append((_line(s, r0, r0 + (r1 - r0) * q, 2) & roofing, C["timber_lit"]))
+            n = max(2, round(np.hypot(*(e1 - e0)) / FACE_RAFTER_PX)) if faces else t.get("rafters", 7)
+            for j in range(n):
+                if q * n >= j + 1:
+                    u = j / (n - 1)
+                    items.append((_line(s, e0 + (e1 - e0) * u, r0 + (r1 - r0) * u) & roofing, C["timber"]))
+            if q >= 1:
+                for u in (0.3, 0.6):
+                    items.append((_line(s, e0 + (r0 - e0) * u, e1 + (r1 - e1) * u) & roofing, C["timber_lit"]))
     if t.get("ladder") and T["ladder"][0] <= f < T["ladder"][1]:
         lb, lt = (np.array(p_, float) for p_ in t["ladder"])
         for off in (0, 3):
@@ -2305,15 +2310,17 @@ def cmd_assemble(a):
              empty_parts=empty, steps_ending_after_assembly=late), 0 if ok else 1)
 
 
+FACE_RAFTER_PX = 7  # rafter spacing along a `roofFaces` eave
 SITE_KEYS = ("roof", "lumber", "groundBase", "wallHeight", "timberValue", "eave", "ridge", "ladder", "rafters",
              "timeline", "seed", "clip", "walls", "course", "roofOrder", "board", "floor", "props", "propOrder", "rimStep",
-             "scaffold", "ring", "propGround", "before")
+             "scaffold", "ring", "propGround", "before", "roofFaces")
 
 
 def _assemble_natural(a, brief, briefPath, plan):
     """A natural plan: {"vocabulary": "natural", "frames": N, "regions": {roof, lumber}, "roof": name, "lumber": name,
     "groundBase", "wallHeight", "eave", "ridge", "ladder", "rafters", "timeline", "timberValue", "seed", "fps",
-    "walls": "logs", "course", "roofOrder": "boards", "board"}. A pit (`"walls": "pit"`) needs "floor" (the dug floor
+    "walls": "logs", "course", "roofOrder": "boards", "board", "roofFaces": [[eaveA, eaveB, ridgeB, ridgeA], ...]}.
+    `roofFaces` frames a hipped, L-shaped or courtyard roof one face at a time, in place of the single eave and ridge grid. A pit (`"walls": "pit"`) needs "floor" (the dug floor
     region) instead of roof, eave and ridge; "props" (crane, ladders, a hut) rise last, bottom up; "rimStep".
     Prefixes the animation (created when the brief has none by that name) with a `site` track."""
     pit = plan.get("walls") == "pit"
