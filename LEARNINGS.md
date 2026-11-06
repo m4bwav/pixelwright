@@ -132,3 +132,9 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: all three passed with the empty step skipped; `uncovered_pixels` stayed 0. Reproduced on 0.9.1, 2026-11-05: a second weld step with no pixels left raises the IndexError at `_torch`.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-05
+
+### L-086 · 2026-11-05 · A rect rotate region turns whatever sits behind the wheel
+- Trigger: a reviewer rejected a winch wheel because part of the fixed brace turned with it; every gate had passed.
+- Hypothesis: `rotate` takes all pixels in its rects, and no gate can tell a wheel from the structure it overlaps.
+- Rule: when a rotating part overlaps structure, drop the rotate track and spin a colour-and-radius mask taken from the still, leaving the rest on the plate; fill rim gaps by angle. Zoom into the part across the turn before review.
+- Evidence: take 2 kept the brace fixed in a zoomed frame check; reviewer verdict pending.
