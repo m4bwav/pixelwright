@@ -2,7 +2,7 @@
 
 Checked 2026-10-23 against `sw.py` 0.5.0 (`pxw.py` since 0.6.0). Every track: `effect`, `region`, optional `curve` (one value per frame;
 missing = 1.0 every frame). Tracks run in order on a copy of the still, so a later track sees an earlier one's
-pixels. Colours in parameters are `[r, g, b]`. Output colours are snapped to the region's ramp (its `select`
+pixels, except `shift`, `scroll` and `rotate`, which copy from the still (Rules from use). Colours in parameters are `[r, g, b]`. Output colours are snapped to the region's ramp (its `select`
 pixels plus `extraColours`) or the full still palette, so no stray colour appears.
 
 | Effect | What it does | k means | Parameters |
@@ -11,7 +11,7 @@ pixels plus `extraColours`) or the full still palette, so no stray colour appear
 | `spill` | additive light on the surface around a source box, falling off | strength now | `source` box, `tint`, `radius` (10), `strength` (0.5) |
 | `darken` | desaturate and darken (power off) | 1 = fully off | `amount` (0.55), `desat` (0.7), `ramp` (snap to region ramp) |
 | `glint` | bright diagonal band sweeping across | band position 0 to 1 | `hot`, `width` (3), `slope` (1), `strength` |
-| `sparks` | 1 px sparks from a source, arcing and cooling | unused | `source` box, `bornFrames`, `colours` (hot to ember), `count`, `vy`, `gravity`, `seed` |
+| `sparks` | 1 px sparks from a source, arcing and cooling | unused | `source` box, `bornFrames`, `colours` (hot to ember), `count`, `vy` (`[min, max]`, never one number, L-084), `gravity`, `seed` |
 | `dust` | soft cloud band at the base, thinning | density | `band` [y0, y1], `colour`, `opacity`, `cell`, `drift`, `seed`, `lumpy` (a different height per column; `assemble` sets it) |
 | `puffs` | steam or smoke puffs rising, growing, thinning (2 shades, binary alpha) | unused | `source` [x, y], `bornFrames`, `colours` [light, mid], `life`, `vx`, `r0`, `grow`, `seed` |
 | `brighten` | multiplies the region's own pixels brighter (or dimmer at k < 0), warm-tinted, so painted texture keeps its contrast; use instead of `pulse` on painted art (L-017) | gain now (negative dims) | `gain` (0.6), `tint` per-channel weights (`[1, 0.8, 0.5]`); `hotspot` [x, y] with `radius` (8) and `floor` (0.2) makes the light come from one point and fall off (a fire hottest at the back lights the walls and floor less with distance, L-023), `coreTint` (e.g. `[1, 1, 1]`) whitens toward the hotspot |
@@ -89,6 +89,49 @@ Seeds make every run byte-identical; change `seed` for a different scatter.
 - Conveyor: `scroll` on the belt stripes with `period` = the stripe spacing; a full curve 0 to 1 returns to the
   still, so it loops.
 
+## Rules from use
+
+What reviewers and failed gates taught. Read before writing tracks.
+
+- **Size**: a part's far end travels at least 2 to 3 px, or it is lost at game zoom (L-004). A thin part under
+  about 3% of the opaque pixels cannot carry a use animation at any angle: pick another part or add a track with
+  area, never a bigger angle or a looser gate (L-018).
+- **Particles**: a smoke or spark source needs 8 px of transparent sky above it inside the frame (L-005). Clouds are
+  `dust` or `puffs`; fresh per-pixel noise each frame reads as TV static (L-003). Cut puff texture from a plume's
+  densest paint: its soft edge makes rings (L-036).
+- **Belts**: fit a `scroll` region to the belt alone at 12x with a 1 px grid; a loose shape moves the wall too (L-010).
+- **Flares**: `strength` 1.0 and 3 to 4 graded hot colours in `extraColours`, since the snap gives a pulse only as
+  many visible steps as the ramp has colours (L-006).
+- **Lights on at rest**: `pulse` barely moves them; carry the motion with a warm `spill` on the surface around them,
+  same curve. That reaches the 8% share only on a big lit area; small lights need a moving part (L-012).
+- **Painted fire**: `brighten` with `hotspot` at the deepest, hottest point, `radius` the distance from the back to
+  the mouth minus 2, `floor` 0.15 to 0.25, `coreTint` [1, 1, 1]. Mask by what it is (saturated pixels plus the dark
+  inner walls) inside an ellipse, 2 px edge ring at gain 0.25, outer stone lip at 0.12 or less, so the rim stays near
+  its painted tone (L-023).
+- **Parts set into a building**: `rotate` with `"behind": "still"` and a disc polygon on the real hub; the default
+  punches holes in an opaque rim. `alpha: true` only against sky, or on a `shift` or `scroll` zone whose source has
+  partial alpha (L-014).
+- **One moving effect per pixel**: `shift`, `scroll` and `rotate` all copy from the still, so the last one wins
+  outright. Compose both motions into a sheet and paste it with `external` on a zone covering the travel. An arm with
+  a hanging load is `rotate` on the arm plus `shift` on the load by the wrist's offset, same curve (L-015).
+- **Carts and cables**: a `cart` only where it visibly enters or leaves something, in its load's colours. Bring a
+  cable or pipe in with `telescope`; `hinge` on a thin curve draws a solid wedge (L-011).
+- **Frames you generate**: start from a copy of the still and clear only its opaque pixels. Transparent pixels carry
+  colour bytes, and a canvas of zeros fails `rest_frame_identical` with nothing visibly wrong (L-053).
+
+## Natural construction
+
+Beyond SKILL.md step 2. The gates pass all of these; judge the 1x and 3x rows.
+
+- **Chimney, lantern, belfry**: follow it down at 8x. Notch it out of the roof polygon only when its masonry reaches
+  the ground diamond; one on the roof slope stays in the polygon or it floats over half-built walls (L-066).
+- **Low or wide sites**: no scaffold on fenced yards, docks or anything under about a third as tall as wide; it reads
+  as wire. In a pit-order yard with a painted floor, a building standing on the floor goes with the rim, and props
+  are for things against the sky, with `propGround` naming only them. Keep `"clear"` for bare floors (L-080).
+- **Upgrades (`before`)**: look at the last five frames at 3x for old-roof scraps along the ridge and fragments in
+  the sky. Once the roof has landed, show the still's pixels in the roof region and clear detached fragments in a
+  post-pass. `rafters: 0` when they would cross open sky and no `roofFaces` covers it. No gate catches this yet (L-082).
+
 ## Model rotate
 
 For a part that turns (wheel, millstone, sail, gear) when a 3D model of the building exists. The render folder
@@ -125,6 +168,9 @@ short of it, and set `"rest": "none"`. Give the region from the ID pass: `"wheel
 from the downscaled painted frame 0, so the rest of the region keeps the still byte for byte. `gates.json` reports
 `model.<part>.unmatched_px` per frame: body points frame 0 never shows in any sector, filled from the nearest part
 colour (L-041 to L-043). No pos pass: `rotate` with `plane` is the fallback for a thin part.
+
+Build a level's loop from the exact file that was picked, with the tone references its still used, then compare
+strip frame 0 with the still: only the moving part may differ, or the building jumps in colour when work starts (L-044).
 
 ## External
 

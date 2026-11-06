@@ -6,6 +6,13 @@ A test passes on evidence (a tool call in the trace, a file, a marker, a log lin
 
 Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then one line per failing case (`id · kind · class · what the evidence showed`), then `led to:` (L-, C-, R- ids or none). Newest first. Budget 150 lines; archive older runs to `TESTS-ARCHIVE.md`.
 
+## Case design
+
+- Copy only the input into a case's `files`. A checker or fixture source in there hands the baseline the answer; ship a
+  fixture that writes the input from embedded bytes (L-049).
+- Before an A/B, run the obvious ten-line script through the checker, on the shipped bytes. If it passes, the baseline
+  will too, so spend the A/B elsewhere (L-054).
+
 ## Runs
 
 ### T-20261026-1 · 2026-10-26 · unittest + structure checks · Windows · 55 animation tests and 37 make tests passed
