@@ -175,3 +175,10 @@ flicker is report-only unless capped, and cadence remains report-only. Calibrati
 set from the owner. Deferred effects and palette work remain deferred. The coordinating session owns the
 docs-only record PR and worktree cleanup.
 ## [2026-10-26] index | rebuilt (2 entries)
+
+## 2026-11-05: learnings consolidation, 0.9.2
+
+83 active learnings down to 10: 59 promoted, 14 retired or merged, all kept in the new LEARNINGS-ARCHIVE.md with
+reasons (C-20261105-1). New text went to effects.md (Rules from use, Natural construction) and TESTS.md (Case design);
+SKILL.md was left alone because pixelwright-animate is at the 200-line limit. 63 animation tests, 37 make tests and
+structure checks pass. Reproduced L-085 on 0.9.1. Owed code work is in HANDOFF.md. 0.9.2 is not tagged.

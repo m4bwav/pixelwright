@@ -40,7 +40,7 @@
     }
   ],
   "counts": {
-    "learnings": 0,
+    "learnings": 1,
     "changes": 0,
     "research": 0,
     "tests": 0
@@ -53,7 +53,9 @@
     "cases": 13,
     "passed": 5,
     "failed": 1,
-    "failing": ["action-1 (2/3, evidence regex missed one sheet build, T-20261023-2)"],
+    "failing": [
+      "action-1 (2/3, evidence regex missed one sheet build, T-20261023-2)"
+    ],
     "last_failure": "2026-10-23",
     "research_after_days": null
   }

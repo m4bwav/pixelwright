@@ -4,7 +4,17 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
-### C-20261104-1 · 2026-11-04 · 0.9.1: `roofFaces` frames a complex roof one face at a time
+### C-20261105-1 · 2026-11-05 · 0.9.2: learnings consolidated, 83 active to 10
+- because: consolidation due (83 > 25); L-ids below
+- files: LEARNINGS.md, LEARNINGS-ARCHIVE.md (new), skills/pixelwright-animate/references/effects.md (Rules from use, Natural construction, Model rotate, table, track-order note), references/brief.md, skills/pixelwright-make/references/recipe.md (snap), TESTS.md (Case design), plugin.json, pxw.py (version)
+
+Docs only; no effect or make output changes. The 0.9.1 entry shared the ID C-20261104-1 with 0.9.0 and is now C-20261104-2. brief.md cited L-046 for `display: full`; it is L-052. effects.md said every later track sees earlier pixels, which `shift`, `scroll` and `rotate` do not.
+Promoted: L-001, L-002, L-003, L-004, L-005, L-006, L-007, L-008, L-009, L-010, L-011, L-012, L-014, L-015, L-018, L-023, L-030, L-031, L-034, L-036, L-037, L-038, L-039, L-040, L-041, L-042, L-043, L-044, L-049, L-052, L-053, L-054, L-055, L-056, L-057, L-058, L-059, L-060, L-061, L-062, L-063, L-064, L-065, L-066, L-067, L-069, L-070, L-071, L-072, L-073, L-074, L-075, L-076, L-077, L-080, L-081, L-082, L-084, L-086.
+Retired or merged: L-017, L-019, L-020, L-021, L-024, L-025, L-026, L-035, L-045, L-046, L-047, L-048, L-068, L-079.
+Edited, still active: L-016 (takes L-019), L-027 (takes L-021, L-024), L-028, L-029 (test path), L-085 (reproduced on 0.9.1; Scope and Status added).
+Survivors that took merged rules: L-023 (L-020, L-026), L-036 (L-035), L-069 (L-068), L-078 (L-079).
+
+### C-20261104-2 · 2026-11-04 · 0.9.1: `roofFaces` frames a complex roof one face at a time
 - because: L-086 (user report)
 - files: pxw.py (natural site rafters), pixelwright-animate SKILL.md, tests, LEARNINGS.md
 

@@ -44,7 +44,8 @@ pxw.py palettes
   to 0.05%, and an integer that fits as well is taken exactly. A few edges line up with some period by chance, so
   fewer than 8 edge positions, or a best coherence under 0.5 or 2.8/sqrt(edges) (random edges reach about
   2.6/sqrt(edges) one time in 20), means no grid (scale 1). One axis with no grid takes the other's scale only when
-  that one rests on 16 or more edges.
+  that one rests on 16 or more edges. A real 16 px sprite has about 10 edges at coherence 0.94 to 0.95, just inside
+  the line: do not raise it without a fixture that small (L-061).
   Each block keeps its inner 60% and takes the most common colour at 5 bits a channel, averaged inside that bin:
   the block's own colour, not a blend of its neighbours.
 - **palette**: nearest colour in OKLab (distance follows how different colours look). Median cut is

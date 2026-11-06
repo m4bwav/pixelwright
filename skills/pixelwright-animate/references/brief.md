@@ -64,5 +64,5 @@ A region without `alpha` and without `select` is cut to the still's opaque pixel
 `kind`: `choose` (one button per candidate image plus "None fit"), `approve` (Approve, Redo, Drop) or anything
 else (Keep, Redo, Drop); `info` shows text and images with a note field and no buttons (context, not a
 decision). `"display": "full"` shows the item's images at their own resolution, smoothly scaled to the page width,
-for paintings and illustrations (the default is the sprite's 3x pixel zoom) (L-046). `heading` starts a new heading
+for paintings and illustrations (the default is the sprite's 3x pixel zoom) (L-052). `heading` starts a new heading
 above the item. Image paths are relative to the batch folder.

@@ -7,6 +7,13 @@ The follow-up was based on the 0.8.3 source and limited to flicker motion
 matching, its tests, the fog warning and fixture, and the format of `flicker_at`. Source and manifest versions
 both say 0.8.4. No effect or make output is meant to change.
 
+## Owed code (from the 2026-11-05 consolidation, each needs a test)
+
+- L-085: `frames` raises IndexError at `_torch` on an empty `assemble` step; skip or reject it with a message.
+- L-082: no gate for detached fragments or rafters outside the old-plus-new silhouette on upgrade strips.
+- L-015: `shift`, `scroll` and `rotate` copy from the still, so they cannot stack; a `compose` effect or reading
+  the current frame would fix it, but output must stay byte-identical for existing briefs.
+
 ## Next single action
 
 Commit these publication records and the exact `2026-10-26-wiki-verify-084.out.txt` transcript in the
