@@ -128,7 +128,7 @@ Write an entry the moment a real signal happens: a user correction, the same err
 ### L-085 · 2026-11-03 · A catch-all `rest` weld can crash assemble on an empty part
 - Trigger: `pxw.py frames` raised IndexError in `_torch` on three buildings.
 - Hypothesis: a final `rest` weld step had no pixels left because the other parts already covered the silhouette.
-- Rule: drop the catch-all `rest` weld when the other parts cover the silhouette. `pxw.py assemble` reports these as `empty` with `ok: false`; a hand-written track gets the crash. Owed: make `frames` skip or reject an empty step with a message.
+- Rule: drop the catch-all `rest` weld when the other parts cover the silhouette. `pxw.py assemble` reports these as `empty` with `ok: false`; a hand-written track gets the crash. Since 2026-11-05 `frames` draws no machine for an empty step.
 - Evidence: all three passed with the empty step skipped; `uncovered_pixels` stayed 0. Reproduced on 0.9.1, 2026-11-05: a second weld step with no pixels left raises the IndexError at `_torch`.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-05

@@ -4,6 +4,10 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261105-2 · 2026-11-05 · frames no longer crashes on an empty weld step
+- because: L-085
+- files: skills/pixelwright/scripts/pxw.py (_drones_at, puff sources), tests/test_pxw.py, LEARNINGS.md
+
 ### C-20261105-1 · 2026-11-05 · 0.9.2: learnings consolidated, 83 active to 10
 - because: consolidation due (83 > 25); L-ids below
 - files: LEARNINGS.md, LEARNINGS-ARCHIVE.md (new), skills/pixelwright-animate/references/effects.md (Rules from use, Natural construction, Model rotate, table, track-order note), references/brief.md, skills/pixelwright-make/references/recipe.md (snap), TESTS.md (Case design), plugin.json, pxw.py (version)

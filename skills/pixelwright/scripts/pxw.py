@@ -769,7 +769,7 @@ def _drones_at(st, m, bb, t, ground):
     flies in, the welding drone while it welds, and both as they leave for 3 frames after."""
     a, b = st["at"]
     how = st["how"]
-    if how not in ("drone", "weld") or t < a or t >= b + 4:
+    if how not in ("drone", "weld") or t < a or t >= b + 4 or not m.any():  # an empty part has no machine
         return []
     x0, y0, x1, y1 = bb
     w = x1 - x0
@@ -812,7 +812,7 @@ def _dust_sources(parts, j, ground):
             ox = int(round((1 - p) * fx_))
             rear = (x1 - 2 + ox) if fx_ > 0 else (x0 + 1 + ox)
             src.append((rear, y1 - 1, 0.6 if fx_ > 0 else -0.6))
-        elif how == "weld":
+        elif how == "weld" and m.any():
             tx, ty = _torch(st, m, bb, p, j)
             if ty >= ground - 16:
                 src.append((tx, ty, 0.5 if j % 2 else -0.5))

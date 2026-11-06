@@ -9,7 +9,6 @@ both say 0.8.4. No effect or make output is meant to change.
 
 ## Owed code (from the 2026-11-05 consolidation, each needs a test)
 
-- L-085: `frames` raises IndexError at `_torch` on an empty `assemble` step; skip or reject it with a message.
 - L-082: no gate for detached fragments or rafters outside the old-plus-new silhouette on upgrade strips.
 - L-015: `shift`, `scroll` and `rotate` copy from the still, so they cannot stack; a `compose` effect or reading
   the current frame would fix it, but output must stay byte-identical for existing briefs.
