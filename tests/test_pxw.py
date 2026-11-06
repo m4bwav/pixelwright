@@ -646,6 +646,17 @@ class TestCommands(Base):
                 self.assertTrue((frames[1] != frames[0]).any(), name)
                 self.assertTrue((frames[3] == frames[0]).all(), f"{name} should be hidden at k < 0 or off")
 
+    def test_frames_skips_a_weld_step_with_no_pixels_left(self):
+        (self.dir / "b.json").write_text(json.dumps(brief(place=json.loads(json.dumps(PULSE)))))
+        plan = {"frames": 6, "regions": {"p_body": {"rects": [[0, 0, 32, 32]]}},
+                "steps": [{"part": "p_body", "how": "weld", "at": [0, 3]},
+                          {"part": "p_body", "how": "weld", "at": [3, 5]}]}
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        code, res = self.run_sw("assemble", "b.json", "b2.json", "--plan", "plan.json")
+        self.assertEqual(code, 1, "assemble still reports the empty step")
+        code, res = self.run_sw("frames", "b2.json", "out", "--no-aw")
+        self.assertEqual(code, 0, res)
+
     def test_assemble_reports_uncovered_pixels(self):
         (self.dir / "b.json").write_text(json.dumps(brief(place=json.loads(json.dumps(PULSE)))))
         plan = {"frames": 4, "regions": {"p_belt": {"rects": [[4, 29, 28, 32]]}},
