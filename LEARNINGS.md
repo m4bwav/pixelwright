@@ -146,3 +146,11 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: flecks gone on five buildings after this change, checked on the rest frames at 2x; frame 0 still equals the still by script.
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-06
+
+### L-088 · 2026-11-06 · Check a strip's last frame against the next strip's first frame
+- Trigger: a clear strip ended on an empty plot while three of five construction strips it hands over to opened with a few hundred pixels already drawn, so the join would pop. Each strip passed its own gates.
+- Hypothesis: gates look at one strip against its still. A sequence played one after another has joins no single strip's gate can see.
+- Rule: when strips play in sequence, read the next strip's first frame and make the earlier strip end on it (`collapse --clear-to`). Compare what shows only: colour under alpha 0 is unseen and a byte compare fails on it.
+- Evidence: opaque pixels on the first frame of the construction strips were 151, 165 and 338 on the three that popped and 0 on the other two.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-06

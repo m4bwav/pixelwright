@@ -1292,5 +1292,135 @@ class TestDownscale(unittest.TestCase):
         self.assertEqual(float(bx.max()), 255.0)
 
 
+class CollapseTest(unittest.TestCase):
+    """`collapse`: rubble, collapse and clear from one seeded simulation, plain and burnt."""
+
+    @staticmethod
+    def fixture(pit=False):
+        a = np.zeros((96, 96, 4), dtype=np.uint8)
+        rng = np.random.RandomState(3)
+        ys, xs = np.mgrid[0:96, 0:96]
+        body = (np.abs(xs - 48) / 34 + np.abs(ys - 68) / 17 <= 1) | ((np.abs(xs - 48) <= 34) & (ys >= 38) & (ys <= 68))
+        a[body] = [150, 120, 90, 255]
+        a[body, :3] = np.clip(a[body, :3].astype(int) + rng.randint(-25, 25, (body.sum(), 3)), 0, 255)
+        roof = (ys < 50) & (ys >= 16) & (np.abs(xs - 48) <= (ys - 14) * 1.05)
+        a[roof] = [170, 130, 60, 255]
+        a[roof & (ys % 3 == 0)] = [120, 90, 40, 255]
+        plan = dict(groundBase=dict(front=dict(x=48, y=85), left=dict(x=14, y=68), right=dict(x=82, y=68)), wallHeight=24,
+                    roof="roof", regions=dict(roof=dict(poly=[[48, 14], [12, 50], [84, 50]])))
+        if pit:
+            plan.update(walls="pit", floor="floor", props=[])
+            plan["regions"]["floor"] = dict(poly=[[48, 80], [26, 68], [48, 56], [70, 68]])
+        return a, plan
+
+    def test_strips_join_and_gates_pass(self):
+        still, plan = self.fixture()
+        r = sw.collapse_render(still, plan)
+        self.assertTrue(np.array_equal(r["collapse"][0], still))
+        self.assertTrue(np.array_equal(r["collapseBurnt"][0], still))
+        self.assertTrue(np.array_equal(r["clear"][0], r["collapse"][-1]))
+        self.assertFalse(r["clear"][-1][..., 3].any())
+        self.assertFalse(r["clearBurnt"][-1][..., 3].any())
+        g = sw.collapse_gates(still, r)
+        self.assertTrue(g["collapse"]["ok"], g)
+        self.assertTrue(g["collapseBurnt"]["ok"], g)
+
+    def test_roof_falls_before_the_walls_land(self):
+        still, plan = self.fixture()
+        c = sw.collapse_render(still, plan)["collapse"]
+        top = lambda f: np.nonzero(f[..., 3] > 0)[0].min()
+        self.assertGreater(top(c[-1]), top(c[0]) + 10)
+        self.assertGreater((c[10][20:40, :, 3] == 0).sum(), (c[0][20:40, :, 3] == 0).sum())
+
+    def test_same_seed_same_bytes_other_seed_differs(self):
+        still, plan = self.fixture()
+        a = sw.collapse_render(still, plan, seed=7)["collapse"][-1]
+        b = sw.collapse_render(still, plan, seed=7)["collapse"][-1]
+        c = sw.collapse_render(still, plan, seed=8)["collapse"][-1]
+        self.assertTrue(np.array_equal(a, b))
+        self.assertFalse(np.array_equal(a, c))
+
+    def test_burnt_is_darker_than_plain_at_rest(self):
+        still, plan = self.fixture()
+        r = sw.collapse_render(still, plan)
+        plain, burnt = r["collapse"][-1], r["collapseBurnt"][-1]
+        solid = plain[..., 3] > 0
+        self.assertTrue(np.array_equal(solid, burnt[..., 3] > 0))
+        self.assertLess(burnt[solid][:, :3].mean(), plain[solid][:, :3].mean() * 0.8)
+
+    def test_clear_to_ends_on_the_next_strips_first_frame(self):
+        still, plan = self.fixture()
+        target = np.zeros_like(still)
+        target[70:80, 30:60] = [90, 80, 70, 255]
+        r = sw.collapse_render(still, plan, target=target)
+        self.assertTrue(np.array_equal(r["clear"][-1], target))
+        self.assertTrue(np.array_equal(r["clearBurnt"][-1], target))
+        self.assertTrue(np.array_equal(r["clear"][0], r["collapse"][-1]))
+        self.assertTrue(sw.collapse_gates(still, r, target)["collapse"]["ok"])
+        grown = [int((f[70:80, 30:60, 3] > 0).sum()) for f in r["clear"][-6:]]
+        self.assertGreater(grown[-1], grown[1])
+        self.assertFalse(sw.collapse_gates(still, r)["collapse"]["ok"], "gate must notice a strip that does not end empty")
+
+    def test_frame_count_scales(self):
+        still, plan = self.fixture()
+        r = sw.collapse_render(still, plan, frames=12)
+        self.assertEqual(len(r["collapse"]), 12)
+        self.assertTrue(sw.collapse_gates(still, r)["collapse"]["opensOnStill"])
+        self.assertTrue(np.array_equal(r["clear"][0], r["collapse"][-1]))
+
+    def test_gates_catch_each_break(self):
+        still, plan = self.fixture()
+        fresh = lambda: {k: [f.copy() for f in v] for k, v in sw.collapse_render(still, plan, frames=10).items()}
+        r = fresh()
+        r["collapse"][0][50, 48, 0] ^= 255
+        self.assertFalse(sw.collapse_gates(still, r)["collapse"]["opensOnStill"])
+        r = fresh()
+        r["clear"][0][0, 0] = [1, 2, 3, 255]
+        self.assertFalse(sw.collapse_gates(still, r)["collapse"]["clearOpensOnRest"])
+        r = fresh()
+        r["collapse"][-2][0, 0] = [1, 2, 3, 255]
+        self.assertFalse(sw.collapse_gates(still, r)["collapse"]["settled"])
+        r = fresh()
+        r["collapse"][-1] = still.copy()
+        v = sw.collapse_gates(still, r)["collapse"]
+        self.assertLess(v["changedShare"], sw.COLLAPSE_MIN_CHANGED)
+        self.assertFalse(v["ok"])
+        r = fresh()
+        scattered = r["collapse"][-1].copy()
+        scattered[..., 3] = 0
+        scattered[10:30, 10:30] = [90, 80, 70, 255]
+        scattered[60:80, 60:80] = [90, 80, 70, 255]
+        r["collapse"][-1] = scattered
+        v = sw.collapse_gates(still, r)["collapse"]
+        self.assertLess(v["largestPieceShare"], sw.COLLAPSE_MIN_PIECE)
+        self.assertFalse(v["ok"])
+
+    def test_pit_keeps_a_floor(self):
+        still, plan = self.fixture(pit=True)
+        r = sw.collapse_render(still, plan)
+        self.assertTrue(np.array_equal(r["collapse"][0], still))
+        self.assertGreater((r["collapse"][-1][60:78, 30:66, 3] > 0).sum(), 200)
+
+    def test_cli_writes_six_files_and_rejects_a_bad_plan(self):
+        still, plan = self.fixture()
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            Image.fromarray(still, "RGBA").save(d / "s.png")
+            (d / "p.json").write_text(json.dumps(plan), encoding="utf-8")
+            p = subprocess.run([sys.executable, str(SW), "collapse", str(d / "s.png"), str(d / "p.json"), str(d / "o"), "--name", "Hut", "--frames", "10"],
+                               capture_output=True, text=True)
+            res = json.loads(p.stdout)
+            self.assertEqual(p.returncode, 0, p.stdout)
+            self.assertTrue(res["ok"])
+            names = sorted(f.name for f in (d / "o").iterdir())
+            self.assertEqual(names, sorted(f"Hut{s}.png" for s in ("Rubble", "RubbleBurnt", "Collapse", "CollapseBurnt", "Clear", "ClearBurnt")))
+            self.assertEqual(Image.open(d / "o" / "HutCollapse.png").size, (960, 96))
+            (d / "bad.json").write_text("{}", encoding="utf-8")
+            p = subprocess.run([sys.executable, str(SW), "collapse", str(d / "s.png"), str(d / "bad.json"), str(d / "o"), "--name", "Hut"],
+                               capture_output=True, text=True)
+            self.assertEqual(p.returncode, 1)
+            self.assertIn("groundBase", json.loads(p.stdout)["error"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)
