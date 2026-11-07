@@ -1325,6 +1325,21 @@ class CollapseTest(unittest.TestCase):
         self.assertTrue(g["collapse"]["ok"], g)
         self.assertTrue(g["collapseBurnt"]["ok"], g)
 
+    def test_fenced_yard_stays_open_thin_gaps_do_not(self):
+        hole = np.zeros((40, 40, 4), dtype=np.uint8)
+        hole[2:38, 2:38] = 255
+        hole[6:34, 6:34] = 0  # a fenced yard
+        hole[20, 37] = 0  # not enclosed
+        thin = np.zeros((40, 40, 4), dtype=np.uint8)
+        thin[2:38, 2:38] = 255
+        thin[10:30, 19:21] = 0  # a gap between planks
+        self.assertTrue(sw._col_open_yard(hole[..., 3] > 0)[6:34, 6:34].all())
+        self.assertFalse(sw._col_open_yard(thin[..., 3] > 0).any())
+        dark = np.full((40, 40, 3), 60, dtype=np.uint8)
+        keep = sw._col_open_yard(hole[..., 3] > 0)
+        self.assertFalse(sw._col_tidy(hole.copy(), dark, keep=keep)[6:34, 6:34, 3].any())
+        self.assertTrue(sw._col_tidy(hole.copy(), dark)[6:34, 6:34, 3].all())
+
     def test_roof_falls_before_the_walls_land(self):
         still, plan = self.fixture()
         c = sw.collapse_render(still, plan)["collapse"]

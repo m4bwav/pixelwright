@@ -46,7 +46,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.10.0"
+VERSION = "0.10.1"
 
 try:
     import numpy as np
@@ -2417,6 +2417,7 @@ class _CollapseSim:
         self.wall = plan.get("wallHeight", 20)
         self.pit = plan.get("walls") == "pit"
         self.alpha = still[..., 3] > 0
+        self.open = _col_open_yard(self.alpha)
         self.roof = _col_region(plan, plan.get("roof", "roof"), self.alpha.shape) & self.alpha
         self.diamond = _col_polymask(self.alpha.shape, [[self.front, self.left, self.left + self.right - self.front, self.right]])
         self.span = np.linalg.norm(self.left - self.front) + np.linalg.norm(self.right - self.front)
@@ -2650,7 +2651,7 @@ class _CollapseSim:
                 self.draw_patch(c, s, x, y, ang, sq)
             else:
                 self.draw_beam(c, self.beams[i], f)
-        return _col_tidy(c, self.basecol)
+        return _col_tidy(c, self.basecol, keep=self.open)
 
     def draw_beam(self, c, b, f):
         if f < b["start"]:
@@ -2686,7 +2687,7 @@ class _CollapseSim:
                 self.draw_patch(c, it, it["rx"], it["ry"] - t * 2, it["ang"], it["sq"], 1 - .6 * t)
             elif t == 0:
                 self.draw_beam(c, it, 99)
-        return _col_tidy(c, self.basecol, f < 21)
+        return _col_tidy(c, self.basecol, f < 21, keep=self.open)
 
 
 def _col_char(img, seed):
@@ -2726,16 +2727,39 @@ def _col_enclosed(o):
     return np.array(im)[1:-1, 1:-1] == 0
 
 
-def _col_tidy(c, dark, fill=True):
-    """Grass must not show through the heap and no pixel may float alone."""
+def _col_open_yard(alpha, r=4):
+    """Holes in the still wide enough to be a yard (a fence round open ground): every hole pixel that a
+    (2r+1)-square core of hole reaches. Gaps between planks or under an arch are thinner and are left out."""
+    hole = _col_enclosed(alpha)
+    core = hole.copy()
+    for _ in range(r):
+        core[1:-1, 1:-1] &= core[:-2, 1:-1] & core[2:, 1:-1] & core[1:-1, :-2] & core[1:-1, 2:]
+        core[[0, -1], :] = False
+        core[:, [0, -1]] = False
+    while True:
+        grown = core.copy()
+        grown[1:-1, 1:-1] |= core[:-2, 1:-1] | core[2:, 1:-1] | core[1:-1, :-2] | core[1:-1, 2:]
+        grown &= hole
+        if np.array_equal(grown, core):
+            return core
+        core = grown
+
+
+def _col_tidy(c, dark, fill=True, keep=None):
+    """Grass must not show through the heap and no pixel may float alone. keep: holes the still already had
+    (a fenced yard), which stay open."""
     if fill:
         hole = _col_enclosed(c[..., 3] > 0)
+        if keep is not None:
+            hole &= ~keep
         c[hole, :3] = dark[hole]
         c[hole, 3] = 255
     for _ in range(2):
         o = (c[..., 3] > 0).astype(int)
         n = sum(np.roll(np.roll(o, dy, 0), dx, 1) for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx)
         hole = (o == 0) & (n >= 5)
+        if keep is not None:
+            hole &= ~keep
         c[hole, :3] = dark[hole]
         c[hole, 3] = 255
     o = (c[..., 3] > 0).astype(int)
