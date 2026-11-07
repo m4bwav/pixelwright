@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261107-1 · 2026-11-07 · 0.10.2: `collapse` pit plans leave no dirt ghost of a fallen prop
+- because: user request (a clay pit's shed, a coop and a tree left dirt in their own outlines, standing in the air)
+- files: skills/pixelwright/scripts/pxw.py (collapse: `build_stump`, `build_base`), tests/test_pxw.py, plugin.json
+- In a pit plan the dirt base covered every fallen pixel of the still, props included. Props are now left out of it; their debris lands on the floor as before. Plans without `walls: pit` render as in 0.10.1.
+
 ### C-20261106-2 · 2026-11-06 · 0.10.1: `collapse` leaves a fenced yard open
 - because: user request (a ranch's rubble filled its whole fenced yard with dirt and failed the outside gate)
 - files: skills/pixelwright/scripts/pxw.py (collapse: `_col_open_yard`, `_col_tidy`), tests/test_pxw.py, plugin.json
