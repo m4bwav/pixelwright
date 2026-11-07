@@ -138,3 +138,11 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Hypothesis: `rotate` takes all pixels in its rects, and no gate can tell a wheel from the structure it overlaps.
 - Rule: when a rotating part overlaps structure, drop the rotate track and spin a colour-and-radius mask taken from the still, leaving the rest on the plate; fill rim gaps by angle. Zoom into the part across the turn before review.
 - Evidence: take 2 kept the brace fixed in a zoomed frame check; reviewer verdict pending.
+
+### L-087 · 2026-11-06 · Soft-edged pixels show the ground when a piece moves onto a heap
+- Trigger: a collapse heap kept green flecks after every hole enclosed by the silhouette had been filled, and the flecks survived a burnt recolour.
+- Hypothesis: the source still has low-alpha edge pixels. They look solid on the plate, but moved onto other pieces they overwrite an opaque pixel with a see-through one.
+- Rule: when a shard leaves its place, drop pixels under half alpha and make the rest opaque. Keep the untouched frame 0 as the still. To tell a colour from a hole, recolour the frame: a real colour changes, the ground does not.
+- Evidence: flecks gone on five buildings after this change, checked on the rest frames at 2x; frame 0 still equals the still by script.
+- Scope: skill
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-06
