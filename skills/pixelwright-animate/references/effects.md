@@ -2,7 +2,7 @@
 
 Checked 2026-10-23 against `sw.py` 0.5.0 (`pxw.py` since 0.6.0). Every track: `effect`, `region`, optional `curve` (one value per frame;
 missing = 1.0 every frame). Tracks run in order on a copy of the still, so a later track sees an earlier one's
-pixels, except `shift`, `scroll` and `rotate`, which copy from the still (Rules from use). Colours in parameters are `[r, g, b]`. Output colours are snapped to the region's ramp (its `select`
+pixels, except `shift`, `scroll` and `rotate`, which copy from the still unless the track sets `stack: true`; then they copy from the frame so far, so a `shift` after a `scroll` carries the scrolled pixels (L-015). Colours in parameters are `[r, g, b]`. Output colours are snapped to the region's ramp (its `select`
 pixels plus `extraColours`) or the full still palette, so no stray colour appears.
 
 | Effect | What it does | k means | Parameters |
@@ -130,7 +130,7 @@ Beyond SKILL.md step 2. The gates pass all of these; judge the 1x and 3x rows.
   are for things against the sky, with `propGround` naming only them. Keep `"clear"` for bare floors (L-080).
 - **Upgrades (`before`)**: look at the last five frames at 3x for old-roof scraps along the ridge and fragments in
   the sky. Once the roof has landed, show the still's pixels in the roof region and clear detached fragments in a
-  post-pass. `rafters: 0` when they would cross open sky and no `roofFaces` covers it. No gate catches this yet (L-082).
+  post-pass. `rafters: 0` when they would cross open sky and no `roofFaces` covers it. Gates: `detached_pixels_late` reports the largest count of scrap pixels in the last five frames (pieces under 12 px the still does not show there), report-only unless the animation sets `max_detached_pixels`; rafters outside both silhouettes fail `drawn_outside_silhouette`, pixels on the old building's silhouette or a pole's do not. Scraps joined to the roof still need the zoom (L-082).
 
 ## Model rotate
 
