@@ -25,6 +25,10 @@ JSON object; exit 1 means a check failed, 2 a usage error (argparse's usage text
 Painted sprites (soft edges, brush texture, thousands of colours on purpose) are not pixel art: do not snap or
 quantise them. pixelwright-animate handles painted stills; artwright's `aw.py sprite` judges them.
 
+## Sfxwright, when installed
+
+Pixelwright makes no sound. If the sfxwright plugin is present, hand it the actions that need one; `synth retro` suits a pixel game and needs no model. Read its `sounds.json` for the picked files to pair with each strip. Without it, every step here still works.
+
 ## Shared rules
 
 - The human's art is never overwritten. Outputs go to a new folder; a shipped still is replaced only on their say-so.

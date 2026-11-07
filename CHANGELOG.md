@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261106-3 · 2026-11-06 · Sfxwright, when installed
+- because: user request
+- files: skills/pixelwright/SKILL.md (Sfxwright, when installed)
+- Hand sound effects to sfxwright when present and read its sounds.json; this plugin's own steps stay as the fallback.
+
 ### C-20261107-1 · 2026-11-07 · 0.10.2: `collapse` pit plans leave no dirt ghost of a fallen prop
 - because: user request (a clay pit's shed, a coop and a tree left dirt in their own outlines, standing in the air)
 - files: skills/pixelwright/scripts/pxw.py (collapse: `build_stump`, `build_base`), tests/test_pxw.py, plugin.json
