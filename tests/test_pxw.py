@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 import numpy as np
@@ -761,6 +762,63 @@ class TestCommands(Base):
         g = json.loads((self.dir / "out3" / "cottage.gates.json").read_text())["place"]
         self.assertGreater(g["drawn_outside_silhouette"], 0)
         self.assertFalse(g["pass"])
+
+    def test_upgrade_gates_fragments_and_rafters_outside_both_silhouettes(self):
+        still, plan = self.cottage()
+        old = np.zeros((48, 48, 4), dtype=np.uint8)
+        old[30:41, 20:28] = [90, 110, 160, 255]  # small, so the new roof's rafters cross sky it does not cover
+        Image.fromarray(old, "RGBA").save(self.dir / "old.png")
+        plan.update({"before": str(self.dir / "old.png"), "timeline": {"stakes": [0, 0]}})
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        self.run_sw("assemble", "c.json", "c2.json", "--plan", "plan.json")
+        self.run_sw("frames", "c2.json", "out", "--no-aw")
+        g = json.loads((self.dir / "out" / "cottage.gates.json").read_text())["place"]
+        self.assertEqual(g["detached_pixels_late"], 0)
+        self.assertTrue(g["pass"], g)
+        # a cap below the count fails; no cap only reports
+        with unittest.mock.patch.object(sw, "_detached_pixels", return_value=7):
+            c2 = json.loads((self.dir / "c2.json").read_text())
+            spr = sw.Sprite(c2, self.dir, self.dir)
+            anim = c2["animations"]["place"]
+            fr = sw.build_frames(spr, anim)
+            ri = sw.rest_index("place", anim)
+            self.assertEqual(sw.gates(spr, anim, fr, ri)["detached_pixels_late"], 7)
+            self.assertTrue(sw.gates(spr, anim, fr, ri)["pass"])
+            self.assertFalse(sw.gates(spr, dict(anim, max_detached_pixels=0), fr, ri)["pass"])
+        # unclipped rafters leave both silhouettes
+        plan["clip"] = False
+        (self.dir / "plan.json").write_text(json.dumps(plan))
+        self.run_sw("assemble", "c.json", "c3.json", "--plan", "plan.json")
+        self.run_sw("frames", "c3.json", "out3", "--no-aw")
+        g = json.loads((self.dir / "out3" / "cottage.gates.json").read_text())["place"]
+        self.assertGreater(g["drawn_outside_silhouette"], 0)
+        self.assertFalse(g["pass"])
+
+    def test_detached_pixels_counts_new_scraps_only(self):
+        still = np.zeros((20, 20, 4), dtype=np.uint8)
+        still[10:18, 2:18] = [100, 100, 100, 255]
+        still[2, 2] = [100, 100, 100, 255]  # a lone pixel the still itself paints is not a scrap
+        f = still.copy()
+        self.assertEqual(sw._detached_pixels(f, still), 0)
+        f[3:5, 10:12] = [200, 0, 0, 255]
+        self.assertEqual(sw._detached_pixels(f, still), 4)
+
+    def test_stack_makes_a_shift_carry_the_scroll(self):
+        def strip(stack):
+            shift = {"effect": "shift", "part": "belt", "region": "body", "by": [0, -1], "curve": [0, 1, 1, 0]}
+            if stack:
+                shift["stack"] = True
+            b = brief(run={"frames": 4, "focal": "body", "noticeable": {"share": 0}, "tracks": [
+                {"effect": "scroll", "region": "belt", "period": 4, "curve": [0, 0.25, 0.5, 0]}, shift]})
+            self.frames(b)
+            return self.sheet("machine-run-4f")[:, 32:64]
+        plain, stacked = strip(False), strip(True)
+        # frame 1: belt rows 29 to 30 land on 28 to 29. From the still without stack, scrolled by one px with it.
+        s = np.array(self.still)
+        self.assertTrue((plain[28, 4:28] == s[29, 4:28]).all())
+        self.assertFalse((stacked[28, 4:28] == s[29, 4:28]).all())
+        self.assertTrue((stacked[28, 5:28] == s[29, 4:27]).all())
+
 
     def test_natural_upgrade_builds_over_the_old_still_and_wipes_it_from_the_ground_up(self):
         still, plan = self.cottage()

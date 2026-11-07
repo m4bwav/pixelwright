@@ -46,7 +46,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.10.2"
+VERSION = "0.11.0"
 
 try:
     import numpy as np
@@ -437,6 +437,11 @@ def _plane_matrix(plane, pivot):
     return np.asarray(plane, dtype=float).T
 
 
+def _moving_source(s, f, t):
+    """What a moving effect copies from: the still, or with `stack` the frame so far, so it carries the tracks before it (L-015)."""
+    return (f if t.get("stack") else s.still).copy()
+
+
 def fx_rotate(s, f, k, t, i):
     """Cut a part out and rotate it about a pivot by k degrees (+ = clockwise on screen). Samples 4x4 per target
     pixel and takes the most common part colour, so no new colours and no rotation blur. With `plane` the part turns
@@ -444,7 +449,7 @@ def fx_rotate(s, f, k, t, i):
     plane's first axis toward its second (rim point j toward j + 1)."""
     part = s.regions[t["part"]]
     zone = s.regions[t["region"]]
-    src = np.round(s.still).astype(np.uint8)
+    src = np.round(_moving_source(s, f, t)).astype(np.uint8)
     _behind(s, f, part, t)
     px, py = t["pivot"]
     a = math.radians(k)
@@ -484,7 +489,7 @@ def fx_shift(s, f, k, t, i):
     ox, oy = int(round(k * t["by"][0])), int(round(k * t["by"][1]))
     if ox == 0 and oy == 0:
         return
-    src = s.still.copy()
+    src = _moving_source(s, f, t)
     if t.get("behind", "still") != "still":
         _behind(s, f, part, t)
     ys, xs = np.nonzero(part)
@@ -570,7 +575,7 @@ def fx_scroll(s, f, k, t, i):
     if off == 0:
         return
     dx, dy = t.get("dir", [1, 0])
-    src = s.still.copy()
+    src = _moving_source(s, f, t)
     ys, xs = np.nonzero(m)
     sx, sy = xs - dx * off, ys - dy * off
     for _ in range(4):
@@ -1967,6 +1972,30 @@ def _pixel_moves(a, b, c, y, x):
     return False
 
 
+def _detached_pixels(frame, still, least=12):
+    """Pixels in 8-connected visible pieces under `least` px that the still does not show there: scraps in the sky (L-082)."""
+    alpha = frame[..., 3] > 0
+    seen = np.zeros_like(alpha)
+    h, w = alpha.shape
+    total = 0
+    for y0, x0 in zip(*np.nonzero(alpha)):
+        if seen[y0, x0]:
+            continue
+        seen[y0, x0] = True
+        stack, piece = [(int(y0), int(x0))], []
+        while stack:
+            y, x = stack.pop()
+            piece.append((y, x))
+            for ny in range(max(0, y - 1), min(h, y + 2)):
+                for nx in range(max(0, x - 1), min(w, x + 2)):
+                    if alpha[ny, nx] and not seen[ny, nx]:
+                        seen[ny, nx] = True
+                        stack.append((ny, nx))
+        if len(piece) < least and any((frame[p] != still[p]).any() for p in piece):
+            total += len(piece)
+    return total
+
+
 def gates(s, anim, frames, restIndex):
     still = np.round(s.still).astype(np.uint8)
     union = np.zeros((s.h, s.w), dtype=bool)
@@ -2077,9 +2106,15 @@ def gates(s, anim, frames, restIndex):
         steps = [int((frames[j] != frames[j + 1]).any(-1).sum()) for j in range(len(frames) - 1)]
         res["loop_seam_changed"] = int((frames[-1] != frames[0]).any(-1).sum())
         res["loop_seam_ok"] = res["loop_seam_changed"] <= max(steps)
+    # an upgrade's late frames: scraps of the old building left in the sky. Report-only unless capped, like flicker.
+    detachedOk = True
+    if any(t["effect"] == "site" and t.get("before") for t in anim["tracks"]):
+        late = [f for j, f in enumerate(frames) if j != restIndex][-5:]
+        res["detached_pixels_late"] = max((_detached_pixels(f, still) for f in late), default=0)
+        detachedOk = res["detached_pixels_late"] <= anim.get("max_detached_pixels", res["detached_pixels_late"])
     flickOk = res["flicker_pixels"] <= anim.get("max_flicker_pixels", res["flicker_pixels"])
     res["pass"] = bool(res["rest_frame_identical"] is not False and outside == 0 and alphaBad == 0 and not newCols
-                       and res["noticeable"] and res.get("loop_seam_ok", True) and siteOk and flickOk)
+                       and res["noticeable"] and res.get("loop_seam_ok", True) and siteOk and flickOk and detachedOk)
     return res
 
 
