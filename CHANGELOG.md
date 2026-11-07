@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261106-2 · 2026-11-06 · 0.10.1: `collapse` leaves a fenced yard open
+- because: user request (a ranch's rubble filled its whole fenced yard with dirt and failed the outside gate)
+- files: skills/pixelwright/scripts/pxw.py (collapse: `_col_open_yard`, `_col_tidy`), tests/test_pxw.py, plugin.json
+- The hole fill that stops grass showing through a heap also filled any hole the fence enclosed. Holes the still already had that are at least 9 px across now stay open; thinner gaps fill as before, so buildings without a yard render byte for byte as in 0.10.0.
+
 ### C-20261106-1 · 2026-11-06 · 0.10.0: `collapse` command for rubble, collapse and clear strips
 - because: L-088; user request
 - files: skills/pixelwright/scripts/pxw.py (collapse), tests/test_pxw.py, skills/pixelwright-animate/SKILL.md, LEARNINGS.md, plugin.json
