@@ -24,6 +24,8 @@ Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, wh
   buildup <brief.json> <out.json> [--anim place] [--frames 6]  prefix an animation with construction frames
   assemble <brief.json> <out.json> --plan plan.json [--anim place]  prefix with crane/drone/trolley assembly,
                                                              or a natural site build ("vocabulary": "natural")
+  collapse <still.png> <plan.json> <outdir> --name N [--frames 30] [--seed 7] [--clear-to first.png]
+                                                             rubble, collapse and clear, plain and burnt
   contact <sheet.png> <out.png> --frames N [--per 5] [--zoom 3]
   pack    <out.png> <frame.png>...                           horizontal strip in the order given
   review  <dir> [--port 8765] [--extra items.json]           click page; every click saves <dir>/picks.json
@@ -32,6 +34,7 @@ Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, wh
 Needs Python 3.9+, numpy and Pillow. Works on Windows, macOS and Linux.
 """
 import argparse
+import colorsys
 import datetime as dt
 import html
 import json
@@ -43,7 +46,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.9.2"
+VERSION = "0.10.0"
 
 try:
     import numpy as np
@@ -2362,6 +2365,513 @@ def _assemble_natural(a, brief, briefPath, plan):
              colours={kk: [int(v) for v in c] for kk, c in G["cols"].items()}), 0 if ok else 1)
 
 
+# Collapse (`collapse`): one seeded shard simulation gives a building's rubble still, its collapse strip and the strip
+# that clears the rubble, each plain and burnt. The timeline is written in _COL_T steps and scaled to --frames.
+_COL_T = 30
+COLLAPSE_MIN_CHANGED = 0.2  # a rest frame this close to the still has not fallen down
+COLLAPSE_MAX_OUTSIDE = 0.25  # debris past the still's silhouette, as a share of the heap
+COLLAPSE_MIN_PIECE = 0.9  # below this the heap reads as scattered bits
+
+
+def _col_polymask(shape, polys):
+    im = Image.new("L", (shape[1], shape[0]), 0)
+    d = ImageDraw.Draw(im)
+    for p in polys:
+        d.polygon([tuple(float(v) for v in q) for q in p], fill=255)
+    return np.array(im) > 0
+
+
+def _col_region(plan, key, shape):
+    r = plan["regions"].get(key)
+    if not r:
+        return np.zeros(shape, bool)
+    polys = ([r["poly"]] if "poly" in r else []) + r.get("polys", [])
+    return _col_polymask(shape, polys)
+
+
+def _col_noise(shape, cell, seed):
+    rng = np.random.RandomState(seed)
+    h, w = shape
+    g = rng.rand(h // cell + 2, w // cell + 2)
+    return np.kron(g, np.ones((cell, cell)))[:h, :w]
+
+
+def _col_shade(s, heap, ang, sq):
+    if s["ang"] == 0:
+        return 1.0
+    landed = min(1.0, ang / s["ang"])
+    return 1 - 0.42 * landed * (1 - min(1, s["lift"] / max(1e-3, heap)))
+
+
+class _CollapseSim:
+    def __init__(self, still, plan, seed=7):
+        self.still = still
+        self.plan = plan
+        self.h, self.w = still.shape[:2]
+        self.rng = random.Random(seed)
+        self.np = np.random.RandomState(seed)
+        gb = plan["groundBase"]
+        self.front = np.array([gb["front"]["x"], gb["front"]["y"]], float)
+        self.left = np.array([gb["left"]["x"], gb["left"]["y"]], float)
+        self.right = np.array([gb["right"]["x"], gb["right"]["y"]], float)
+        self.wall = plan.get("wallHeight", 20)
+        self.pit = plan.get("walls") == "pit"
+        self.alpha = still[..., 3] > 0
+        self.roof = _col_region(plan, plan.get("roof", "roof"), self.alpha.shape) & self.alpha
+        self.diamond = _col_polymask(self.alpha.shape, [[self.front, self.left, self.left + self.right - self.front, self.right]])
+        self.span = np.linalg.norm(self.left - self.front) + np.linalg.norm(self.right - self.front)
+        self.yf = self.front_edge()
+        self.build_stump()
+        self.build_shards()
+        self.build_beams()
+        self.build_base()
+
+    def front_edge(self):
+        xs = np.arange(self.w, dtype=float)
+        lf = self.left[1] + (self.front[1] - self.left[1]) * (xs - self.left[0]) / max(1, self.front[0] - self.left[0])
+        fr = self.front[1] + (self.right[1] - self.front[1]) * (xs - self.front[0]) / max(1, self.right[0] - self.front[0])
+        return np.where(xs < self.front[0], lf, fr)
+
+    def build_stump(self):
+        ys, xs = np.indices(self.alpha.shape)
+        if self.pit:
+            props = np.zeros_like(self.alpha)
+            for k in self.plan.get("props", []):
+                props |= _col_region(self.plan, k, self.alpha.shape)
+            floor = _col_region(self.plan, self.plan.get("floor", "floor"), self.alpha.shape)
+            self.floor = floor
+            cx, cy = np.nonzero(floor)[1].mean(), np.nonzero(floor)[0].mean()
+            ang = np.arctan2((ys - cy) * 1.6, xs - cx)
+            wob = np.sin(ang * 3 + self.rng.uniform(0, 6)) + np.sin(ang * 7 + self.rng.uniform(0, 6)) * .5
+            rad = np.hypot(xs - cx, (ys - cy) * 1.6)
+            inner = rad < rad[self.alpha].max() * (.72 + .1 * _col_noise(self.alpha.shape, 3, self.rng.randint(0, 9999)))
+            self.stump = self.alpha & ~props & (floor | (wob < 1.05) | ~inner)
+            return
+        grid = np.arange(0, self.w + 6, 5)
+        rough = np.interp(np.arange(self.w), grid, self.np.rand(len(grid)))
+        cornerd = np.minimum.reduce([np.abs(np.arange(self.w) - c) for c in (self.front[0], self.left[0] + 5, self.right[0] - 5)])
+        corner = np.clip(1 - cornerd / (self.span * 0.09), 0, 1)
+        high = self.wall * (0.28 + 0.34 * rough + 0.5 * corner)
+        self.stump = self.alpha & ~self.roof & ((self.yf[xs] - ys) < high[xs]) & self.diamond_near()
+
+    def diamond_near(self):
+        d = self.diamond.copy()
+        for _ in range(2):
+            d[1:-1, 1:-1] = d[1:-1, 1:-1] | d[:-2, 1:-1] | d[2:, 1:-1] | d[1:-1, :-2] | d[1:-1, 2:]
+        return d
+
+    def rest_point(self, srcx, srcy, is_roof):
+        r = self.rng
+        A = self.left - self.front
+        B = self.right - self.front
+        if self.pit:
+            ys, xs = np.nonzero(self.floor)
+            i = r.randrange(len(ys))
+            return np.array([xs[i], ys[i]], float), r.uniform(0, 4)
+        a = r.betavariate(2.4, 2.4) if is_roof else r.betavariate(1.3, 2.6)
+        b = r.betavariate(2.4, 2.4)
+        if not is_roof and srcx >= self.front[0]:
+            a, b = b, a
+        P = self.front + a * A + b * B
+        dn = max(abs(2 * a - 1), abs(2 * b - 1))
+        lift = self.heap * max(0, 1 - dn) ** 0.7 * r.uniform(0.7, 1.0)
+        return P, lift
+
+    def build_shards(self):
+        base = max(5.0, self.span / 16)
+        self.heap = max(9, self.wall * 0.8) * (self.span / 120) ** 0.5
+        mob = self.alpha & ~self.stump
+        self.shards = []
+        for cls, mask, sp in ((True, self.roof & mob, base * 1.15), (False, ~self.roof & mob, base * 0.8)):
+            py, px = np.nonzero(mask)
+            if not len(py):
+                continue
+            n = max(3, int(len(py) / (sp * sp)))
+            idx = self.np.choice(len(py), n, replace=False)
+            sx, sy = px[idx].astype(float), py[idx].astype(float)
+            wgt = np.where(self.np.rand(n) < 0.14, 1.9, 1.0)
+            d = ((px[:, None] - sx) ** 2 * 0.7 + (py[:, None] - sy) ** 2 * 1.5) / wgt ** 2
+            own = d.argmin(1)
+            for k in range(n):
+                m = own == k
+                if m.sum() < 1:
+                    continue
+                self.shards.append(self.make_shard(py[m], px[m], cls, wgt[k] > 1))
+        top = min(s["cy"] for s in self.shards)
+        bot = max(s["cy"] for s in self.shards)
+        for s in self.shards:
+            hn = (s["cy"] - top) / max(1, bot - top)
+            s["start"] = 2 + hn * 11 + self.rng.uniform(-1.5, 1.5) + (0 if s["roof"] else 3)
+            drop = max(4, s["ry"] - s["cy"])
+            s["dur"] = min(27 - s["start"], 3.5 + math.sqrt(drop) + self.rng.uniform(0, 1.5))
+        self.shards.sort(key=lambda s: (s["gy"], s["lift"]))
+
+    def make_shard(self, py, px, is_roof, big):
+        x0, x1, y0, y1 = px.min(), px.max() + 1, py.min(), py.max() + 1
+        patch = np.zeros((y1 - y0, x1 - x0, 4), "uint8")
+        patch[py - y0, px - x0] = self.still[py, px]
+        cx, cy = int(px.mean()), int(py.mean())
+        P, lift = self.rest_point(cx, cy, is_roof)
+        ang = self.rng.uniform(-1, 1) * (0.28 if big else 0.75)
+        if self.rng.random() < 0.2 and not big:
+            ang += math.pi
+        return dict(patch=patch, x0=x0, y0=y0, cx=cx, cy=cy, roof=is_roof, ang=ang, sq=self.rng.uniform(.62, .85),
+                    rx=int(round(P[0])), ry=int(round(P[1] - lift)), gy=P[1], lift=lift, big=big)
+
+    def wood_palette(self):
+        px = self.still[self.alpha][:, :3] / 255.0
+        cols = []
+        for c in px[:: max(1, len(px) // 2500)]:
+            h, s, v = colorsys.rgb_to_hsv(*c)
+            if 0.04 < h < 0.13 and s > 0.3 and 0.16 < v < 0.62:
+                cols.append((v, tuple(int(q) for q in c * 255)))
+        return sorted(cols)
+
+    def build_beams(self):
+        self.beams = []
+        pal = self.wood_palette()
+        if self.pit or len(pal) < 60:
+            return
+        n = int(self.span / 14)
+        for _ in range(n):
+            a, b = self.rng.uniform(.18, .82), self.rng.uniform(.18, .82)
+            P = self.front + a * (self.left - self.front) + b * (self.right - self.front)
+            d = self.rng.choice([self.left - self.front, self.right - self.front])
+            ang = math.atan2(d[1], d[0]) + self.rng.uniform(-.5, .5)
+            ln = self.span * self.rng.uniform(.14, .24)
+            lift = self.heap * self.rng.uniform(.4, 1.1)
+            self.beams.append(dict(P=P, ang=ang, ln=ln, lift=lift, pal=pal, v=self.rng.uniform(.3, .85), start=self.rng.uniform(11, 17)))
+
+    def beam_pixels(self, b):
+        pal = b["pal"]
+        lo = pal[int(len(pal) * b["v"] * .4)][1]
+        mid = pal[int(len(pal) * b["v"] * .75)][1]
+        hi = pal[int(len(pal) * min(.98, b["v"] + .12))][1]
+        out = []
+        n = int(b["ln"])
+        for i in range(n):
+            t = i - n / 2
+            x = t * math.cos(b["ang"])
+            y = t * math.sin(b["ang"])
+            out += [(x, y - 1, hi), (x, y, mid), (x, y + 1, lo)]
+        return out
+
+    def build_base(self):
+        """Dirt under the heap: the still's own dark shades, shown through the gaps."""
+        vals = self.still[self.alpha][:, :3]
+        lum = vals.sum(1)
+        dark = vals[lum < np.percentile(lum, 35)]
+        ids = self.np.randint(0, len(dark), self.alpha.shape)
+        n = _col_noise(self.alpha.shape, 2, self.rng.randint(0, 9999))
+        self.basecol = ((dark[ids] * .25 + dark.mean(0) * .75) * (n[..., None] * 0.3 + 0.7)).astype("uint8")
+        ys, xs = np.indices(self.alpha.shape)
+        A = self.left - self.front
+        B = self.right - self.front
+        det = A[0] * B[1] - A[1] * B[0]
+        a = ((xs - self.front[0]) * B[1] - (ys - self.front[1]) * B[0]) / det
+        b = ((ys - self.front[1]) * A[0] - (xs - self.front[0]) * A[1]) / det
+        edge = np.minimum.reduce([a, b, 1 - a, 1 - b])
+        en = _col_noise(self.alpha.shape, 3, self.rng.randint(0, 9999))
+        self.basemask = edge > (0.05 + 0.12 * en)
+        if self.pit:
+            self.basecol = (vals.mean(0) * .72 * (n[..., None] * 0.3 + 0.7)).astype("uint8")
+            self.basemask = self.floor | (self.alpha & ~self.stump & (en > .25))
+        self.baseorder = self.np.rand(*self.alpha.shape)
+        self.clump = _col_noise(self.alpha.shape, 4, 23)
+        self.stable = np.random.RandomState(11).rand(*self.alpha.shape)
+
+    def draw_patch(self, c, s, x, y, ang, sq, scale=1.0):
+        ph, pw = s["patch"].shape[:2]
+        ox, oy = s["cx"] - s["x0"], s["cy"] - s["y0"]
+        shade = _col_shade(s, self.heap, ang, sq)
+        if ang == 0 and sq == 1 and scale == 1:
+            X0, Y0 = int(x) - ox, int(y) - oy
+            xa, ya = max(0, X0), max(0, Y0)
+            xb, yb = min(self.w, X0 + pw), min(self.h, Y0 + ph)
+            if xa >= xb or ya >= yb:
+                return
+            src = s["patch"][ya - Y0:yb - Y0, xa - X0:xb - X0]
+            m = src[..., 3] > 0
+            c[ya:yb, xa:xb][m] = src[m]
+            return
+        r = int(math.hypot(ph, pw) * max(1, scale)) + 2
+        xa, xb, ya, yb = max(0, int(x) - r), min(self.w, int(x) + r), max(0, int(y) - r), min(self.h, int(y) + r)
+        if xa >= xb or ya >= yb:
+            return
+        gy, gx = np.mgrid[ya:yb, xa:xb]
+        dx, dy = (gx - x) / scale, (gy - y) / (sq * scale)
+        ca, sa = math.cos(-ang), math.sin(-ang)
+        ux = np.round(ca * dx - sa * dy + ox).astype(int)
+        uy = np.round(sa * dx + ca * dy + oy).astype(int)
+        ok = (ux >= 0) & (uy >= 0) & (ux < pw) & (uy < ph)
+        src = s["patch"][uy[ok], ux[ok]]
+        m = src[:, 3] > 127
+        idx = np.nonzero(ok)
+        px = src[m].copy()
+        px[:, 3] = 255
+        px[:, :3] = (px[:, :3] * shade).astype("uint8")
+        c[ya:yb, xa:xb][idx[0][m], idx[1][m]] = px
+
+    def shard_state(self, s, f):
+        t = (f - s["start"]) / s["dur"]
+        if t <= 0:
+            return s["cx"], s["cy"], 0, 1
+        if t >= 1:
+            return s["rx"], s["ry"], s["ang"], s["sq"]
+        p = t * t
+        return s["cx"] + (s["rx"] - s["cx"]) * t, s["cy"] + (s["ry"] - s["cy"]) * p, s["ang"] * t, 1 + (s["sq"] - 1) * p
+
+    def ordered(self):
+        draws = [(s["gy"], s["lift"], 0, i) for i, s in enumerate(self.shards)]
+        draws += [(b["P"][1], b["lift"], 1, i) for i, b in enumerate(self.beams)]
+        draws.sort()
+        return draws
+
+    def frame(self, f):
+        if f <= 0:
+            return self.still.copy()
+        c = np.zeros((self.h, self.w, 4), "uint8")
+        m = self.basemask & (self.baseorder < np.clip((f - 6) / 16, 0, 1))
+        c[m, :3] = self.basecol[m]
+        c[m, 3] = 255
+        if not self.pit:
+            H = self.wall * 1.6 * (1 - np.clip((f - 2) / 17, 0, 1))
+            if H > 0:
+                ys, xs = np.nonzero(self.alpha & ~self.stump)
+                keep = ((self.yf[xs] - ys) < H) & (xs > self.left[0] + 3) & (xs < self.right[0] - 3)
+                ys, xs = ys[keep], xs[keep]
+                c[ys, xs, :3] = (self.still[ys, xs, :3] * 0.28).astype("uint8")
+                c[ys, xs, 3] = 255
+        c[self.stump] = self.still[self.stump]
+        for _, _, kind, i in self.ordered():
+            if kind == 0:
+                s = self.shards[i]
+                x, y, ang, sq = self.shard_state(s, f)
+                self.draw_patch(c, s, x, y, ang, sq)
+            else:
+                self.draw_beam(c, self.beams[i], f)
+        return _col_tidy(c, self.basecol)
+
+    def draw_beam(self, c, b, f):
+        if f < b["start"]:
+            return
+        t = min(1, (f - b["start"]) / 4)
+        rest = b["P"] - np.array([0, b["lift"]])
+        y = rest[1] - (1 - t * t) * 6
+        for dx, dy, col in self.beam_pixels(b):
+            X, Y = int(round(rest[0] + dx)), int(round(y + dy))
+            if 0 <= X < self.w and 0 <= Y < self.h and (t >= 1 or self.alpha[Y, X]):
+                c[Y, X, :3] = col
+                c[Y, X, 3] = 255
+
+    def clear_frame(self, f):
+        """f 0 = rubble, the last step = empty plot. Top of the heap goes first, pieces shrink as they are carried off."""
+        c = np.zeros((self.h, self.w, 4), "uint8")
+        if f >= _COL_T - 1:
+            return c
+        keep = 1 - np.clip((f - 21) / 7, 0, 1)
+        m = self.basemask & (self.clump < keep)
+        c[m, :3] = self.basecol[m]
+        c[m, 3] = 255
+        k = self.stump & (self.clump < 1 - np.clip((f - 12) / 12, 0, 1))
+        c[k] = self.still[k]
+        for _, lift, kind, i in self.ordered():
+            it = self.shards[i] if kind == 0 else self.beams[i]
+            go = it.setdefault("gone", 1 + 13 * (1 - min(1, lift / max(1e-3, self.heap))) + self.rng.uniform(0, 6))
+            t = (f - go) / 3.0
+            if t >= 1:
+                continue
+            t = max(0, t)
+            if kind == 0:
+                self.draw_patch(c, it, it["rx"], it["ry"] - t * 2, it["ang"], it["sq"], 1 - .6 * t)
+            elif t == 0:
+                self.draw_beam(c, it, 99)
+        return _col_tidy(c, self.basecol, f < 21)
+
+
+def _col_char(img, seed):
+    """Burnt recolour: thatch and timber go to black, stone and brick darken, a little pale ash."""
+    a = img[..., 3] > 0
+    rgb = img[..., :3] / 255.0
+    lum = rgb @ np.array([.3, .59, .11])
+    warm = np.clip((rgb[..., 0] - rgb[..., 2]) * 3, 0, 1)
+    k = 0.86 - warm * 0.52
+    n = _col_noise(a.shape, 2, seed)
+    v = lum * k * (0.72 + n * 0.5) + 0.018
+    out = np.stack([v * 1.05, v * 0.98, v * 0.93], 2)
+    n2 = np.random.RandomState(seed + 1).rand(*a.shape)
+    ash = (n2 > 0.965) & (_col_noise(a.shape, 5, seed + 2) > .4)
+    out[ash] = (lum[ash][:, None] * .35 + .36) * np.array([1, .98, .94])
+    res = img.copy()
+    res[..., :3] = (np.clip(out * .8 + rgb * k[..., None] * .2, 0, 1) * 255).astype("uint8")
+    return res
+
+
+def _col_char_mix(a, b, f, order):
+    """Scorch spreads over the plain frame until, at f22, everything is burnt."""
+    t = np.clip((f - 1) / 21, 0, 1)
+    h = a.shape[0]
+    ys = np.arange(h)[:, None] / h
+    m = ((order * .45 + ys * .55) < t * 1.05) & (a[..., 3] > 0)
+    out = a.copy()
+    out[m] = b[m]
+    return out
+
+
+def _col_enclosed(o):
+    h, w = o.shape
+    im = Image.new("L", (w + 2, h + 2), 0)
+    im.paste(Image.fromarray((o * 255).astype("uint8")), (1, 1))
+    ImageDraw.floodfill(im, (0, 0), 128)
+    return np.array(im)[1:-1, 1:-1] == 0
+
+
+def _col_tidy(c, dark, fill=True):
+    """Grass must not show through the heap and no pixel may float alone."""
+    if fill:
+        hole = _col_enclosed(c[..., 3] > 0)
+        c[hole, :3] = dark[hole]
+        c[hole, 3] = 255
+    for _ in range(2):
+        o = (c[..., 3] > 0).astype(int)
+        n = sum(np.roll(np.roll(o, dy, 0), dx, 1) for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx)
+        hole = (o == 0) & (n >= 5)
+        c[hole, :3] = dark[hole]
+        c[hole, 3] = 255
+    o = (c[..., 3] > 0).astype(int)
+    n = sum(np.roll(np.roll(o, dy, 0), dx, 1) for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx)
+    c[(o == 1) & (n <= 1)] = 0
+    return c
+
+
+def _col_largest_piece(alpha):
+    """Share of the opaque pixels in the largest 8-connected piece (numpy only)."""
+    total = int(alpha.sum())
+    if not total:
+        return 1.0
+    seen = np.zeros_like(alpha)
+    h, w = alpha.shape
+    best = 0
+    for y0, x0 in zip(*np.nonzero(alpha)):
+        if seen[y0, x0]:
+            continue
+        seen[y0, x0] = True
+        stack, n = [(int(y0), int(x0))], 0
+        while stack:
+            y, x = stack.pop()
+            n += 1
+            for ny in range(max(0, y - 1), min(h, y + 2)):
+                for nx in range(max(0, x - 1), min(w, x + 2)):
+                    if alpha[ny, nx] and not seen[ny, nx]:
+                        seen[ny, nx] = True
+                        stack.append((ny, nx))
+        best = max(best, n)
+    return best / total
+
+
+def _col_reveal(frame, target, u):
+    """Let the next strip's first frame grow in under what is left of the rubble, complete on the last step."""
+    t = np.clip((u - (_COL_T - 9)) / 8, 0, 1)
+    if t <= 0:
+        return frame
+    order = np.random.RandomState(13).rand(*target.shape[:2])
+    m = (order < t) & (frame[..., 3] == 0) & (target[..., 3] > 0)
+    res = frame.copy()
+    res[m] = target[m]
+    return res
+
+
+def collapse_render(still, plan, frames=_COL_T, seed=7, target=None):
+    """Return {"collapse", "collapseBurnt", "clear", "clearBurnt"}, each a list of RGBA frames."""
+    sim = _CollapseSim(still, plan, seed)
+    units = [i * (_COL_T - 1) / (frames - 1) for i in range(frames)]
+    col = [sim.frame(u) for u in units]
+    clr = [sim.clear_frame(u) for u in units]
+    clr[0] = col[-1].copy()
+    order = np.random.RandomState(seed + 5).rand(*still.shape[:2])
+    burnt_col = [fr if u == 0 else (_col_char(fr, seed) if u >= 22 else _col_char_mix(fr, _col_char(fr, seed), u, order))
+                 for u, fr in zip(units, col)]
+    burnt_clr = [_col_char(fr, seed) for fr in clr]
+    burnt_clr[0] = burnt_col[-1].copy()
+    if target is not None:
+        clr = [_col_reveal(fr, target, u) for u, fr in zip(units, clr)]
+        burnt_clr = [_col_reveal(fr, target, u) for u, fr in zip(units, burnt_clr)]
+        clr[-1] = target.copy()
+        burnt_clr[-1] = target.copy()
+    return dict(collapse=col, collapseBurnt=burnt_col, clear=clr, clearBurnt=burnt_clr)
+
+
+def _col_visible_diff(a, b):
+    """Pixels that look different: alpha differs, or both show and the colour differs. Colour under alpha 0 is unseen."""
+    return (a[..., 3] != b[..., 3]) | ((a[..., 3] > 0) & (a[..., :3] != b[..., :3]).any(2))
+
+
+def collapse_gates(still, r, target=None):
+    """Checks on a render: the strips join up, the fall really happened, and the heap rests as one heap."""
+    alpha = still[..., 3] > 0
+    end = np.zeros_like(still) if target is None else target
+    g = {}
+    for key, cl in (("collapse", "clear"), ("collapseBurnt", "clearBurnt")):
+        c, k = r[key], r[cl]
+        rest = c[-1]
+        solid = rest[..., 3] > 0
+        v = dict(
+            opensOnStill=bool(np.array_equal(c[0], still)),
+            clearOpensOnRest=bool(np.array_equal(k[0], rest)),
+            clearEndsOnTarget=not _col_visible_diff(k[-1], end).any(),
+            settled=bool(np.array_equal(c[-2], rest)),
+            changedShare=round(float(_col_visible_diff(rest, still).sum() / max(1, alpha.sum())), 3),
+            outsideShare=round(float((solid & ~alpha).sum() / max(1, solid.sum())), 3),
+            largestPieceShare=round(_col_largest_piece(solid), 3),
+        )
+        v["ok"] = bool(v["opensOnStill"] and v["clearOpensOnRest"] and v["clearEndsOnTarget"] and v["settled"]
+                       and solid.any() and v["changedShare"] >= COLLAPSE_MIN_CHANGED
+                       and v["outsideShare"] <= COLLAPSE_MAX_OUTSIDE and v["largestPieceShare"] >= COLLAPSE_MIN_PIECE)
+        g[key] = v
+    return g
+
+
+def _col_load(path):
+    if not Path(path).is_file():
+        fail(f"missing image: {path}")
+    return np.array(Image.open(path).convert("RGBA"))
+
+
+def cmd_collapse(a):
+    """Rubble, collapse and clear, plain and burnt, from a still and a plan with groundBase, regions and roof."""
+    need_deps()
+    still = _col_load(a.still)
+    plan = json.loads(Path(a.plan).read_text(encoding="utf-8"))
+    for key in ("groundBase", "regions"):
+        if key not in plan:
+            fail(f"collapse plan needs '{key}'")
+    if a.frames < 8:
+        fail("collapse needs at least 8 frames")
+    target = None
+    if a.clear_to:
+        target = _col_load(a.clear_to)
+        if target.shape[0] != still.shape[0] or target.shape[1] % still.shape[1]:
+            fail("--clear-to is neither one frame nor a strip of the still's size")
+        target = target[:, :still.shape[1]]
+    r = collapse_render(still, plan, a.frames, a.seed, target)
+    d = Path(a.outdir)
+    d.mkdir(parents=True, exist_ok=True)
+    written = []
+
+    def write(arr, suffix):
+        p = d / f"{a.name}{suffix}.png"
+        Image.fromarray(arr, "RGBA").save(p)
+        written.append(str(p))
+
+    write(r["collapse"][-1], "Rubble")
+    write(r["collapseBurnt"][-1], "RubbleBurnt")
+    for key, suffix in (("collapse", "Collapse"), ("collapseBurnt", "CollapseBurnt"), ("clear", "Clear"), ("clearBurnt", "ClearBurnt")):
+        write(np.concatenate(r[key], axis=1), suffix)
+    g = collapse_gates(still, r, target)
+    ok = all(v["ok"] for v in g.values())
+    out(dict(ok=ok, name=a.name, frames=a.frames, seed=a.seed, gates=g, files=written), 0 if ok else 1)
+
+
 def cmd_contact(a):
     need_deps()
     sheet = np.array(Image.open(a.sheet).convert("RGBA"))
@@ -3415,6 +3925,15 @@ def main(argv=None):
     c.add_argument("--anim", default="place")
     c.add_argument("--root", default=".")
     c.set_defaults(fn=cmd_assemble)
+    c = sub.add_parser("collapse")
+    c.add_argument("still")
+    c.add_argument("plan")
+    c.add_argument("outdir")
+    c.add_argument("--name", required=True)
+    c.add_argument("--frames", type=int, default=_COL_T)
+    c.add_argument("--seed", type=int, default=7)
+    c.add_argument("--clear-to", dest="clear_to")
+    c.set_defaults(fn=cmd_collapse)
     c = sub.add_parser("contact")
     c.add_argument("sheet")
     c.add_argument("out")

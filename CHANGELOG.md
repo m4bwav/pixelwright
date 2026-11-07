@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261106-1 · 2026-11-06 · 0.10.0: `collapse` command for rubble, collapse and clear strips
+- because: L-088; user request
+- files: skills/pixelwright/scripts/pxw.py (collapse), tests/test_pxw.py, skills/pixelwright-animate/SKILL.md, LEARNINGS.md, plugin.json
+- One seeded shard simulation gives the rubble still, a collapse strip opening on the still and resting on the rubble, a clear strip, and burnt versions. `--clear-to` ends the clear strip on the next strip's first frame. Gates check the joins, that the heap settled, that it really fell, and that it rests as one piece. No existing command changes output.
+
 ### C-20261105-2 · 2026-11-05 · frames no longer crashes on an empty weld step
 - because: L-085
 - files: skills/pixelwright/scripts/pxw.py (_drones_at, puff sources), tests/test_pxw.py, LEARNINGS.md
