@@ -46,7 +46,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.10.1"
+VERSION = "0.10.2"
 
 try:
     import numpy as np
@@ -2441,6 +2441,7 @@ class _CollapseSim:
                 props |= _col_region(self.plan, k, self.alpha.shape)
             floor = _col_region(self.plan, self.plan.get("floor", "floor"), self.alpha.shape)
             self.floor = floor
+            self.props = props
             cx, cy = np.nonzero(floor)[1].mean(), np.nonzero(floor)[0].mean()
             ang = np.arctan2((ys - cy) * 1.6, xs - cx)
             wob = np.sin(ang * 3 + self.rng.uniform(0, 6)) + np.sin(ang * 7 + self.rng.uniform(0, 6)) * .5
@@ -2576,7 +2577,8 @@ class _CollapseSim:
         self.basemask = edge > (0.05 + 0.12 * en)
         if self.pit:
             self.basecol = (vals.mean(0) * .72 * (n[..., None] * 0.3 + 0.7)).astype("uint8")
-            self.basemask = self.floor | (self.alpha & ~self.stump & (en > .25))
+            # a fallen prop leaves no dirt in its own outline: its debris lands on the floor
+            self.basemask = self.floor | (self.alpha & ~self.stump & ~self.props & (en > .25))
         self.baseorder = self.np.rand(*self.alpha.shape)
         self.clump = _col_noise(self.alpha.shape, 4, 23)
         self.stable = np.random.RandomState(11).rand(*self.alpha.shape)

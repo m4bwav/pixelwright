@@ -1340,6 +1340,14 @@ class CollapseTest(unittest.TestCase):
         self.assertFalse(sw._col_tidy(hole.copy(), dark, keep=keep)[6:34, 6:34, 3].any())
         self.assertTrue(sw._col_tidy(hole.copy(), dark)[6:34, 6:34, 3].all())
 
+    def test_fallen_prop_leaves_no_dirt_in_its_outline(self):
+        still, plan = self.fixture(pit=True)
+        plan["regions"]["post"] = dict(poly=[[44, 4], [52, 4], [52, 40], [44, 40]])
+        plan["props"] = ["post"]
+        still[4:40, 44:52] = [90, 60, 30, 255]
+        rest = sw.collapse_render(still, plan)["collapse"][-1]
+        self.assertFalse(rest[4:14, 44:52, 3].any())
+
     def test_roof_falls_before_the_walls_land(self):
         still, plan = self.fixture()
         c = sw.collapse_render(still, plan)["collapse"]
