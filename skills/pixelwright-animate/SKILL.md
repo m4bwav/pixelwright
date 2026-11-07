@@ -86,7 +86,6 @@ A small structure (a well) takes no scaffold: the pit order, posts then roof as 
 (L-074). Fires and glows stay dark until the building stands and light last; a stack's mouth is laid with
 its rim; a water floor is filled after its ring is started (L-075). A lit still is the active loop's base; the idle
 still is cold, and the construction ends on it (L-076). Change a still, re-make every strip and GIF on it (L-077). `pxw.py collapse <still> <plan> <outdir> --name N` takes the same plan (groundBase, regions, roof; `"walls": "pit"` for pits) and writes rubble, collapse and clear, plain and burnt; `--clear-to` ends the clear on the next strip's first frame (L-088).
-
 `"scaffold"` (any natural plan) puts a pole scaffold up first and takes it down from the top over the last frames.
 Match the footprint: `"walls"` for square and oblong buildings (poles just outside each wall, one on every corner,
 up to the eaves), `"ring"` only for round pits and towers. Both are open work: 2 px poles about 26 px apart, a
