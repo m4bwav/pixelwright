@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261109-2 · 2026-11-09 · 0.13.0: `normals` writes normal maps for 2D lights
+- because: R-20261109-2; user request
+- files: skills/pixelwright/scripts/pxw.py (normals), skills/pixelwright-make/SKILL.md (Hand-offs), skills/pixelwright/SKILL.md (Route), tests/test_make.py (TestNormals), RESEARCH.md, plugin.json
+- New command after Hugo-Dz/spritefusion-sprite-normals (MIT); no existing command changes output.
+
 ### C-20261109-1 · 2026-11-09 · 0.12.0: `anim` cleans an image model's effect GIF into one sheet
 - because: L-090, R-20261109-1; user request
 - files: skills/pixelwright/scripts/pxw.py (anim), skills/pixelwright-animate/SKILL.md (Effects from a model's animation), skills/pixelwright/SKILL.md (Route), tests/test_pxw.py (Anim), plugin.json

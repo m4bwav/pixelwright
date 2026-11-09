@@ -27,6 +27,7 @@ Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, wh
   collapse <still.png> <plan.json> <outdir> --name N [--frames 30] [--seed 7] [--clear-to first.png]
                                                              rubble, collapse and clear, plain and burnt
   contact <sheet.png> <out.png> --frames N [--per 5] [--zoom 3]
+  normals <in> <outdir> [--frame-size WxH] [--relit] [--green-down]  normal map <name>_n.png for 2D lights
   pack    <out.png> <frame.png>...                           horizontal strip in the order given
   review  <dir> [--port 8765] [--extra items.json]           click page; every click saves <dir>/picks.json
   doctor                                                     versions, dependencies, artwright's aw.py
@@ -46,7 +47,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.12.0"
+VERSION = "0.13.0"
 
 try:
     import numpy as np
@@ -3094,6 +3095,111 @@ def cmd_anim(a):
              accent_colours=extra, fringe_pixels=fringe_total, wobble_before=before_w, wobble_after=after_w))
 
 
+def _nm_shift(f, dy, dx):
+    """f moved by (dy, dx) with edge values repeated."""
+    h, w = f.shape
+    p = np.pad(f, 1, mode="edge")
+    return p[1 + dy:1 + dy + h, 1 + dx:1 + dx + w]
+
+
+def _nm_blur(f, sigma):
+    """Separable Gaussian blur (numpy only), edges repeated."""
+    r = max(1, int(math.ceil(3 * sigma)))
+    k = np.exp(-0.5 * (np.arange(-r, r + 1) / sigma) ** 2)
+    k /= k.sum()
+    for ax in (0, 1):
+        p = np.pad(f, [(r, r) if i == ax else (0, 0) for i in (0, 1)], mode="edge")
+        n = f.shape[ax]
+        f = sum(k[i] * (p[i:i + n] if ax == 0 else p[:, i:i + n]) for i in range(2 * r + 1))
+    return f
+
+
+def _nm_depth(m):
+    """Distance from each opaque pixel to the outside, by erosion alternating 4- and 8-neighbour steps (an
+    octagonal approximation of the Euclidean distance; the height compresses it with a log anyway)."""
+    d = np.zeros(m.shape, np.float32)
+    cur, i = m.copy(), 0
+    while cur.any() and i < 256:
+        d += cur
+        n = cur & _nm_shift(cur, 1, 0) & _nm_shift(cur, -1, 0) & _nm_shift(cur, 0, 1) & _nm_shift(cur, 0, -1)
+        if i % 2:
+            n &= _nm_shift(cur, 1, 1) & _nm_shift(cur, -1, -1) & _nm_shift(cur, 1, -1) & _nm_shift(cur, -1, 1)
+        cur, i = n, i + 1
+    return d
+
+
+def _nm_normals(rgba, strength=1.5, shape=1.15, detail=6.0, radius=3.0, green_down=False):
+    """Unit normals (h, w, 3) for one frame: height = log-compressed depth inside the silhouette plus the painted
+    lightness blurred at two scales (alpha-weighted), then a Sobel slope. After Hugo-Dz/spritefusion-sprite-normals
+    (MIT, relief.rs). A heuristic, not geometry: dark paint reads as low."""
+    p = 4
+    im = np.pad(rgba.astype(np.float32) / 255, ((p, p), (p, p), (0, 0)))
+    a = im[..., 3]
+    m = a > 0.1
+    L = im[..., :3] @ np.array([0.2126, 0.7152, 0.0722], np.float32)
+    if m.any():
+        L = np.where(m, L - (L[m].min() + L[m].max()) / 2, 0)
+    d = _nm_depth(m)
+    sh = shape * radius * np.log1p(np.maximum(d - 0.5, 0) / radius)
+
+    def wblur(f, s):
+        w = _nm_blur(a, s)
+        return np.where(w > 1e-6, _nm_blur(f * a, s) / np.maximum(w, 1e-6), 0)
+
+    h = _nm_blur(sh, 0.8) + detail * (0.7 * wblur(L, 0.6) + 0.3 * wblur(L, 1.2))
+    S = _nm_shift
+    gx = (S(h, -1, 1) + 2 * S(h, 0, 1) + S(h, 1, 1) - S(h, -1, -1) - 2 * S(h, 0, -1) - S(h, 1, -1)) / 8
+    gy = (S(h, 1, -1) + 2 * S(h, 1, 0) + S(h, 1, 1) - S(h, -1, -1) - 2 * S(h, -1, 0) - S(h, -1, 1)) / 8
+    n = np.dstack([-gx * strength, gy * strength, np.ones_like(h)])  # image y runs down; +green = up (OpenGL)
+    n /= np.linalg.norm(n, axis=2, keepdims=True)
+    n[~m] = (0, 0, 1)
+    if green_down:
+        n[..., 1] *= -1
+    return n[p:-p, p:-p], m[p:-p, p:-p]
+
+
+def cmd_normals(a):
+    """A normal map for 2D lights: one sprite, a sheet (each --frame-size cell on its own) or an animated GIF/APNG
+    (frames side by side). Writes <name>_n.png with the source alpha, flat (128,128,255) outside the sprite."""
+    need_deps()
+    frames, _ = _anim_load([a.input])
+    if len(frames) > 1:
+        src = np.concatenate(frames, axis=1)
+        fw, fh = frames[0].shape[1], frames[0].shape[0]
+    else:
+        src = frames[0]
+        fw, fh = (int(v) for v in a.frame_size.lower().split("x")) if a.frame_size else (src.shape[1], src.shape[0])
+    H, W = src.shape[:2]
+    if W % fw or H % fh:
+        fail(f"image {W}x{H} is not a whole number of {fw}x{fh} cells")
+    n = np.zeros((H, W, 3), np.float32)
+    m = np.zeros((H, W), bool)
+    for y in range(0, H, fh):
+        for x in range(0, W, fw):
+            n[y:y + fh, x:x + fw], m[y:y + fh, x:x + fw] = _nm_normals(
+                src[y:y + fh, x:x + fw], a.strength, a.shape, a.detail, green_down=a.green_down)
+    o = np.round((n * 0.5 + 0.5) * 255).astype(np.uint8)
+    o[~m] = (128, 128, 255)
+    od = Path(a.outdir)
+    od.mkdir(parents=True, exist_ok=True)
+    name = a.name or Path(a.input).stem
+    Image.fromarray(np.dstack([o, src[..., 3]]), "RGBA").save(od / f"{name}_n.png")
+    res = dict(ok=True, normal=(od / f"{name}_n.png").as_posix(), size=[W, H], cell=[fw, fh],
+               cells=(W // fw) * (H // fh), opaque_pixels=int(m.sum()),
+               mean_normal_z=round(float(n[m][:, 2].mean()), 3) if m.any() else None,
+               green="down (DirectX)" if a.green_down else "up (OpenGL)")
+    if a.relit:
+        lt = np.array([-0.6, -0.6 if a.green_down else 0.6, 0.55])  # from the upper left
+        lt /= np.linalg.norm(lt)
+        lit = src[..., :3] / 255 * (0.35 + 0.65 * np.clip(n @ lt, 0, 1))[..., None]
+        lit = np.dstack([np.round(lit * 255).astype(np.uint8), src[..., 3]])
+        strip = np.concatenate([src, np.dstack([o, src[..., 3]]), lit], axis=1)
+        z = max(1, a.zoom)
+        Image.fromarray(strip, "RGBA").resize((strip.shape[1] * z, H * z), Image.NEAREST).save(od / f"{name}_relit.png")
+        res["relit"] = (od / f"{name}_relit.png").as_posix()
+    out(res)
+
+
 def cmd_pack(a):
     need_deps()
     ims = [Image.open(p).convert("RGBA") for p in a.frames]
@@ -4175,6 +4281,18 @@ def main(argv=None):
     c.add_argument("--only", help="a-b frame range, 0-based inclusive")
     c.add_argument("--zoom", type=int, default=3)
     c.set_defaults(fn=cmd_anim)
+    c = sub.add_parser("normals", help="normal map for 2D lights from a sprite, sheet or GIF")
+    c.add_argument("input", help="a sprite, a sheet (with --frame-size) or an animated GIF/APNG")
+    c.add_argument("outdir")
+    c.add_argument("--name", help="output stem (default: the input's)")
+    c.add_argument("--frame-size", help="WxH of one sheet cell; each cell gets its own normals")
+    c.add_argument("--green-down", action="store_true", help="DirectX convention (-Y green); default OpenGL/Unity/Godot")
+    c.add_argument("--strength", type=float, default=1.5)
+    c.add_argument("--shape", type=float, default=1.15, help="silhouette volume")
+    c.add_argument("--detail", type=float, default=6.0, help="how much painted lightness becomes relief")
+    c.add_argument("--relit", action="store_true", help="also write <name>_relit.png: source | normals | lit from upper left")
+    c.add_argument("--zoom", type=int, default=4)
+    c.set_defaults(fn=cmd_normals)
     c = sub.add_parser("pack")
     c.add_argument("out")
     c.add_argument("frames", nargs="+")

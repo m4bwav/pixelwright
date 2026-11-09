@@ -194,3 +194,14 @@ T-20261109-1). Guide: skills/pixelwright-animate/references/model-effects.md. PR
 installed plugin updated. comfyui-gen PR #195 (alpha-video.md prompt rules) merged. cinewright and game-juice
 unchanged: no compositing route in cinewright; game-juice already covers hit feel. Not taken: the relit-background
 trick (fixed scenes only). Also scrubbed a private project name from L-089.
+
+## 2026-11-09: 0.13.0 `normals`
+
+`pxw.py normals` writes `<name>_n.png` normal maps (sprite, `--frame-size` sheet, or GIF frames side by side;
+`--relit` strip; `--green-down` for DirectX-style engines), a numpy-only re-implementation of
+Hugo-Dz/spritefusion-sprite-normals (MIT, credited in R-20261109-2). Came from technique-harvest candidate 1x9xg1c.
+
+- Measured: 32 px mushroom mean z 0.574 (0.87 s incl. start-up), 96 px rubble stills 0.851 and 0.779, a 30-cell
+  96 px collapse sheet 0.831 in 0.44 s. Relit strips viewed: read as volume lit from the upper left.
+- Tests: TestNormals in tests/test_make.py (dome direction, alpha, green flip, independent cells, bad cell size).
+- Note: Unity URP 2D and Godot both expect green up (OpenGL); the candidate note had Unity under DirectX.
