@@ -205,3 +205,6 @@ Hugo-Dz/spritefusion-sprite-normals (MIT, credited in R-20261109-2). Came from t
   96 px collapse sheet 0.831 in 0.44 s. Relit strips viewed: read as volume lit from the upper left.
 - Tests: TestNormals in tests/test_make.py (dome direction, alpha, green flip, independent cells, bad cell size).
 - Note: Unity URP 2D and Godot both expect green up (OpenGL); the candidate note had Unity under DirectX.
+
+## 2026-11-09 character actions doc (0.13.1)
+- Added "Character actions from a video model" to pixelwright-animate references/model-effects.md from technique-harvest #18 (r/aigamedev 1x8m8ly), marked untested. Patch bump 0.13.1.

@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261109-3 · 2026-11-09 · 0.13.1: character actions from a video model (docs)
+- because: user request (technique-harvest #18, r/aigamedev post 1x8m8ly)
+- files: skills/pixelwright-animate/references/model-effects.md (Character actions from a video model), plugin.json, pxw.py VERSION
+- New untested guidance section, credited to the post; no command output changes.
+
 ### C-20261109-2 · 2026-11-09 · 0.13.0: `normals` writes normal maps for 2D lights
 - because: R-20261109-2; user request
 - files: skills/pixelwright/scripts/pxw.py (normals), skills/pixelwright-make/SKILL.md (Hand-offs), skills/pixelwright/SKILL.md (Route), tests/test_make.py (TestNormals), RESEARCH.md, plugin.json
