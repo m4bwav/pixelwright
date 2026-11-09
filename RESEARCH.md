@@ -114,6 +114,12 @@ Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P 
 - Notes, with page citations and the full proposal lists: kept with the owner's book-learnings records, outside
   this repository.
 
+### R-20261109-1 · 2026-11-09 · ChatGPT GIF effects to game pixel art (r/aigamedev, kasperzackgames)
+- Source: reddit.com/r/aigamedev/comments/1xrpexe (2026-11-09) and github.com/kasperzackgames/chatgpt-pixel-effects (MIT, d25ce12). Its clean_gif.py run here reproduces its README numbers and sheet byte for byte.
+- Prompt rules: flat #FF00FF key (#00FF00 for violet), pin the effect to one ground point, ask for 2 to 3 px art pixels, keep tips under ~85% height. ChatGPT ignores size (~300x300, ~95k px) and draws pixels 2.5 to 4 px wide off-grid; 5 of 7 GIFs usable.
+- Cleanup: key + edge despill, one fixed grid (or content-aware downscale via `unfake` when none), modal colour per cell, one OKLab k-means palette with an accent guard, greys detinted, x-pin to the ground. Taken into `pxw.py anim` without the scipy/scikit-learn/unfake deps (L-090).
+- Extras not taken: relit background copy blended near the blast (fixed scenes only; engine lights with normal maps for blasts anywhere, per the thread); Godot hit feel (game-juice covers it).
+
 ### R-20261024-1 · 2026-10-24 · Survey for pixel creation (the pixelwright expansion)
 - Track: tooling and subject. Magnitude 0.3 (scope widened; no animation claim changed).
 - Fixers exist and are good at their core job: Sprite Fusion Pixel Snapper (Rust CLI and WebAssembly, MIT; grid

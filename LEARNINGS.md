@@ -155,9 +155,16 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Scope: skill
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-06
 
+### L-090 · 2026-11-09 · Model-made effect animations: one grid, one palette, pinned, for all frames
+- Hypothesis: per-frame snap and palette are enough to clean an image model's effect GIF.
+- Rule: clean the whole animation at once (`pxw.py anim`): one grid offset and scale for every frame, one palette built from all frames, the key's spill removed and key-tinted greys neutralised, frames touching the ground pinned to one x. Soft "HD pixel art" has no detectable grid; take the art-pixel size from the user or a zoomed frame (`--scale 2.6`), never from run lengths (soft edges make them 1 px).
+- Evidence: the explosion GIF from kasperzackgames/chatgpt-pixel-effects (316x301, 16 frames). Per-frame pxw snap found no grid (frames stayed 316x301, one collapsed to 4x4) and per-frame palettes gave 338 colours across the strip. `pxw.py anim --scale 2.6 --neutral-greys`: 122x115, 25 shared colours, mean wobble 0.96 -> 0.32 px (max 0.56), no magenta; the kit's own clean_gif.py (reproduced byte for byte): 122x116, 26 colours, 0.43 -> 0.30 (max 1.05). Fire pillar 23 colours, lightning on green 25.
+- Scope: skill (pixelwright-animate)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-09
+
 ### L-089 · 2026-11-07 · Terrain tile variants: lock the borders, not the palette
 - Hypothesis: a variant of an autotile (blob) sheet that must mix freely with the original needs matching edges, and a palette shift or snap breaks that.
 - Rule: keep each tile's outer band (4 px at 48 px tiles) pixel-identical to the source and re-lay only the interior (offset copy of the full tile, ordered-dither fade into the band, never touching the outline's shading ring). Seamless by construction; check border equality per tile, not a seam heuristic. Seasonal recolours of the same sheet take the grass mask from the base sheet.
-- Evidence: Arvum Electrum GrassOnSand (2,121 colours, no fixed palette): V01 and its three season sheets pass border equality; a random 16x16 autotiled map mixing original and variant shows no seam.
+- Evidence: a colony-sim GrassOnSand sheet (2,121 colours, no fixed palette): V01 and its three season sheets pass border equality; a random 16x16 autotiled map mixing original and variant shows no seam.
 - Scope: skill (pixelwright-make, tiles)
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-07

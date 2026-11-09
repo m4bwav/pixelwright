@@ -46,7 +46,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.11.0"
+VERSION = "0.12.0"
 
 try:
     import numpy as np
@@ -2942,6 +2942,158 @@ def cmd_contact(a):
     out(dict(ok=True, out=a.out, frames=a.frames, frame_size=[fw, sheet.shape[0]]))
 
 
+def _anim_load(inputs):
+    """Frames (RGBA u8) and durations in ms from one animated file (GIF, APNG, WebP) or several stills."""
+    frames, durs = [], []
+    if len(inputs) == 1 and getattr(Image.open(inputs[0]), "n_frames", 1) > 1:
+        im = Image.open(inputs[0])
+        for i in range(im.n_frames):
+            im.seek(i)
+            frames.append(np.array(im.convert("RGBA")))
+            durs.append(int(im.info.get("duration", 100) or 100))
+    else:
+        for p in inputs:
+            frames.append(np.array(Image.open(p).convert("RGBA")))
+            durs.append(100)
+    return frames, durs
+
+
+def _oklab_l_to_srgb(L):
+    """sRGB 0..1 of the neutral grey with OKLab lightness L (for a grey, linear value = L cubed)."""
+    lin = L ** 3
+    return 12.92 * lin if lin <= 0.0031308 else 1.055 * lin ** (1 / 2.4) - 0.055
+
+
+def _anchor_x(a):
+    """(base row, mean x of the opaque pixels in the bottom two rows) or None for an empty frame."""
+    ys, xs = np.nonzero(a[..., 3] > 127)
+    if not len(ys):
+        return None
+    b = ys.max()
+    return int(b), float(xs[ys >= b - 1].mean())
+
+
+def _wobble(anchors, ground):
+    xs = [x for b, x in anchors if b >= ground - 2]
+    st = np.abs(np.diff(xs)) if len(xs) > 1 else np.zeros(1)
+    return dict(mean_x_step_px=round(float(st.mean()), 2), max_x_step_px=round(float(st.max()), 2), ground_frames=len(xs))
+
+
+def cmd_anim(a):
+    """An image model's animation (a ChatGPT GIF, video frames) to game-ready pixel art: key out the flat
+    background, put every frame on ONE pixel grid, give all frames ONE palette, pin effects to their ground point,
+    write frames, a sheet and its JSON. Per-frame snap and palette give every frame its own grid and colours."""
+    need_deps()
+    frames, durs = _anim_load(a.inputs)
+    if a.only:
+        lo, hi = (int(v) for v in a.only.split("-"))
+        frames, durs = frames[lo:hi + 1], durs[lo:hi + 1]
+    key = None if a.key == "none" else {"magenta": "ff00ff", "green": "00ff00"}.get(a.key, a.key)
+    keyed = [remove_background(f, key, a.tol)[0] if key else f for f in frames]
+    if key in ("ff00ff", "00ff00") and not a.keep_spill:
+        # despill: the key leaks into soft edges and tints greys (pink smoke). Magenta: R and B cannot both exceed
+        # G by more than they would without it; green: G cannot exceed max(R, B). This also shifts real violets
+        # (or greens), which is why violet effects are asked for on green and green effects on magenta.
+        for f in keyed:
+            c = f[..., :3].astype(np.int16)
+            if key == "ff00ff":
+                sp = np.clip(np.minimum(c[..., 0], c[..., 2]) - c[..., 1], 0, None)
+                c[..., 0] -= sp; c[..., 2] -= sp
+            else:
+                sp = np.clip(c[..., 1] - np.maximum(c[..., 0], c[..., 2]), 0, None)
+                c[..., 1] -= sp
+            f[..., :3] = np.clip(c, 0, 255).astype(np.uint8)
+    ex = sum(_edge_energy(f, 1) for f in keyed)
+    ey = sum(_edge_energy(f, 0) for f in keyed)
+    if a.scale:
+        s = float(a.scale)
+        ox, oy = _coherence(ex, s)[1], _coherence(ey, s)[1]
+        detected = False
+    else:
+        sx, ox, cx = detect_scale(ex, a.max)
+        sy, oy, cy = detect_scale(ey, a.max)
+        if sx <= 1 and sy <= 1:
+            fail("no shared pixel grid found across the frames (image models often draw soft 'HD pixel art' with "
+                 "none). Measure one art pixel on a zoomed frame and pass --scale, e.g. --scale 2.6", coherence=[cx, cy])
+        s = max(sx, sy)
+        detected = True
+    snapped = [snap_grid(f, s, (ox, oy))[0] for f in keyed]
+    before = len(np.unique(np.concatenate([f[f[..., 3] > 0][:, :3] for f in snapped] or [np.zeros((0, 3), np.uint8)]), axis=0))
+    fr_masks, fringe_total = [], 0
+    for f in snapped:  # key-tinted edge pixels next to the cleared area stay, but out of the palette
+        m = np.zeros(f.shape[:2], bool)
+        if key and key != "auto":
+            d = np.linalg.norm(oklab(f[..., :3]) - oklab(parse_rgb(key)), axis=2) * 255
+            clear = f[..., 3] < 128
+            near = np.zeros_like(clear)
+            near[1:] |= clear[:-1]; near[:-1] |= clear[1:]; near[:, 1:] |= clear[:, :-1]; near[:, :-1] |= clear[:, 1:]
+            m = near & ~clear & (d < a.tol * a.fringe)
+        fr_masks.append(m)
+        fringe_total += int(m.sum())
+    pool = np.concatenate([f[(f[..., 3] >= 128) & ~m][:, :3] for f, m in zip(snapped, fr_masks)])
+    if not len(pool):
+        fail("nothing opaque left after keying")
+    if a.palette:  # one fixed palette (a .hex/.gpl, a Lospec name, a project palette) shared by every effect
+        pal = load_palette(a.palette)
+    else:
+        pal = median_cut(pool, a.colours)
+    # accent guard: small, far-off colours (embers, sparks) that the shared palette would swallow get their own
+    err = np.linalg.norm(oklab(pool) - oklab(pal)[_nearest(pool, oklab(pal))[:, 0]], axis=1)
+    far = pool[err > a.accent]
+    extra = 0
+    if len(far) >= a.accent_min and a.max_extra and not a.palette:
+        add = median_cut(far, a.max_extra)
+        pal = np.unique(np.concatenate([pal, add]), axis=0)
+        extra = len(add)
+    if a.neutral_greys:  # palette greys the key tinted (pink smoke) lose their hue but keep their lightness
+        lab = oklab(pal)
+        ch = np.hypot(lab[:, 1], lab[:, 2])
+        for i in np.flatnonzero(ch < a.grey_chroma):
+            v = float(np.clip(np.round(255 * _oklab_l_to_srgb(lab[i, 0])), 0, 255))
+            pal[i] = (v, v, v)
+        pal = np.unique(pal, axis=0)
+    outs = []
+    for f in snapped:
+        g = f.copy()
+        g[..., 3] = np.where(g[..., 3] >= 128, 255, 0)
+        outs.append(quantise(g, pal))
+    # pin to the ground point: shift x only, and only frames that touch the ground (rising smoke keeps its height)
+    anchors = [_anchor_x(f) for f in outs]
+    live = [t for t in anchors if t]
+    ground = max(b for b, _ in live) if live else 0
+    before_w = _wobble(live, ground)
+    if a.anchor == "bottom" and live:
+        tx = float(np.median([x for b, x in live if b >= ground - 2]))
+        for i, t in enumerate(anchors):
+            if t and t[0] >= ground - 2:
+                dx = int(round(tx - t[1]))
+                if dx:
+                    outs[i] = np.roll(outs[i], dx, axis=1)
+                    if dx > 0:
+                        outs[i][:, :dx] = 0
+                    else:
+                        outs[i][:, dx:] = 0
+    after_w = _wobble([t for t in (_anchor_x(f) for f in outs) if t], ground)
+    od = Path(a.outdir)
+    (od / "frames").mkdir(parents=True, exist_ok=True)
+    h, w = outs[0].shape[:2]
+    sheet = np.zeros((h, w * len(outs), 4), np.uint8)
+    for i, f in enumerate(outs):
+        save_u8(f, str(od / "frames" / f"{i:02d}.png"))
+        sheet[:, i * w:(i + 1) * w] = f
+    name = a.name or Path(a.inputs[0]).stem
+    save_u8(sheet, str(od / f"{name}_sheet.png"))
+    (od / f"{name}_palette.hex").write_text("\n".join(_hex(c) for c in sorted(pal, key=lambda c: oklab(c)[0])) + "\n")
+    meta = dict(image=f"{name}_sheet.png", frame_size=[w, h], ground_row=ground,
+                frames=[dict(x=i * w, y=0, w=w, h=h, duration=d) for i, d in enumerate(durs)],
+                palette=[_hex(c) for c in pal])
+    (od / f"{name}_sheet.json").write_text(json.dumps(meta, indent=1))
+    contact_sheet(outs, min(8, len(outs)), a.zoom).save(od / f"{name}_contact.png")
+    out(dict(ok=True, out=str(od), frames=len(outs), scale=round(s, 3), offset=[round(ox, 2), round(oy, 2)],
+             detected=detected, native=[w, h], colours_after_snap=int(before), colours_final=int(len(pal)),
+             accent_colours=extra, fringe_pixels=fringe_total, wobble_before=before_w, wobble_after=after_w))
+
+
 def cmd_pack(a):
     need_deps()
     ims = [Image.open(p).convert("RGBA") for p in a.frames]
@@ -4002,6 +4154,27 @@ def main(argv=None):
     c.add_argument("--per", type=int, default=5)
     c.add_argument("--zoom", type=int, default=3)
     c.set_defaults(fn=cmd_contact)
+    c = sub.add_parser("anim", help="animated GIF/frames from an image model -> one grid, one palette, pinned sheet")
+    c.add_argument("inputs", nargs="+", help="one animated GIF/APNG/WebP, or the frames in order")
+    c.add_argument("outdir")
+    c.add_argument("--name")
+    c.add_argument("--key", default="magenta", help="magenta, green, auto, none or a hex colour")
+    c.add_argument("--tol", type=float, default=40)
+    c.add_argument("--neutral-greys", action="store_true", help="palette colours under --grey-chroma become true greys")
+    c.add_argument("--grey-chroma", type=float, default=0.05)
+    c.add_argument("--keep-spill", action="store_true", help="skip the despill (key colour bleeding into the subject)")
+    c.add_argument("--fringe", type=float, default=1.0, help="key-tinted edge pixels within tol x this stay out of the palette")
+    c.add_argument("--scale", type=float, help="art pixel size in image pixels (fractional is fine, e.g. 2.6)")
+    c.add_argument("--max", type=float, default=16)
+    c.add_argument("--colours", type=int, default=20)
+    c.add_argument("--palette", help="map every frame to this palette instead of building one (.hex, .gpl or a Lospec name)")
+    c.add_argument("--max-extra", type=int, default=6, help="extra colours kept for small far-off accents")
+    c.add_argument("--accent", type=float, default=0.08, help="OKLab error that makes a pixel an accent")
+    c.add_argument("--accent-min", type=int, default=12)
+    c.add_argument("--anchor", default="bottom", choices=["bottom", "none"])
+    c.add_argument("--only", help="a-b frame range, 0-based inclusive")
+    c.add_argument("--zoom", type=int, default=3)
+    c.set_defaults(fn=cmd_anim)
     c = sub.add_parser("pack")
     c.add_argument("out")
     c.add_argument("frames", nargs="+")

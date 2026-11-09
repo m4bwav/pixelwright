@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261109-1 · 2026-11-09 · 0.12.0: `anim` cleans an image model's effect GIF into one sheet
+- because: L-090, R-20261109-1; user request
+- files: skills/pixelwright/scripts/pxw.py (anim), skills/pixelwright-animate/SKILL.md (Effects from a model's animation), skills/pixelwright/SKILL.md (Route), tests/test_pxw.py (Anim), plugin.json
+- New command; no existing command changes output.
+
 ### C-20261106-5 · 2026-11-06 · 0.11.0: `stack` on moving effects, `detached_pixels_late` on upgrades
 - because: L-015, L-082
 - files: skills/pixelwright/scripts/pxw.py (`_moving_source`, `_detached_pixels`, `gates`), references/effects.md, tests/test_pxw.py

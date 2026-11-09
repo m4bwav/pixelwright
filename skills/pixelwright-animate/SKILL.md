@@ -1,6 +1,6 @@
 ---
 name: pixelwright-animate
-description: Animate an existing 2D game sprite (a building, machine or prop) without redrawing it. A brief names regions of the still and effects (glow pulse, blink, glint, light spill, power-off, sparks, steam, dust, part shift, rotate or bend, a wheel turned by a 3D render's passes, brighten for painted art, drifting bands, stripe scroll, level fill, arcs, drones and carts, realistic construction); pxw.py makes the frames in code, keeps every pixel outside the regions identical, locks colours to the still's palette, gates the result, packs a sheet with previews and serves a click-to-pick review page. PixelLab frames paste back through the mask. Use on 'animate this building', 'make the furnace glow when used', 'placement animation', 'sprite sheet from this still'. Making a still into real pixel art is pixelwright-make; rendering stills is comfyui-gen; measuring pixel art is artwright-pixel. Also 'refresh pixelwright'.
+description: Animate an existing 2D game sprite (a building, machine or prop) without redrawing it. A brief names regions of the still and effects (glow pulse, blink, glint, light spill, power-off, sparks, steam, dust, part shift, rotate or bend, a wheel turned by a 3D render's passes, brighten for painted art, drifting bands, stripe scroll, level fill, arcs, drones and carts, realistic construction); pxw.py makes the frames in code, keeps every pixel outside the regions identical, locks colours to the still's palette, gates the result, packs a sheet with previews and serves a click-to-pick review page. PixelLab frames paste back through the mask. Also cleans a model's effect GIF (pxw.py anim). Use on 'animate this building', 'clean up this ChatGPT GIF', 'make the furnace glow when used', 'placement animation', 'sprite sheet from this still'. Making a still into real pixel art is pixelwright-make; rendering stills is comfyui-gen; measuring pixel art is artwright-pixel. Also 'refresh pixelwright'.
 ---
 
 # pixelwright-animate
@@ -74,8 +74,7 @@ Keep a prop to the part that stands against the sky: the ground shown under a wa
 pixels below it and reads as streaks over a lumpy floor, so a frame or ladder lying on the floor or the rim goes
 with them instead (L-071).
 A fenced yard (a coop, a pen: a fence round bare ground, a hut inside) takes the pit order too: the fence as the rim,
-the yard as the floor, the hut as the prop, with `"propGround": "clear"` so the hut's area stays empty until it rises
-(L-072).
+the yard as the floor, the hut as the prop, with `"propGround": "clear"` so the hut's area stays empty until it rises (L-072).
 A camp (tents round a fire, no fence) takes the pit order, the clearing as floor, and the props in build order with
 `"propOrder": "each"`; `"propGround"` as a list clears only those, so a flame prop waits on its fire bed. Give strays
 between polygons to the floor or a prop (they are rim and draw early). No scaffold round tents (L-073). An upgrade:
@@ -155,6 +154,7 @@ A screen-space `rotate` is wrong for a wheel seen at an angle; with no pos pass,
 
 ## Fallback: motion code cannot fake
 
+Explosions, lightning, spells from a model's GIF: [references/model-effects.md](references/model-effects.md) (`pxw.py anim`, L-090).
 A dome opening or an arm unfolding: ask the human first (it costs money), naming the sprite, the motion and the
 cost. PixelLab (REST `api.pixellab.ai/v2`, Bearer key from the `PIXELLAB_API_KEY` environment variable, never a
 file): `animate-with-text-v3` keeps the input as frame 1; `interpolation-v2` and `edit-animation-v2` suit a
