@@ -182,3 +182,15 @@ docs-only record PR and worktree cleanup.
 reasons (C-20261105-1). New text went to effects.md (Rules from use, Natural construction) and TESTS.md (Case design);
 SKILL.md was left alone because pixelwright-animate is at the 200-line limit. 63 animation tests, 37 make tests and
 structure checks pass. Reproduced L-085 on 0.9.1. Owed code work is in HANDOFF.md. 0.9.2 is not tagged.
+
+## 2026-11-09 · 0.12.0: `pxw.py anim` from the r/aigamedev ChatGPT GIF technique
+
+Mark asked for an evaluation of reddit.com/r/aigamedev/comments/1xrpexe (kasperzackgames/chatgpt-pixel-effects, MIT). The kit's
+clean_gif.py was run in a scratch venv and reproduced its README numbers and its sheet byte for byte. pxw had no
+answer for an animation: per-frame snap found no grid in ChatGPT's soft "HD pixel art" and per-frame palettes gave
+338 colours. New `pxw.py anim` (one grid, one palette, despill, neutral greys, accent guard, ground x-pin, sheet +
+JSON, `--palette` for one game palette) reaches parity without scipy/scikit-learn/unfake (L-090, R-20261109-1,
+T-20261109-1). Guide: skills/pixelwright-animate/references/model-effects.md. PR #54 merged, v0.12.0 released,
+installed plugin updated. comfyui-gen PR #195 (alpha-video.md prompt rules) merged. cinewright and game-juice
+unchanged: no compositing route in cinewright; game-juice already covers hit feel. Not taken: the relit-background
+trick (fixed scenes only). Also scrubbed a private project name from L-089.
