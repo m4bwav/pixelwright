@@ -1,6 +1,6 @@
 ---
 name: pixelwright-animate
-description: Animate an existing 2D game sprite (a building, machine or prop) without redrawing it. A brief names regions of the still and effects (glow pulse, blink, glint, light spill, power-off, sparks, steam, dust, part shift, rotate or bend, a wheel turned by a 3D render's passes, brighten for painted art, drifting bands, stripe scroll, level fill, arcs, drones and carts, realistic construction); pxw.py makes the frames in code, keeps every pixel outside the regions identical, locks colours to the still's palette, gates the result, packs a sheet with previews and serves a click-to-pick review page. PixelLab frames paste back through the mask. Use on 'animate this building', 'make the furnace glow when used', 'placement animation', 'sprite sheet from this still'. Making a still into real pixel art is pixelwright-make; rendering stills is comfyui-gen; measuring pixel art is artwright-pixel. Also 'refresh pixelwright'.
+description: Animate an existing 2D game sprite (a building, machine or prop) without redrawing it. A brief names regions of the still and effects (glow pulse, blink, glint, light spill, power-off, sparks, steam, dust, part shift, rotate or bend, a wheel turned by a 3D render's passes, brighten for painted art, drifting bands, stripe scroll, level fill, arcs, drones and carts, realistic construction); pxw.py makes the frames in code, keeps every pixel outside the regions identical, locks colours to the still's palette, gates the result, packs a sheet with previews and serves a click-to-pick review page. PixelLab frames paste back through the mask. Also cleans an image model's animation (a ChatGPT GIF, video frames of an explosion or spell) into one grid, one palette and a pinned sheet (pxw.py anim). Use on 'animate this building', 'clean up this ChatGPT GIF', 'make the furnace glow when used', 'placement animation', 'sprite sheet from this still'. Making a still into real pixel art is pixelwright-make; rendering stills is comfyui-gen; measuring pixel art is artwright-pixel. Also 'refresh pixelwright'.
 ---
 
 # pixelwright-animate
@@ -152,6 +152,32 @@ point has in the painted frame 0, folded into one sector of the part's symmetry,
 painted part and the loop closes after one spoke interval. The gaps come from a plate painted without the part.
 Region: `"model": {"frames": ..., "part": ...}`. Details: [references/effects.md](references/effects.md#model-rotate).
 A screen-space `rotate` is wrong for a wheel seen at an angle; with no pos pass, give it a `plane` (L-041).
+
+## Effects from a model's animation (ChatGPT GIF, video frames)
+
+Explosions, lightning, fire and spells are hard in code and easy for a model. Image models draw soft "HD pixel
+art": no shared grid, 250+ colours, a background tint, a blast that wobbles (L-090). Ask for the fixes in the
+prompt, then clean in one pass:
+
+- Prompt: "flat solid pure magenta #FF00FF background in every frame" (green #00FF00 for violet or purple
+  effects, or the key eats them); pin it: "the bottom edge is the ground line and the explosion hits it at the
+  bottom centre, at the same point in every frame"; "fine pixel art, each art pixel 2 to 3 image pixels wide";
+  "the tallest flames reach about 85 percent of the frame height, empty background above and at both sides".
+  Re-roll coarse or cut-off takes (about 5 in 7 usable). Any reachable video model can stand in for ChatGPT:
+  same prompt rules, frames via ffmpeg.
+
+```
+pxw.py anim <fx.gif | frames...> <outdir> --name fx [--key magenta|green] [--scale 2.6] [--colours 20]
+    [--neutral-greys] [--palette game.hex] [--anchor bottom|none] [--only 3-14]
+```
+
+One grid for every frame (detected over all frames pooled; soft art has none, so the command stops and asks for
+`--scale`: measure one art pixel on a zoomed frame), the key cleared and its spill removed, one palette for all
+frames with up to 6 extra colours for small far-off accents (embers), key-tinted greys made neutral with
+`--neutral-greys`, frames that touch the ground pinned to one x, then frames, `<name>_sheet.png` + `.json`
+(rects, durations), a `.hex` palette and a contact sheet. `--palette` maps several effects to one game palette so
+they belong together. The JSON prints colours and wobble before and after. Hit feel (hit-stop, flash, shake) is
+game-juice's job.
 
 ## Fallback: motion code cannot fake
 

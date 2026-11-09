@@ -117,6 +117,10 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
   `evals/check_make_outcome.py` passes the skill's output and fails a plain nearest downsample (281 stray colours).
 - led to: L-046, L-047
 
+### T-20261109-1 · 2026-11-09 · unittest + side-by-side vs the kasperzackgames kit · Windows 11, Opus · 117/117
+- `tests/test_pxw.py` Anim: a 3 px-grid GIF on magenta with spill and x jitter detects scale 3, keeps the palette, reduces wobble, leaves no magenta; a soft GIF stops and asks for `--scale`.
+- Side by side on the kit's explosion.gif: numbers in L-090; contact sheets compared by eye, frames 2/6/10/13 match the kit's look.
+
 ### T-20261023-2 · 2026-10-23 · evergreen worth --ab (claude -p) + unittest · Windows 11, Opus · unit 23/23; A/B action 2/3 with vs 0/3 without; outcome 3/3 vs 3/3 (re-graded)
 - `tests/test_sw.py`: 23/23 (every effect, every gate fails when its rule breaks, review page, legacy gates files).
   `tests/check_skills.py`: ok. Regression: the 8 pilot sheets reproduce byte for byte.

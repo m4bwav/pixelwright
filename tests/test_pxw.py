@@ -1503,5 +1503,51 @@ class CollapseTest(unittest.TestCase):
             self.assertIn("groundBase", json.loads(p.stdout)["error"])
 
 
+class Anim(Base):
+    """pxw.py anim: an image model's GIF on magenta -> one grid, one palette, pinned to the ground."""
+
+    def gif(self, jitter=True):
+        rng = np.random.default_rng(3)
+        cols = np.array([[255, 240, 120], [255, 160, 40], [200, 60, 20], [120, 110, 110], [255, 255, 255]], np.uint8)
+        art = cols[rng.integers(0, 5, (20, 16))]
+        frames = []
+        for i in range(8):
+            f = np.zeros((40, 40, 3), np.uint8); f[:] = (255, 0, 255)
+            dx = (1, -1, 0, 2, -1, 1, 0, -2)[i] if jitter else 0
+            h = 8 + i  # grows from the ground, base on the bottom row
+            f[40 - h:40, 12 + dx:28 + dx] = art[20 - h:20]
+            f = np.repeat(np.repeat(f, 3, 0), 3, 1)
+            f[f.sum(2) > 600] = np.minimum(255, f[f.sum(2) > 600].astype(int) + [0, 0, 30])  # magenta spill on whites
+            frames.append(Image.fromarray(f))
+        frames[0].save(self.dir / "fx.gif", save_all=True, append_images=frames[1:], duration=80, loop=0)
+        return self.dir / "fx.gif"
+
+    def test_one_grid_one_palette_pinned(self):
+        g = self.gif()
+        code, r = self.run_sw("anim", g, "o", "--name", "fx", "--colours", "8")
+        self.assertEqual(code, 0, r)
+        self.assertTrue(r["detected"])
+        self.assertAlmostEqual(r["scale"], 3, delta=0.05)
+        self.assertEqual(r["native"], [40, 40])
+        self.assertLessEqual(r["colours_final"], 8 + 6)
+        self.assertLess(r["wobble_after"]["mean_x_step_px"], r["wobble_before"]["mean_x_step_px"])
+        meta = json.loads((self.dir / "o" / "fx_sheet.json").read_text())
+        self.assertEqual(len(meta["frames"]), 8)
+        self.assertEqual(meta["frames"][0]["duration"], 80)
+        sheet = np.array(Image.open(self.dir / "o" / "fx_sheet.png").convert("RGBA"))
+        px = sheet[sheet[..., 3] > 0][:, :3].astype(int)
+        self.assertFalse(((px[:, 0] > 200) & (px[:, 2] > 200) & (px[:, 1] < 80)).any(), "magenta left in the sheet")
+        self.assertLessEqual(len(np.unique(px, axis=0)), r["colours_final"])
+
+    def test_soft_frames_ask_for_scale(self):
+        im = Image.new("RGB", (64, 64), (255, 0, 255))
+        im.paste((250, 150, 40), (20, 30, 44, 64))
+        im = im.resize((97, 97), Image.BILINEAR)  # soft edges, no grid
+        im.save(self.dir / "s.gif", save_all=True, append_images=[im, im], duration=80)
+        code, r = self.run_sw("anim", self.dir / "s.gif", "o")
+        self.assertNotEqual(code, 0)
+        self.assertIn("--scale", r["error"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)
