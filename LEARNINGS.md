@@ -165,6 +165,6 @@ Write an entry the moment a real signal happens: a user correction, the same err
 ### L-089 · 2026-11-07 · Terrain tile variants: lock the borders, not the palette
 - Hypothesis: a variant of an autotile (blob) sheet that must mix freely with the original needs matching edges, and a palette shift or snap breaks that.
 - Rule: keep each tile's outer band (4 px at 48 px tiles) pixel-identical to the source and re-lay only the interior (offset copy of the full tile, ordered-dither fade into the band, never touching the outline's shading ring). Seamless by construction; check border equality per tile, not a seam heuristic. Seasonal recolours of the same sheet take the grass mask from the base sheet.
-- Evidence: Arvum Electrum GrassOnSand (2,121 colours, no fixed palette): V01 and its three season sheets pass border equality; a random 16x16 autotiled map mixing original and variant shows no seam.
+- Evidence: a colony-sim GrassOnSand sheet (2,121 colours, no fixed palette): V01 and its three season sheets pass border equality; a random 16x16 autotiled map mixing original and variant shows no seam.
 - Scope: skill (pixelwright-make, tiles)
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-07
