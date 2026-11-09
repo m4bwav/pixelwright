@@ -102,6 +102,10 @@ time, then `make` again.
   A mirrored copy also mirrors the light: re-light it, or accept it knowingly.
 - Editing by hand: the user's Aseprite (`aseprite --batch in.png --palette out/<id>.gpl --color-mode indexed
   --save-as x.aseprite`) or an Aseprite MCP server.
+- Normal maps, only when the game moves lights over sprites (2.5D, torches, day cycles): `pxw.py normals
+  out/<id>.png out --relit` (sheets: `--frame-size WxH`; GIFs: frames side by side) writes `<id>_n.png`; check the
+  relit strip. Unity URP 2D: Sprite Editor Secondary Textures, name `_NormalMap`. Godot 4: a CanvasTexture's
+  normal texture. Both use green up; `--green-down` only for DirectX-style engines. Dark paint reads as low.
 - Engine import (point filter, no compression, integer pixels per unit): the engine plugin, named, not configured.
 - Other fixers: Pixel Snapper, unfake, proper-pixel-art (artwright-pixel's references). Use one when the human
   already has it; compare with `aw.py pixel` and keep whichever scores cleaner.

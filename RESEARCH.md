@@ -114,6 +114,16 @@ Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P 
 - Notes, with page citations and the full proposal lists: kept with the owner's book-learnings records, outside
   this repository.
 
+### R-20261109-2 · 2026-11-09 · Normal maps from one sprite (r/aigamedev 1x9xg1c, Hugo-Dz)
+- Source: github.com/Hugo-Dz/spritefusion-sprite-normals (Rust CLI and wasm, MIT), `src/relief.rs`. Credit: the
+  method and default constants (shape 1.15, detail 6, blur 0.7 x 0.6 px + 0.3 x 1.2 px, strength 1.5) are theirs.
+- Method: height = log-compressed distance to the silhouette edge plus the painted lightness, centred and blurred
+  alpha-weighted at two scales; Sobel slope to a normal; flat (128,128,255) and the source alpha outside. A
+  heuristic: dark paint reads as a recess.
+- Taken into `pxw.py normals` in numpy only (an octagonal erosion distance instead of scipy's EDT). Their binary
+  was not run. Measured: a 32 px mushroom mean normal z 0.574, two 96 px rubble stills 0.851 and 0.779, a 30-cell
+  96 px collapse sheet 0.831 in 0.44 s; the relit strips read as volume lit from the upper left.
+
 ### R-20261109-1 · 2026-11-09 · ChatGPT GIF effects to game pixel art (r/aigamedev, kasperzackgames)
 - Source: reddit.com/r/aigamedev/comments/1xrpexe (2026-11-09) and github.com/kasperzackgames/chatgpt-pixel-effects (MIT, d25ce12). Its clean_gif.py run here reproduces its README numbers and sheet byte for byte.
 - Prompt rules: flat #FF00FF key (#00FF00 for violet), pin the effect to one ground point, ask for 2 to 3 px art pixels, keep tips under ~85% height. ChatGPT ignores size (~300x300, ~95k px) and draws pixels 2.5 to 4 px wide off-grid; 5 of 7 GIFs usable.

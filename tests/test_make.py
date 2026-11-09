@@ -507,5 +507,39 @@ class TestRound2(Base):
         self.assertTrue(np.array_equal(self.load("out/far.png")[..., 3], a[..., 3]))
 
 
+class TestNormals(Base):
+    def disc(self):
+        y, x = np.mgrid[:20, :20]
+        a = np.zeros((20, 20, 4), np.uint8)
+        a[(x - 9.5) ** 2 + (y - 9.5) ** 2 < 64] = [200, 60, 60, 255]
+        return a
+
+    def test_disc_reads_as_a_dome_and_keeps_alpha(self):
+        save(self.disc(), self.dir / "d.png")
+        code, res = self.run_pxw("normals", "d.png", "out", "--relit")
+        self.assertEqual(code, 0, res)
+        self.assertTrue(0.5 < res["mean_normal_z"] < 0.97, res)
+        n = self.load("out/d_n.png")
+        self.assertTrue(np.array_equal(n[..., 3], self.disc()[..., 3]))
+        self.assertEqual(n[0, 0, :3].tolist(), [128, 128, 255])
+        self.assertLess(n[10, 3, 0], 100)   # left rim faces left
+        self.assertGreater(n[10, 16, 0], 156)
+        self.assertGreater(n[3, 10, 1], 156)  # top rim faces up (OpenGL green)
+        self.assertTrue((self.dir / "out/d_relit.png").exists())
+        code, res = self.run_pxw("normals", "d.png", "dx", "--green-down")
+        self.assertLess(self.load("dx/d_n.png")[3, 10, 1], 100)
+
+    def test_sheet_cells_are_independent(self):
+        d = self.disc()
+        save(np.concatenate([d, d], axis=1), self.dir / "s.png")
+        code, res = self.run_pxw("normals", "s.png", "out", "--frame-size", "20x20")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["cells"], 2)
+        n = self.load("out/s_n.png")
+        self.assertTrue(np.array_equal(n[:, :20], n[:, 20:]))
+        code, res = self.run_pxw("normals", "s.png", "out", "--frame-size", "15x20")
+        self.assertEqual(code, 1)
+
+
 if __name__ == "__main__":
     unittest.main()
