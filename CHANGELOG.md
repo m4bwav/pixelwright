@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261109-4 · 2026-11-09 · 0.13.2: code-drawn route and craft rules (docs)
+- because: R-20261109-3; user request (technique-harvest, r/aigamedev post 1xb3k2l)
+- files: skills/pixelwright/SKILL.md (Route), skills/pixelwright-make/SKILL.md (Step 4: look), RESEARCH.md, plugin.json, pxw.py VERSION
+- Untested route for small icons, tiles and UI drawn as palette-keyed grids, credited to claude-pxl (MIT); no command output changes.
+
 ### C-20261109-3 · 2026-11-09 · 0.13.1: character actions from a video model (docs)
 - because: user request (technique-harvest #18, r/aigamedev post 1x8m8ly)
 - files: skills/pixelwright-animate/references/model-effects.md (Character actions from a video model), plugin.json, pxw.py VERSION

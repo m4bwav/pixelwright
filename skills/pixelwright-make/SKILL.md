@@ -95,6 +95,10 @@ palette means too few colours for the value range: first share ramp ends between
 greens, skin and wood meeting in one shadow), then raise the budget by 2 to 4 rather than dithering. One fix at a
 time, then `make` again.
 
+Craft rules (after claude-pxl, MIT): no outline at 16 px and under; shine is a lighter tone, white only for metal
+or gem glints; pure black only as outline, never in shadow; 2 to 4 shades per material; a sprite the game flips is
+lit from straight above; every surface mark has a cause. Replacing approved art: show old and new side by side.
+
 ## Hand-offs
 
 - Animating the finished still: pixelwright-animate (its `still` is `out/<id>.png`).
