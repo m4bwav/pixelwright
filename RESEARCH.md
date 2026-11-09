@@ -114,6 +114,14 @@ Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P 
 - Notes, with page citations and the full proposal lists: kept with the owner's book-learnings records, outside
   this repository.
 
+### R-20261109-3 · 2026-11-09 · Code-drawn pixel art (claude-pxl fork, r/aigamedev 1xb3k2l)
+- Source: github.com/augusto-scarvalho/claude-pxl (fork of crsolver/claude-pxl, MIT), state of 2026-10-27: a JS
+  DSL (palettes, ramps, grid strings, mirrors, layers, anims) with 14 commands and 404 tests; Node 22.18.
+- Cost (author's own measurement): one agent drew a 320x180 animated street in 85 turns / 31 min; a planner plus
+  forks pipeline cost about 5x the tokens and 2x the time and was less coherent.
+- Taken: a code-drawn route row in the hub and six craft rules in pixelwright-make Step 4, credited. No code
+  copied; the route is untested here (proposed test: same 32 px potion drawn vs rendered, scored by `aw.py pixel`).
+
 ### R-20261109-2 · 2026-11-09 · Normal maps from one sprite (r/aigamedev 1x9xg1c, Hugo-Dz)
 - Source: github.com/Hugo-Dz/spritefusion-sprite-normals (Rust CLI and wasm, MIT), `src/relief.rs`. Credit: the
   method and default constants (shape 1.15, detail 6, blur 0.7 x 0.6 px + 0.3 x 1.2 px, strength 1.5) are theirs.

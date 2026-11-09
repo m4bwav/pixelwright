@@ -16,6 +16,7 @@ JSON object; exit 1 means a check failed, 2 a usage error (argparse's usage text
 | The request | Go to |
 |---|---|
 | A new sprite, icon, tile or item from a description | render it (comfyui-gen, or PixelLab when the human pays for it), then pixelwright-make |
+| A small new icon, tile or UI piece with a settled palette (untested here) | draw it as a palette-keyed grid of strings in code (or claude-pxl, MIT, when installed), then pixelwright-make without snap |
 | A render or drawing that should become clean pixel art, a palette, an outline, a tile, a size | [pixelwright-make](../pixelwright-make/SKILL.md) |
 | An existing still that should move (use, placement, idle loop), a sprite sheet, a review page | [pixelwright-animate](../pixelwright-animate/SKILL.md) |
 | Normal maps so 2D lights shade a sprite, sheet or GIF | [pixelwright-make](../pixelwright-make/SKILL.md#hand-offs) (`pxw.py normals`) |
