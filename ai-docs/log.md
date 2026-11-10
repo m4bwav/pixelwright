@@ -208,3 +208,6 @@ Hugo-Dz/spritefusion-sprite-normals (MIT, credited in R-20261109-2). Came from t
 
 ## 2026-11-09 character actions doc (0.13.1)
 - Added "Character actions from a video model" to pixelwright-animate references/model-effects.md from technique-harvest #18 (r/aigamedev 1x8m8ly), marked untested. Patch bump 0.13.1.
+
+## 2026-11-09 explosion pattern and engine game-feel layers (0.13.3)
+- Researched explosion/impact technique (web; everscout game-design beat had nothing). Added frame-by-frame explosion beats to pixelwright-animate effects.md and engine-side layers (flash, shake, hit-stop, debris, scorch, embers, smoke hold, light) to timing-and-gates.md. R-20261109-4, C-20261109-5. Docs only.

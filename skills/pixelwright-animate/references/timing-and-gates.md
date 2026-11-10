@@ -64,4 +64,10 @@ The sheet name `<id>-<anim>-<N>f.png` is the contract; import and wiring are pro
   animation, or `add_frame(anim, texture, duration)` for holds without duplicate frames (R-S9).
 - Aseprite (optional): `aseprite -b frames/*.png --sheet out.png --sheet-type horizontal --data out.json
   --format json-array` when a project wants Aseprite JSON (R-S6).
+- Game feel belongs in the engine, not the sheet (R-20261109-4): play the sheet at about 80 ms a frame and add the
+  rest as engine layers, each behind a toggle: a screen flash (about 40% for 1 to 2 frames), shake (about 10 to 16
+  game frames for an explosion: one slow wave and a quick tail; 4 to 8 high-frequency for melee), hit-stop measured
+  in game frames (2 to 4 light, 6 to 10 heavy), debris rocks, a scorch decal that stays, embers, a smoke sheet held
+  about 1.5 to 2 s, and a short point light. The sound's attack lands on the flash frame. game-juice's juice-apply
+  writes these; pixelwright supplies the separate layer sheets.
 - An engine snapshot test must be deterministic: seeded particles, a fixed time, a fixed resolution (R-T4).

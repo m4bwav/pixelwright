@@ -59,6 +59,15 @@ Seeds make every run byte-identical; change `seed` for a different scatter.
 - **Effect beats** (Dawe and Humphries, ch. 7): a flame is two nested teardrops, the inner one moving inside the
   outer, with a rare escaping ember; a laser is a bright core with a short build-up and a fade; a glow grows,
   holds and shrinks; an explosion is a flash frame, an expanding fireball, then smoke that outlives it.
+- **Explosions and impacts, frame by frame** (R-20261109-4): 1 to 2 frames of white or palette-hot flash at full
+  silhouette (longer reads as a stun state, not an impact); the fireball expands fast in 2 to 3 frames, eased out,
+  and the hottest colours retreat to the centre as it grows; then the fire breaks into separate lumps that rise and
+  cool through the ramp (white, yellow, orange, red, smoke grey) while their edges erode; smoke outlives the fire and
+  dissipates by shrinking holes, not by fading alpha (binary alpha keeps the edge crisp). Bunch the frames at the
+  start (fast) and hold the smoke (slow): 2 to 3 flash and fireball frames, 6 to 10 smoke frames. Make it in layers
+  that an engine can reuse and scale: a big and a small fireball sheet, a big and a small smoke sheet, debris
+  (`sparks` with gravity, 3 to 8 lumps for a small hit) and a ground scorch decal, each its own sheet, instead of
+  one baked strip.
 - Blink or chase: one `pulse` track per lamp, curves offset by a frame or two.
 - Power-on (placement): `darken` on each emissive region with curves 1 to 0 in a believable order (control room,
   work lights, the machine), one dip back up for a flicker; `dust` at the base settling; the last frame is the

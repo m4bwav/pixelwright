@@ -114,6 +114,17 @@ Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P 
 - Notes, with page citations and the full proposal lists: kept with the owner's book-learnings records, outside
   this repository.
 
+### R-20261109-4 · 2026-11-09 · Explosion and impact technique (user request, Godot step-4 screenshot)
+- Sources: gamineai.com/blog/pixel-art-combat-fx-hitstop-smear-frames-impact-timing-2026 (2026-04-09: flash 1-2
+  frames, explosion shake 10-16 frames, hit-stop 2-4 / 6-10 game frames, 3-8 debris pixels, sound transient on the
+  hit-stop frame); an r/PixelArtTutorials explosion breakdown (2024-12, post 1hkuqv1: big and small explosion,
+  big and small smoke with emitters as separate layers; thread itself 403 to fetch, read from the search summary);
+  the user's screenshot (sheet at 80 ms, + flash 40%, shake, rocks, scorch, embers, smoke hold 1.8 s, light).
+  The everscout game-design beat had nothing on pixel effects (recall 2026-11-09).
+- Taken: an explosion pattern in effects.md and an engine game-feel bullet in timing-and-gates.md. Blog numbers
+  are one vendor's guidance, not measured; treat them as starting values. Smoke-by-holes and colours retreating
+  to the centre are standard pixel-art practice, not from these sources. No code change.
+
 ### R-20261109-3 · 2026-11-09 · Code-drawn pixel art (claude-pxl fork, r/aigamedev 1xb3k2l)
 - Source: github.com/augusto-scarvalho/claude-pxl (fork of crsolver/claude-pxl, MIT), state of 2026-10-27: a JS
   DSL (palettes, ramps, grid strings, mirrors, layers, anims) with 14 commands and 404 tests; Node 22.18.
