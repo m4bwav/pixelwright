@@ -27,6 +27,8 @@ Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, wh
   collapse <still.png> <plan.json> <outdir> --name N [--frames 30] [--seed 7] [--clear-to first.png]
                                                              rubble, collapse and clear, plain and burnt
   contact <sheet.png> <out.png> --frames N [--per 5] [--zoom 3]
+  breathe <prone.png> <outdir> [--frame-size WxH --pick N] [--scrub RRGGBB] [--no-z]
+                                                             sleep loop: 4 frames of 1 px breathing + a "z"
   normals <in> <outdir> [--frame-size WxH] [--relit] [--green-down]  normal map <name>_n.png for 2D lights
   pack    <out.png> <frame.png>...                           horizontal strip in the order given
   review  <dir> [--port 8765] [--extra items.json]           click page; every click saves <dir>/picks.json
@@ -47,7 +49,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.13.3"
+VERSION = "0.14.0"
 
 try:
     import numpy as np
@@ -2943,6 +2945,104 @@ def cmd_contact(a):
     out(dict(ok=True, out=a.out, frames=a.frames, frame_size=[fw, sheet.shape[0]]))
 
 
+Z_SHAPE = [(0, 0), (1, 0), (2, 0), (1, 1), (0, 2), (1, 2), (2, 2)]
+
+
+def _scrub_colour(a, rgb, keep=()):
+    """Paint every opaque pixel of colour rgb with its most common other opaque neighbour (blood off a corpse)."""
+    a = a.copy()
+    h, w = a.shape[:2]
+    bad = lambda c: tuple(c[:3]) == rgb or tuple(c[:3]) in keep
+    for _ in range(4):  # wide blobs fill in from the edges
+        todo = [(y, x) for y, x in zip(*np.nonzero((a[..., 3] > 0) & np.all(a[..., :3] == rgb, -1)))]
+        if not todo:
+            break
+        for y, x in todo:
+            near = {}
+            for dy, dx in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                Y, X = y + dy, x + dx
+                if 0 <= Y < h and 0 <= X < w and a[Y, X, 3] and not bad(a[Y, X]):
+                    k = tuple(int(v) for v in a[Y, X])
+                    near[k] = near.get(k, 0) + 1
+            if near:
+                a[y, x] = max(near, key=near.get)
+    return a
+
+
+def _head_side(a):
+    """The head end of a prone body is the taller end (chibi heads are half the body)."""
+    ys, xs = np.nonzero(a[..., 3] > 0)
+    x0, x1 = xs.min(), xs.max() + 1
+    q = max(2, (x1 - x0) // 4)
+    def height(lo, hi):
+        sel = (xs >= lo) & (xs < hi)
+        return int(ys.max() + 1 - ys[sel].min()) if sel.any() else 0
+    return "left" if height(x0, x0 + q) >= height(x1 - q, x1) else "right"
+
+
+def breathe_frames(prone, rise=1, z=True, z_rgb=(240, 240, 250), frames=4, head=None):
+    """A sleep loop from one prone frame: the middle half of the body's columns rise `rise` px on the
+    middle frames and a small z drifts up from the head end (faded on the last frame). Returns RGBA arrays."""
+    ys, xs = np.nonzero(prone[..., 3] > 0)
+    if not len(xs):
+        raise ValueError("prone frame is empty")
+    x0, x1, y0 = xs.min(), xs.max() + 1, ys.min()
+    head = head or _head_side(prone)
+    hx = (x0 - 1) if head == "left" else (x1 - 2)
+    lo, hi = x0 + (x1 - x0) // 4, x1 - (x1 - x0) // 4
+    up = set(range(1, frames - 1)) if frames > 2 else {1}
+    h, w = prone.shape[:2]
+    outF = []
+    for i in range(frames):
+        f = prone.copy()
+        if i in up and rise:
+            f[:, lo:hi] = 0
+            f[:h - rise, lo:hi] = prone[rise:, lo:hi]
+        if z and i >= 1:
+            zy = y0 - 4 - (i - 1) * 2
+            alpha = 255 if i < frames - 1 else 140
+            for dx, dy in Z_SHAPE:
+                X, Y = hx + dx, zy + dy
+                if 0 <= X < w and 0 <= Y < h:
+                    f[Y, X] = list(z_rgb) + [alpha]
+        outF.append(f)
+    return outF, head
+
+
+def cmd_breathe(a):
+    need_deps()
+    img = np.array(Image.open(a.prone).convert("RGBA"))
+    if a.frame_size:
+        fw, fh = (int(v) for v in a.frame_size.lower().split("x"))
+        n = img.shape[1] // fw
+        pick = a.pick if a.pick is not None else n - 1
+        if not 0 <= pick < n:
+            fail(f"--pick {pick} outside 0..{n - 1}")
+        img = img[:fh, pick * fw:(pick + 1) * fw]
+    if a.scrub:
+        for hexc in a.scrub:
+            img = _scrub_colour(img, tuple(int(hexc.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)))
+    try:
+        frames, head = breathe_frames(img, rise=a.rise, z=not a.no_z, frames=a.frames, head=a.head)
+    except ValueError as e:
+        fail(str(e))
+    outdir = Path(a.outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+    paths = []
+    for i, f in enumerate(frames):
+        pth = outdir / f"{a.name}_{i}.png"
+        Image.fromarray(f, "RGBA").save(pth)
+        paths.append(pth.as_posix())
+    sheet = np.concatenate(frames, axis=1)
+    sheetPath = outdir / f"{a.name}-{len(frames)}f.png"
+    Image.fromarray(sheet, "RGBA").save(sheetPath)
+    big = [Image.fromarray(f, "RGBA").resize((f.shape[1] * 4, f.shape[0] * 4), Image.NEAREST) for f in frames]
+    gifPath = outdir / f"{a.name}-preview.gif"
+    big[0].save(gifPath, save_all=True, append_images=big[1:], duration=int(1000 / a.fps), loop=0, disposal=2)
+    out(dict(ok=True, frames=len(frames), head=head, sheet=sheetPath.as_posix(), preview=gifPath.as_posix(),
+             files=paths, fps=a.fps))
+
+
 def _anim_load(inputs):
     """Frames (RGBA u8) and durations in ms from one animated file (GIF, APNG, WebP) or several stills."""
     frames, durs = [], []
@@ -4260,6 +4360,19 @@ def main(argv=None):
     c.add_argument("--per", type=int, default=5)
     c.add_argument("--zoom", type=int, default=3)
     c.set_defaults(fn=cmd_contact)
+    c = sub.add_parser("breathe", help="sleep loop from a prone (death) frame: breathing + z")
+    c.add_argument("prone")
+    c.add_argument("outdir")
+    c.add_argument("--frame-size", help="WxH when <prone> is a strip; then --pick N (default last frame)")
+    c.add_argument("--pick", type=int)
+    c.add_argument("--scrub", action="append", help="RRGGBB to paint out (blood); repeatable")
+    c.add_argument("--rise", type=int, default=1)
+    c.add_argument("--frames", type=int, default=4)
+    c.add_argument("--head", choices=["left", "right"])
+    c.add_argument("--no-z", action="store_true")
+    c.add_argument("--fps", type=float, default=2)
+    c.add_argument("--name", default="sleep")
+    c.set_defaults(fn=cmd_breathe)
     c = sub.add_parser("anim", help="animated GIF/frames from an image model -> one grid, one palette, pinned sheet")
     c.add_argument("inputs", nargs="+", help="one animated GIF/APNG/WebP, or the frames in order")
     c.add_argument("outdir")

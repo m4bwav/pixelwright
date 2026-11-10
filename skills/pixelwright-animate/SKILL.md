@@ -85,6 +85,8 @@ A small structure (a well) takes no scaffold: the pit order, posts then roof as 
 (L-074). Fires and glows stay dark until the building stands and light last; a stack's mouth is laid with
 its rim; a water floor is filled after its ring is started (L-075). A lit still is the active loop's base; the idle
 still is cold, and the construction ends on it (L-076). Change a still, re-make every strip and GIF on it (L-077). `pxw.py collapse <still> <plan> <outdir> --name N` takes the same plan (groundBase, regions, roof; `"walls": "pit"` for pits) and writes rubble, collapse and clear, plain and burnt; `--clear-to` ends the clear on the next strip's first frame (L-088).
+
+**Sleeping characters.** Small chibi sprites do not survive being rotated to lie down. Start from the pack's own prone (death) frame: `pxw.py breathe <death-strip.png> <outdir> --frame-size 32x32 --scrub 901000` takes the last frame, paints out the blood colour, and writes a 4-frame loop (middle half of the body rises 1 px on frames 1-2, a small z drifts up from the head end) plus a strip and a 4x GIF. Play it at about 2 fps after a lie-down strip (the death strip without its hit frame). `--no-z` skips the z; `--head left|right` overrides the taller-end guess.
 `"scaffold"` (any natural plan) puts a pole scaffold up first and takes it down from the top over the last frames.
 Match the footprint: `"walls"` for square and oblong buildings (poles just outside each wall, one on every corner,
 up to the eaves), `"ring"` only for round pits and towers. Both are open work: 2 px poles about 26 px apart, a

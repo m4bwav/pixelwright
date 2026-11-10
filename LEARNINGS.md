@@ -168,3 +168,8 @@ Write an entry the moment a real signal happens: a user correction, the same err
 - Evidence: a colony-sim GrassOnSand sheet (2,121 colours, no fixed palette): V01 and its three season sheets pass border equality; a random 16x16 autotiled map mixing original and variant shows no seam.
 - Scope: skill (pixelwright-make, tiles)
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-07
+
+## 2026-11-10 sleep loop from a death strip (colony-sim people sheets)
+Chibi 32 px characters do not survive a 90 deg rotation to "lie down" (head is half the body; blankets read as crates). Cheapest convincing sleep: the pack's own prone (death) frame, middle half of the body columns shifted up 1 px on 2 of 4 frames, a 3x3 white z drifting up from the head end (taller end), skip the hit frame and scrub the blood colour. Now `pxw.py breathe` (0.14.0); reproduces the hand script's sleep rows pixel-for-pixel on all nine sheets.
+- Scope: skill (pixelwright-animate)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-10

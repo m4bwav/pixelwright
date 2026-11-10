@@ -1549,5 +1549,42 @@ class Anim(Base):
         self.assertIn("--scale", r["error"])
 
 
+class Breathe(unittest.TestCase):
+    """pxw.py breathe: sleep loop from a prone frame (L: sleep loop from a death strip)."""
+
+    def prone(self):
+        a = np.zeros((32, 32, 4), dtype=np.uint8)
+        a[18:28, 4:12] = [200, 160, 120, 255]   # head (tall end, left)
+        a[22:28, 12:28] = [60, 90, 160, 255]    # body
+        a[23, 15] = [0x90, 0x10, 0x00, 255]     # blood
+        return a
+
+    def test_loop(self):
+        p = self.prone()
+        fr, head = sw.breathe_frames(p)
+        self.assertEqual(head, "left")
+        self.assertEqual(len(fr), 4)
+        self.assertTrue(np.array_equal(fr[0], p))          # rest frame untouched
+        mid = 4 + (28 - 4) // 4
+        self.assertEqual(fr[1][21, mid, 3], 255)            # body column rose 1 px
+        self.assertEqual(fr[1][27, mid, 3], 0)
+        self.assertEqual(fr[3][27, 26, 3], 255)            # outside the middle half: still
+        self.assertTrue((fr[1][..., :3] == [240, 240, 250]).all(-1).any())  # z drawn
+        self.assertEqual(fr[3][..., 3][(fr[3][..., :3] == [240, 240, 250]).all(-1)].max(), 140)
+
+    def test_cli_strip_scrub(self):
+        with tempfile.TemporaryDirectory() as d:
+            strip = np.concatenate([np.zeros((32, 32, 4), np.uint8), self.prone()], axis=1)
+            Image.fromarray(strip, "RGBA").save(f"{d}/death.png")
+            r = subprocess.run([sys.executable, str(SW), "breathe", f"{d}/death.png", f"{d}/out",
+                                "--frame-size", "32x32", "--scrub", "901000"], capture_output=True, text=True)
+            res = json.loads(r.stdout)
+            self.assertTrue(res["ok"], r.stdout + r.stderr)
+            f0 = np.array(Image.open(f"{d}/out/sleep_0.png"))
+            self.assertFalse((f0[..., :3] == [0x90, 0x10, 0x00]).all(-1).any())
+            self.assertEqual(Image.open(res["sheet"]).size, (128, 32))
+            self.assertTrue(Path(res["preview"]).exists())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)
