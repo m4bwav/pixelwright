@@ -13,7 +13,7 @@ prompt, then clean in one pass:
 
 ```
 pxw.py anim <fx.gif | frames...> <outdir> --name fx [--key magenta|green] [--scale 2.6] [--colours 20]
-    [--neutral-greys] [--palette game.hex] [--anchor bottom|none] [--only 3-14]
+    [--neutral-greys] [--palette game.hex] [--anchor bottom|none] [--only 3-14] [--sheet 4x4]
 ```
 
 One grid for every frame (detected over all frames pooled; soft art has none, so the command stops and asks for
@@ -23,6 +23,14 @@ frames with up to 6 extra colours for small far-off accents (embers), key-tinted
 (rects, durations), a `.hex` palette and a contact sheet. `--palette` maps several effects to one game palette so
 they belong together. The JSON prints colours and wobble before and after. Hit feel (hit-stop, flash, shake) is
 game-juice's job.
+
+One sheet instead of a GIF: some image models draw a whole action as one grid. Prompt (after u/Practical_Low29's
+r/aigamedev post 1wbmvnm): "Make a simplified 128px pixel art <action> sprite sheet of this character, flat solid
+pure magenta #FF00FF background, arrange it 4x4, frames in order: <idle, guard, punch, ...>", then
+`pxw.py anim sheet.png out --sheet 4x4 --scale <s>`. Cells are cut at the empty gutters between figures (columns per
+row, since model rows often sit offset), falling back to an equal split for an axis with no gutter; `--sheet-cut
+equal` forces it. The JSON's `sheet` says how each axis was cut. Snap and palette are still needed: a test sheet
+from a model still had 5,600+ colours after the snap and no grid shared across cells, so pass `--scale`.
 
 ## Character actions from a video model
 

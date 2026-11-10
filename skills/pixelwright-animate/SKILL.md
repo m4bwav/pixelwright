@@ -167,8 +167,7 @@ still's palette, and the same gates run. Details: [references/effects.md](refere
 ## Guards
 
 - Never overwrite a shipped still or sheet without the human's say-so; candidates live in a scratch folder.
-- Rotate only from the original still (`rotate` does), never from a rotated copy; at 0 degrees the part must
-  equal the still.
+- Rotate only from the original still (`rotate` does), never a rotated copy; at 0 degrees the part equals it.
 - Construction: a temporary line (string, post, plate, rafter, lath) only draws where the finished building stands,
   on the part that explains it; lines over the sky that vanish on the last frame read as chatter, not scaffolding.
   Real scaffolding needs visible thickness and must read at 1x (L-057).
@@ -177,8 +176,7 @@ still's palette, and the same gates run. Details: [references/effects.md](refere
 - Adding a part to a still that already has strips (a chimney, a sign): lift it from a sibling sprite with a
   saturation mask, add its rectangle to the region it rests on (`polys`) and re-make the strips from the new still,
   so the part arrives with that region; stamp an active loop only where the patch area never moves (L-070).
-- Particles are hard-edged palette pixels with a 2 to 3 frame trail, never soft blurred circles.
-- Preview timing from the APNG or the engine, never from a GIF (256 colours, 10 ms steps).
+- Particles are hard-edged palette pixels with a 2 to 3 frame trail. Time previews from the APNG, never a GIF.
 - Painted art: a part is the object's own colour family inside a loose shape, never the bare shape (soft edges
   carry ground along, L-030), and the ground a moved part leaves bare is `behind: grow` from the ground around it
   (L-031). A solid object with lit and shaded faces (cart, crate) is a loose polygon minus the background by value,

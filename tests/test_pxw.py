@@ -1539,6 +1539,28 @@ class Anim(Base):
         self.assertFalse(((px[:, 0] > 200) & (px[:, 2] > 200) & (px[:, 1] < 80)).any(), "magenta left in the sheet")
         self.assertLessEqual(len(np.unique(px, axis=0)), r["colours_final"])
 
+    def test_sheet_cut_at_gutters(self):
+        """--sheet 2x2: a model sheet whose second row sits offset; gutter cuts keep every figure whole, the equal
+        split cuts through them."""
+        art = np.zeros((12, 8, 3), np.uint8); art[:] = (40, 120, 200); art[8:] = (200, 60, 20)
+        art = np.repeat(np.repeat(art, 3, 0), 3, 1)  # 24 x 36 px figure on a 3 px grid
+        sh = np.zeros((90, 90, 3), np.uint8); sh[:] = (255, 0, 255)
+        for (y, x) in [(3, 3), (3, 48), (48, 28), (48, 62)]:  # row 2 sits right, across the equal split at x=45
+            sh[y:y + 36, x:x + 24] = art
+        Image.fromarray(sh).save(self.dir / "sheet.png")
+        for cut, whole in (("gutter", True), ("equal", False)):
+            code, r = self.run_sw("anim", "sheet.png", "o_" + cut, "--sheet", "2x2", "--sheet-cut", cut, "--scale", "3",
+                                  "--name", "k")
+            self.assertEqual(code, 0, r)
+            self.assertEqual(r["frames"], 4)
+            self.assertEqual(r["sheet"]["cols_cut"], cut)
+            meta = json.loads((self.dir / ("o_" + cut) / "k_sheet.json").read_text())
+            sheet = np.array(Image.open(self.dir / ("o_" + cut) / "k_sheet.png").convert("RGBA"))
+            widths = [int((sheet[f["y"]:f["y"] + f["h"], f["x"]:f["x"] + f["w"], 3] > 0).any(0).sum()) for f in meta["frames"]]
+            self.assertEqual(all(w == 8 for w in widths), whole, (cut, widths))
+        code, r = self.run_sw("anim", "sheet.png", "o", "--sheet", "2by2")
+        self.assertNotEqual(code, 0)
+
     def test_soft_frames_ask_for_scale(self):
         im = Image.new("RGB", (64, 64), (255, 0, 255))
         im.paste((250, 150, 40), (20, 30, 44, 64))

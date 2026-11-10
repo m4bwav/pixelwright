@@ -114,6 +114,17 @@ Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P 
 - Notes, with page citations and the full proposal lists: kept with the owner's book-learnings records, outside
   this repository.
 
+### R-20261110-1 · 2026-11-10 · Model sprite sheets and OKLCH ramps (technique harvest)
+- Source 1: r/aigamedev 1wbmvnm (u/Practical_Low29): one line, "arrange it 4x4", gave a 16-frame combat sheet.
+  Taken: the sheet prompt in model-effects.md and `pxw.py anim --sheet RxC`. Measured on a 4x4 sheet built from
+  a real model pixel-art render (grid 7, cells jittered +-10 px, odd rows 30 px offset): gutter cuts clipped 0 of
+  16 figures vs 10 for the equal split (2 vs 0 with no row offset); colours 20 vs 21; pinned foot-x mean step 0.05
+  vs 0.5 px (offset sheet), 0.28 vs 0.17 px (aligned sheet). Neither had a grid shared across cells.
+- Source 2: github.com/idlerunner00/procedural-pixel-creatures (MIT; r/aigamedev 1wv6slq): material ramps built in
+  OKLCH with fixed lightness steps, lights hue-shifted toward ~92 (yellow) and shadows toward ~285 (blue-violet).
+  Not taken yet: a possible `pxw.py ramp`, to be built only with a test of ramp vs extracted palette on
+  artwright's pixel gate (backlog).
+
 ### R-20261109-4 · 2026-11-09 · Explosion and impact technique (user request, Godot step-4 screenshot)
 - Sources: gamineai.com/blog/pixel-art-combat-fx-hitstop-smear-frames-impact-timing-2026 (2026-04-09: flash 1-2
   frames, explosion shake 10-16 frames, hit-stop 2-4 / 6-10 game frames, 3-8 debris pixels, sound transient on the
