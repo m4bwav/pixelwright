@@ -49,7 +49,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.14.0"
+VERSION = "0.15.0"
 
 try:
     import numpy as np
@@ -3080,12 +3080,82 @@ def _wobble(anchors, ground):
     return dict(mean_x_step_px=round(float(st.mean()), 2), max_x_step_px=round(float(st.max()), 2), ground_frames=len(xs))
 
 
+def _sheet_cuts(fg, n, axis):
+    """n cells along axis (0 = rows, 1 = columns) of a foreground mask: cut each boundary at the centre of the empty
+    run (gutter) nearest the equal split, within a third of a cell; any boundary without one -> the equal split."""
+    size = fg.shape[axis]
+    filled = fg.any(axis=1 - axis)
+    runs, i = [], 0
+    while i < size:
+        if not filled[i]:
+            j = i
+            while j < size and not filled[j]:
+                j += 1
+            if i > 0 and j < size:  # gutters between frames, not the outer margin
+                runs.append((i, j))
+            i = j
+        else:
+            i += 1
+    eq = [round(k * size / n) for k in range(n + 1)]
+    cuts = [0]
+    for k in range(1, n):
+        near = [(abs((a + b) / 2 - eq[k]), (a + b) // 2) for a, b in runs if abs((a + b) / 2 - eq[k]) <= size / n / 3]
+        if not near:
+            return eq, "equal"
+        cuts.append(min(near)[1])
+    return cuts + [size], "gutter"
+
+
+def _sheet_split(a, spec, key, tol, mode="gutter"):
+    """One R x C grid image (a model's 4x4 sprite sheet) -> frames in reading order, and how each axis was cut."""
+    try:
+        r, c = (int(v) for v in spec.lower().split("x"))
+        assert r > 0 and c > 0
+    except (ValueError, AssertionError):
+        fail(f"--sheet wants RxC, e.g. 4x4, got {spec!r}")
+    rgb = a[..., :3].astype(np.int16)
+    if key and key != "auto":
+        bg = np.array(parse_rgb(key), np.int16)
+    else:  # the border's most common colour
+        edge = np.concatenate([rgb[0], rgb[-1], rgb[:, 0], rgb[:, -1]])
+        u, cnt = np.unique(edge, axis=0, return_counts=True)
+        bg = u[cnt.argmax()]
+    fg = (a[..., 3] > 127) & (np.abs(rgb - bg).max(axis=2) > tol)
+    if mode == "equal":
+        ys, xs = [round(k * a.shape[0] / r) for k in range(r + 1)], [round(k * a.shape[1] / c) for k in range(c + 1)]
+        how = ["equal", "equal"]
+    else:
+        ys, hy = _sheet_cuts(fg, r, 0)
+        per = [_sheet_cuts(fg[ys[i]:ys[i + 1]], c, 1) for i in range(r)]  # rows of a model sheet often sit offset
+        xs = [e for e, _ in per] if len(set(map(tuple, (e for e, _ in per)))) > 1 else per[0][0]
+        how = [hy, "gutter" if all(h == "gutter" for _, h in per) else "equal" if all(h == "equal" for _, h in per) else "mixed"]
+    xr = xs if isinstance(xs[0], list) else [xs] * r
+    cells = [a[ys[i]:ys[i + 1], xr[i][j]:xr[i][j + 1]] for i in range(r) for j in range(c)]
+    hh, ww = max(x.shape[0] for x in cells), max(x.shape[1] for x in cells)
+    frames = []
+    for x in cells:  # pad to one size: centred across, kept on the cell's bottom so feet stay on one ground row
+        f = np.zeros((hh, ww, 4), np.uint8)
+        f[..., :3] = bg.astype(np.uint8)
+        f[..., 3] = 255
+        ox = (ww - x.shape[1]) // 2
+        f[hh - x.shape[0]:, ox:ox + x.shape[1]] = x
+        frames.append(f)
+    return frames, dict(rows_cut=how[0], cols_cut=how[1], row_edges=ys, col_edges=xs)
+
+
 def cmd_anim(a):
     """An image model's animation (a ChatGPT GIF, video frames) to game-ready pixel art: key out the flat
     background, put every frame on ONE pixel grid, give all frames ONE palette, pin effects to their ground point,
     write frames, a sheet and its JSON. Per-frame snap and palette give every frame its own grid and colours."""
     need_deps()
     frames, durs = _anim_load(a.inputs)
+    sheetInfo = None
+    if a.sheet:
+        if len(a.inputs) != 1:
+            fail("--sheet takes one grid image")
+        k = None if a.key == "none" else {"magenta": "ff00ff", "green": "00ff00"}.get(a.key, a.key)
+        frames, sheetInfo = _sheet_split(frames[0], a.sheet, k, a.tol, a.sheet_cut)
+        durs = [durs[0]] * len(frames)
     if a.only:
         lo, hi = (int(v) for v in a.only.split("-"))
         frames, durs = frames[lo:hi + 1], durs[lo:hi + 1]
@@ -3192,7 +3262,7 @@ def cmd_anim(a):
     contact_sheet(outs, min(8, len(outs)), a.zoom).save(od / f"{name}_contact.png")
     out(dict(ok=True, out=str(od), frames=len(outs), scale=round(s, 3), offset=[round(ox, 2), round(oy, 2)],
              detected=detected, native=[w, h], colours_after_snap=int(before), colours_final=int(len(pal)),
-             accent_colours=extra, fringe_pixels=fringe_total, wobble_before=before_w, wobble_after=after_w))
+             accent_colours=extra, fringe_pixels=fringe_total, wobble_before=before_w, wobble_after=after_w, sheet=sheetInfo))
 
 
 def _nm_shift(f, dy, dx):
@@ -4392,6 +4462,8 @@ def main(argv=None):
     c.add_argument("--accent-min", type=int, default=12)
     c.add_argument("--anchor", default="bottom", choices=["bottom", "none"])
     c.add_argument("--only", help="a-b frame range, 0-based inclusive")
+    c.add_argument("--sheet", help="RxC: the one input is a grid sheet (a model's 4x4); cut it at the gutters")
+    c.add_argument("--sheet-cut", default="gutter", choices=["gutter", "equal"], help="equal: skip gutter search")
     c.add_argument("--zoom", type=int, default=3)
     c.set_defaults(fn=cmd_anim)
     c = sub.add_parser("normals", help="normal map for 2D lights from a sprite, sheet or GIF")

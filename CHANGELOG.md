@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261110-2 · 2026-11-10 · 0.15.0: `pxw.py anim --sheet RxC` cuts one model sprite sheet into frames
+- because: R-20261110-1; user request (technique-harvest, r/aigamedev 1wbmvnm)
+- files: skills/pixelwright/scripts/pxw.py (anim), skills/pixelwright-animate/references/model-effects.md, tests/test_pxw.py (Anim), RESEARCH.md, plugin.json, skills/pixelwright-animate/SKILL.md (Guards: two bullets joined to get back under 200 lines)
+- Gutter search with an equal-split fallback and the sheet prompt; anim without `--sheet` is unchanged.
+
 ### C-20261110-1 · 2026-11-10 · 0.14.0: `pxw.py breathe` sleep loop from a prone frame
 - because: L sleep loop from a death strip (2026-11-10)
 - files: skills/pixelwright/scripts/pxw.py (breathe), skills/pixelwright-animate/SKILL.md (Sleeping characters), tests/test_pxw.py (Breathe), LEARNINGS.md, plugin.json
