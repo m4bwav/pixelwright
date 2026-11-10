@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261110-1 · 2026-11-10 · 0.14.0: `pxw.py breathe` sleep loop from a prone frame
+- because: L sleep loop from a death strip (2026-11-10)
+- files: skills/pixelwright/scripts/pxw.py (breathe), skills/pixelwright-animate/SKILL.md (Sleeping characters), tests/test_pxw.py (Breathe), LEARNINGS.md, plugin.json
+- New command, ported from a game's one-off script; on its nine people sheets the output matches the hand-made sleep rows pixel for pixel.
+
 ### C-20261109-5 · 2026-11-09 · 0.13.3: explosion pattern and engine game-feel layers (docs)
 - because: R-20261109-4; user request
 - files: skills/pixelwright-animate/references/effects.md (Patterns), skills/pixelwright-animate/references/timing-and-gates.md (Engines), RESEARCH.md, plugin.json, pxw.py VERSION

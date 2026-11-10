@@ -15,6 +15,8 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261110-1 · 2026-11-10 · unittest · Windows · 82 animation tests (2 new Breathe) and make tests passed; breathe matched 9/9 real sleep strips
+
 ### T-20261106-1 · 2026-11-06 · action-1 only, claude -p with --plugin-dir, 3 runs, with arm only · Windows 11, Opus 5.5, Mark's full plugin set loaded (not isolated) · 1/3
 - action-1 · action · undertrigger · the T-20261023-2 note blamed the evidence regex, and the regex is not the cause here. Run 3 loaded pixelwright-animate, ran `pxw.py frames` and left out/machine.gates.json. Runs 1 and 2 never called Skill and wrote the sheet with their own PIL code; both report a correct-looking sheet. Sheets not graded for correctness.
 - Cost $1.60. Not tuned: T-20261023-2 found a small single-glow task comes out as well without the skill, so forcing the trigger here may not add value. Re-run in `claude plugin eval` isolation before changing the description. led to: none yet.
