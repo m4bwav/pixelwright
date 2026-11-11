@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "targets": [
+    {
+      "kind": "reddit",
+      "sub": "aigamedev",
+      "weight": "core",
+      "keep": "AI sprite, tileset and animation workflows for games"
+    },
+    {
+      "kind": "reddit",
+      "sub": "PixelArt",
+      "keep": "hand technique posts only (cleanup, palettes, animation); the sub bans AI art"
+    },
+    {
+      "kind": "reddit",
+      "sub": "FluxAI",
+      "keep": "pixel-art LoRA tricks with settings"
+    },
+    {
+      "kind": "reddit",
+      "sub": "civitai",
+      "keep": "pixel-art LoRAs and training write-ups"
+    },
+    {
+      "kind": "reddit",
+      "sub": "midjourney",
+      "weight": "low",
+      "keep": "sprite-sheet and grid parameters only"
+    },
+    {
+      "kind": "api",
+      "url": "https://civitai.com/api/v1/models?query=pixel%20art&sort=Newest",
+      "keep": "new pixel-art models"
+    },
+    {
+      "kind": "web",
+      "url": "https://lospec.com",
+      "keep": "palettes, tutorials and pixel-art tools"
+    },
+    {
+      "kind": "web",
+      "url": "https://pixeljoint.com/forum",
+      "keep": "hand critique and technique threads; same rule as r/PixelArt"
+    },
+    {
+      "kind": "hn",
+      "query": "pixel art",
+      "keep": "tool launches, points > 50"
+    },
+    {
+      "kind": "hn",
+      "query": "sprite",
+      "keep": "sprite tools and generators, points > 50"
+    }
+  ]
+}
