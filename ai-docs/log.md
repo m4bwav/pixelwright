@@ -211,3 +211,7 @@ Hugo-Dz/spritefusion-sprite-normals (MIT, credited in R-20261109-2). Came from t
 
 ## 2026-11-09 explosion pattern and engine game-feel layers (0.13.3)
 - Researched explosion/impact technique (web; everscout game-design beat had nothing). Added frame-by-frame explosion beats to pixelwright-animate effects.md and engine-side layers (flash, shake, hit-stop, debris, scorch, embers, smoke hold, light) to timing-and-gates.md. R-20261109-4, C-20261109-5. Docs only.
+
+## 2026-11-11: Works with section
+
+Added a README "Works with" section and a wiki Works-with page covering artwright, sfxwright, askwright, grindwright, taken from the real handoffs in both plugins' skills (askwright and tokenwright added where they fit). Part of a cross-plugin pass on Mark's request that each pairing be described from both sides.

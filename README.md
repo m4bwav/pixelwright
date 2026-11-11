@@ -80,6 +80,17 @@ Same briefs, same sheets, same gates files; the animation output is byte for byt
 calls `pxw.py`; `SPRITEWRIGHT_AW` is still read beside `PIXELWRIGHT_AW`. Uninstall the old plugin
 (`claude plugin uninstall spritewright@<marketplace>`) and install pixelwright.
 
+## Works with
+
+Each of these plugins works on its own. Together:
+
+- **[artwright](https://github.com/m4bwav/artwright)**: artwright's `aw.py` measures pixel art (grid, palette, doubled corners). pixelwright fixes what it finds, and still works on its own.
+- **[sfxwright](https://github.com/m4bwav/sfxwright)**: pixelwright makes no sound. With sfxwright installed, the actions that need sound go to it (`synth retro` suits pixel games and needs no model), and its `sounds.json` pairs files with strips.
+- **[askwright](https://github.com/m4bwav/askwright)**: pixelwright's review page links to an askwright question set or inbox, so keep/redo picks and the questions that go with them sit together.
+- **[grindwright](https://github.com/m4bwav/grindwright)**: grindwright's animation lane runs pixelwright and tracks each render's start and end images, so a changed input files a redo.
+
+More on each pairing, with an example flow: [Works with](https://github.com/m4bwav/pixelwright/wiki/Works-with) on the wiki.
+
 ## Choices made
 
 Built-in palettes: PICO-8 only (CC0); every other palette comes from a file, since Lospec palettes carry their own
