@@ -138,7 +138,7 @@ lit from straight above; every surface mark has a cause. Replacing approved art:
 
 ## Lettering
 
-A font, score digits or menu text on a pixel grid: read [references/pixel-type.md](references/pixel-type.md) before drawing. The snap and palette steps above still apply to each sheet.
+A font, score digits or menu text on a pixel grid: read [references/pixel-type.md](references/pixel-type.md) before drawing; `pxw.py font` turns an atlas into a TTF. The snap and palette steps above still apply to each sheet.
 
 ## Seasonal overlays
 

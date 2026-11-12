@@ -114,6 +114,13 @@ Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P 
 - Notes, with page citations and the full proposal lists: kept with the owner's book-learnings records, outside
   this repository.
 
+### R-20261112-2 · 2026-11-12 · Ref2FontV3 font atlas on FLUX.2 Klein 9B (technique harvest)
+- Source: r/StableDiffusion 1qw83f5 (2026-02-05); SnJake/Ref2Font (MIT). Base FLUX.2 Klein 9B: non-commercial
+  licence, so never in sold projects.
+- GPU test 2026-11-12b (technique-harvest tests/k9): distilled 9B fp8, 4 steps, 3 "Aa" refs; wrong or missing of
+  70: serif ~10, display ~12, pixel ~25 (skipped letters and duplicates, not malformed shapes); LoRA 0 gives
+  gibberish. Verdict adopt-partly: draft atlas, then fill gaps. Own `pxw.py font` replaces their pipeline script.
+
 ### R-20261112-1 · 2026-11-12 · Klein 4B spritesheet LoRA for 2x2 four-view sheets (technique harvest)
 - Source: r/FluxAI 1qzbz0f (2026-02-08, links an X post); model fal/flux-2-klein-4b-spritesheet-lora on Hugging
   Face, Apache-2.0 (commercial use fine; the FLUX.2 Klein 4B base is Apache-2.0 too). Related, not adopted:

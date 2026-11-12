@@ -4,6 +4,12 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261112-3 · 2026-11-12 · 0.19.0: `pxw.py font` (atlas to TTF) and the Ref2Font route row
+- because: R-20261112-2; user request (technique-harvest, r/StableDiffusion 1qw83f5, GPU-tested 2026-11-12b)
+- files: skills/pixelwright/scripts/pxw.py (font), skills/pixelwright-make/references/pixel-type.md (Atlas to font
+  file), skills/pixelwright-make/SKILL.md (pixel type line), tests/test_make.py (TestFont), RESEARCH.md, plugin.json
+- New command; fontTools is an optional import used by `font` only. Existing commands unchanged.
+
 ### C-20261112-2 · 2026-11-12 · 0.18.1: seasonal-overlays reference (roof-snow pilot, parked)
 - because: L-091; user request (roof snow tabled, record what was learned)
 - files: skills/pixelwright-make/references/seasonal-overlays.md (new), skills/pixelwright-make/SKILL.md (Seasonal overlays), LEARNINGS.md, plugin.json
