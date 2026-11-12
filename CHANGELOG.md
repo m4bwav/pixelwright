@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261111-1 · 2026-11-11 · 0.16.0: `pxw.py fit` console tile and colour budgets, `gameboy` palette
+- because: R-20261111-1; user request (technique-harvest, r/aigamedev 1q4pgaa)
+- files: skills/pixelwright/scripts/pxw.py (fit, PALETTES), skills/pixelwright-make/SKILL.md (Hand-offs), tests/test_make.py (CropTile), RESEARCH.md, plugin.json
+- New command counts unique 8x8 tiles (flip-deduped with `--flip`), colours per tile and per attribute area against gb or nes targets and fails when over; existing commands unchanged.
+
 ### C-20261110-3 · 2026-11-10 · harvest.json: technique-harvest targets for this unit
 - because: user request 2026-11-10: plugins store their own technique-harvest targets (evergreen 1.1.0 harvest.json)
 - files: harvest.json (new)

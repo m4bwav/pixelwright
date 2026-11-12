@@ -291,6 +291,25 @@ class TestCropTile(Base):
         self.assertLess(res["seam_ratio"], res["seam_ratio_before"])
         self.assertLessEqual(res["seam_ratio"], 1.5)
 
+    def test_fit_counts_tiles_flips_and_colours(self):
+        cell = np.zeros((8, 8, 4), np.uint8)
+        cell[..., 3] = 255
+        cell[:, :4, :3] = RED  # left half red, right half black: its mirror is a new tile without --flip
+        a = np.concatenate([cell, cell[:, ::-1]], axis=1)
+        save(a, self.dir / "f.png")
+        code, res = self.run_pxw("fit", "f.png", "--target", "gb")
+        self.assertEqual((code, res["unique_tiles"], res["max_colours_per_cell"]), (0, 2, 2), res)
+        code, res = self.run_pxw("fit", "f.png", "--tiles", 1)
+        self.assertEqual(code, 1, res)
+        code, res = self.run_pxw("fit", "f.png", "--tiles", 1, "--flip")
+        self.assertEqual((code, res["unique_tiles"]), (0, 1), res)
+        a[0, 0, :3], a[0, 1, :3], a[0, 2, :3] = PINK, INK, GLASS  # five colours in one cell
+        save(a, self.dir / "g.png")
+        code, res = self.run_pxw("fit", "g.png", "--target", "nes")
+        self.assertEqual((code, res["cells_over"], res["areas_over"]), (1, [[0, 0]], [[0, 0]]), res)
+        code, res = self.run_pxw("fit", "g.png", "--cell", 5)
+        self.assertEqual(code, 1, res)
+
 
 class TestMake(Base):
     def test_gate_fails_over_budget_and_writes_the_report(self):
