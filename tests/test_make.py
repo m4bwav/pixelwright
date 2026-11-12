@@ -311,6 +311,56 @@ class TestCropTile(Base):
         self.assertEqual(code, 1, res)
 
 
+class TestPadDirs(Base):
+    def test_pad_unpad_round_trip(self):
+        code, res = self.run_pxw("pad", "potion.png", "p.png")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["scale"], 60)  # (1024 - 64) // 16
+        x0, y0, x1, y1 = res["box"]
+        can = self.load("p.png")
+        self.assertEqual(can.shape[:2], (1024, 1024))
+        self.assertEqual(can[0, 0, :3].tolist(), [0, 0, 0])
+        # a stand-in edit model: blur, then halve the canvas size
+        Image.open(self.dir / "p.png").convert("RGB").filter(ImageFilter.GaussianBlur(2)).resize(
+            (512, 512), Image.BILINEAR).save(self.dir / "e.png")
+        code, res = self.run_pxw("unpad", "e.png", "u.png", "--box", "p.json")
+        self.assertEqual(code, 0, res)
+        u = self.load("u.png")
+        self.assertEqual(u.shape[:2], (16, 16))
+        op = self.sprite[..., 3] > 0
+        diff = np.abs(u[..., :3].astype(int) - self.sprite[..., :3].astype(int)).sum(-1)
+        self.assertGreater((diff[op] < 30).mean(), 0.85)
+        self.assertTrue((u[~op, 3] == 0).all())  # the border went back to transparent
+        code, res = self.run_pxw("pad", "potion.png", "q.png", "--canvas", 40)
+        self.assertEqual(code, 1)
+
+    def ring(self, bad=None):
+        im = Image.new("RGB", (768, 768), (255, 255, 255))
+        from PIL import ImageDraw
+        d = ImageDraw.Draw(im)
+        for i in range(9):
+            x, y = (i % 3) * 256, (i // 3) * 256
+            if i == 4 and bad != "centre":
+                continue
+            d.ellipse((x + 90, y + 40, x + 166, y + 216), fill=(40, 120, 60))
+            if bad == "two" and i == 0:
+                d.ellipse((x + 10, y + 10, x + 40, y + 40), fill=(40, 120, 60))
+            if bad == "edge" and i == 8:
+                d.rectangle((x + 200, y + 100, x + 256, y + 140), fill=(40, 120, 60))
+        im.save(self.dir / f"ring-{bad}.png")
+        return f"ring-{bad}.png"
+
+    def test_dirs_gate(self):
+        code, res = self.run_pxw("dirs", self.ring(), "f")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(sorted(Path(p).stem for p in res["frames"]),
+                         sorted(["N", "NE", "E", "SE", "S", "SW", "W", "NW"]))
+        for bad, cell in (("centre", "centre"), ("two", "NW"), ("edge", "SE")):
+            code, res = self.run_pxw("dirs", self.ring(bad), "g" + bad)
+            self.assertEqual(code, 1, bad)
+            self.assertEqual(res["failed"], [cell])
+
+
 class TestMake(Base):
     def test_gate_fails_over_budget_and_writes_the_report(self):
         rec = {"id": "p", "input": "potion.png", "budget": 3, "crop": {"pad": 1, "size": "pow2"}}

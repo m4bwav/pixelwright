@@ -20,6 +20,7 @@ JSON object; exit 1 means a check failed, 2 a usage error (argparse's usage text
 | A render or drawing that should become clean pixel art, a palette, an outline, a tile, a size | [pixelwright-make](../pixelwright-make/SKILL.md) |
 | An existing still that should move (use, placement, idle loop), a sprite sheet, a review page | [pixelwright-animate](../pixelwright-animate/SKILL.md) |
 | Normal maps so 2D lights shade a sprite, sheet or GIF | [pixelwright-make](../pixelwright-make/SKILL.md#hand-offs) (`pxw.py normals`) |
+| Edit an existing sprite with an image model, or cut an 8-direction ring sheet | [pixelwright-make](../pixelwright-make/SKILL.md#hand-offs) (`pxw.py pad`/`unpad`, `pxw.py dirs`) |
 | A model's animated GIF or video frames (explosion, lightning, spell) to clean into a sheet | [pixelwright-animate](../pixelwright-animate/references/model-effects.md) (`pxw.py anim`) |
 | Both: "make this a sprite and animate it" | make first; its `out/<id>.png` is the animation's `still` |
 | "Is this good pixel art", "what is wrong with this sprite" | artwright-pixel (measures and critiques; never fixes) |
