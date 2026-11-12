@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261112-2 · 2026-11-12 · 0.18.1: seasonal-overlays reference (roof-snow pilot, parked)
+- because: L-091; user request (roof snow tabled, record what was learned)
+- files: skills/pixelwright-make/references/seasonal-overlays.md (new), skills/pixelwright-make/SKILL.md (Seasonal overlays), LEARNINGS.md, plugin.json
+- Docs only; no script changed.
+
 ### C-20261112-1 · 2026-11-12 · 0.18.0: `pxw.py dirs --grid 2x2` and the Klein 4B spritesheet LoRA route
 - because: R-20261112-1; user request (technique-harvest, r/FluxAI 1qzbz0f, GPU-tested 2026-11-12)
 - files: skills/pixelwright/scripts/pxw.py (dirs), skills/pixelwright-make/SKILL.md (Hand-offs),
