@@ -361,6 +361,34 @@ class TestPadDirs(Base):
             self.assertEqual(res["failed"], [cell])
 
 
+    def quad(self, same=False):
+        im = Image.new("RGB", (512, 512), (230, 20, 20))
+        from PIL import ImageDraw
+        d = ImageDraw.Draw(im)
+        for i in range(4):
+            x, y = (i % 2) * 256, (i // 2) * 256
+            if i == 2 and not same:  # back view: a different silhouette from the front
+                d.polygon([(x + 128, y + 30), (x + 200, y + 220), (x + 56, y + 220)], fill=(40, 120, 60))
+            elif i == 0 or same:
+                d.ellipse((x + 90, y + 40, x + 166, y + 216), fill=(40, 120, 60))
+            else:  # side views: a different silhouette
+                d.rectangle((x + 60, y + 100, x + 200, y + 160), fill=(40, 120, 60))
+        im.save(self.dir / f"quad-{same}.png")
+        return f"quad-{same}.png"
+
+    def test_dirs_2x2(self):
+        code, res = self.run_pxw("dirs", self.quad(), "q", "--grid", "2x2")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(sorted(Path(p).stem for p in res["frames"]), ["E", "N", "S", "W"])
+        self.assertIn(["E", "W", 1.0], res["repeated"])  # the side pair
+        self.assertNotIn("S", sum((r[:2] for r in res["repeated"]), []))
+        code, res = self.run_pxw("dirs", self.quad(True), "q2", "--grid", "2x2", "--names", "a,b,c,d")
+        self.assertEqual(code, 0, res)
+        self.assertIn("a", sum((r[:2] for r in res["repeated"]), []))
+        code, res = self.run_pxw("dirs", self.quad(), "q3", "--grid", "2x2", "--names", "a,b")
+        self.assertEqual(code, 1)
+
+
 class TestMake(Base):
     def test_gate_fails_over_budget_and_writes_the_report(self):
         rec = {"id": "p", "input": "potion.png", "budget": 3, "crop": {"pad": 1, "size": "pow2"}}

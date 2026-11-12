@@ -49,7 +49,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.17.0"
+VERSION = "0.18.0"
 
 try:
     import numpy as np
@@ -4438,33 +4438,69 @@ def _blobs(mask, min_px):
     return found
 
 
+DIRS4 = ("S", "E", "N", "W")  # 2x2 spritesheet LoRA order: front, side, back, other side (check by eye)
+
+
+def _cell_shape(mask):
+    """Subject silhouette cropped to its box and resized to 16x16, for the repeated-view check."""
+    ys, xs = np.nonzero(mask)
+    if not len(ys):
+        return None
+    box = mask[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    return np.array(Image.fromarray((box * 255).astype(np.uint8)).resize((16, 16), Image.NEAREST)) > 127
+
+
 def cmd_dirs(a):
-    """Cut a 3x3 eight-direction ring sheet (centre empty) into N..NW frames, gated: one subject per cell, the
-    centre empty, no subject touching its cell edge. Facing is not checked: look at the frames."""
+    """Cut a direction sheet into frames, gated: a 3x3 eight-direction ring (centre empty) into N..NW, or a 2x2
+    four-view sheet (--grid 2x2, e.g. the Klein 4B spritesheet LoRA) into S, E, N, W. One subject per cell, no
+    subject touching its cell edge; 2x2 also flags cells whose silhouette repeats another's (or its mirror).
+    Facing is not checked: look at the frames."""
     need_deps()
     im = Image.open(a.input).convert("RGB")
-    cw, ch = im.width // 3, im.height // 3
+    n = 2 if a.grid == "2x2" else 3
+    names = [x.strip() for x in a.names.split(",")] if a.names else None
+    if names and len(names) != (4 if n == 2 else 8):
+        fail(f"--names needs {4 if n == 2 else 8} names")
+    cw, ch = im.width // n, im.height // n
     bg = np.array(parse_rgb(a.bg) if a.bg else im.getpixel((1, 1)), np.int32)
     Path(a.outdir).mkdir(parents=True, exist_ok=True)
-    cells, written = {}, []
-    for r in range(3):
-        for c in range(3):
+    cells, written, shapes = {}, [], {}
+    k = 0
+    for r in range(n):
+        for c in range(n):
             cell = im.crop((c * cw, r * ch, (c + 1) * cw, (r + 1) * ch))
             small = np.array(cell.resize((max(1, cw // 4), max(1, ch // 4)), Image.NEAREST)).astype(np.int32)
             mask = np.abs(small - bg).sum(-1) > a.tol
             bl = _blobs(mask, 0.01 * mask.size)
             sh, sw = mask.shape
             touch = any(b[0] == 0 or b[1] == 0 or b[2] == sw - 1 or b[3] == sh - 1 for _, b in bl)
-            name = DIRS.get((r, c), "centre")
+            if n == 3 and (r, c) == (1, 1):
+                name = "centre"
+            else:
+                name = (names or (DIRS4 if n == 2 else [DIRS[(r, c)]]))[k if (names or n == 2) else 0]
+                k += 1
             ok = not bl if name == "centre" else (len(bl) == 1 and not touch)
             cells[name] = dict(subjects=len(bl), touches_edge=touch, ok=ok)
             if ok and name != "centre":
+                shapes[name] = _cell_shape(mask)
                 p = Path(a.outdir) / f"{name}.png"
                 cell.save(p)
                 written.append(p.as_posix())
     ok = all(v["ok"] for v in cells.values())
-    out(dict(ok=ok, cells=cells, frames=written, failed=[k for k, v in cells.items() if not v["ok"]],
-             note="the gate does not test facing: check each frame faces its direction by eye"), 0 if ok else 1)
+    res = dict(ok=ok, cells=cells, frames=written, failed=[k for k, v in cells.items() if not v["ok"]],
+               note="the gate does not test facing: check each frame faces its direction by eye")
+    if n == 2:
+        rep, keys = [], [x for x in shapes if shapes[x] is not None]
+        for i, x in enumerate(keys):
+            for y in keys[i + 1:]:
+                m, s2 = shapes[x], shapes[y]
+                iou = max(((m & t).sum() / max(1, (m | t).sum())) for t in (s2, s2[:, ::-1]))
+                if iou >= a.repeat:
+                    rep.append([x, y, round(float(iou), 3)])
+        res["repeated"] = rep
+        res["note"] += ("; 'repeated' pairs share a silhouette (or its mirror): a side pair is expected, "
+                        "a front/back pair usually means the model drew the same view twice")
+    out(res, 0 if ok else 1)
 
 
 def main(argv=None):
@@ -4553,9 +4589,12 @@ def main(argv=None):
     c.add_argument("--box", required=True)
     c.add_argument("--tol", type=int, default=40)
     c.set_defaults(fn=cmd_unpad)
-    c = sub.add_parser("dirs", help="cut a 3x3 eight-direction ring sheet into N..NW frames, gated")
+    c = sub.add_parser("dirs", help="cut a 3x3 eight-direction ring or a 2x2 four-view sheet into frames, gated")
     c.add_argument("input")
     c.add_argument("outdir")
+    c.add_argument("--grid", default="3x3", choices=["3x3", "2x2"])
+    c.add_argument("--names", help="comma list of frame names in reading order (8 for 3x3 skipping the centre, 4 for 2x2)")
+    c.add_argument("--repeat", type=float, default=0.9, help="2x2: silhouette overlap that counts as a repeated view")
     c.add_argument("--bg", help="hex background (default: the top-left pixel)")
     c.add_argument("--tol", type=int, default=40)
     c.set_defaults(fn=cmd_dirs)

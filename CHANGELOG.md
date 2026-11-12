@@ -4,6 +4,13 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261112-1 · 2026-11-12 · 0.18.0: `pxw.py dirs --grid 2x2` and the Klein 4B spritesheet LoRA route
+- because: R-20261112-1; user request (technique-harvest, r/FluxAI 1qzbz0f, GPU-tested 2026-11-12)
+- files: skills/pixelwright/scripts/pxw.py (dirs), skills/pixelwright-make/SKILL.md (Hand-offs),
+  tests/test_make.py (PadDirs), RESEARCH.md, plugin.json
+- `dirs` cuts a 2x2 four-view sheet into S, E, N, W (or `--names`) and reports repeated silhouettes; the 3x3
+  default is unchanged. pixelwright-animate is at its 200-line budget, so the route lives in make only.
+
 ### C-20261111-2 � 2026-11-11 � 0.17.0: `pxw.py pad`/`unpad` for edit models, `pxw.py dirs` ring-sheet cutter
 - because: R-20261111-2; user request (technique-harvest, r/aigamedev 1pa9ygr and 1tlidho, GPU-tested 2026-11-11)
 - files: skills/pixelwright/scripts/pxw.py (pad, unpad, dirs), skills/pixelwright-make/SKILL.md (Hand-offs),
