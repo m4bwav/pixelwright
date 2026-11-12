@@ -48,9 +48,6 @@ It writes, per animation: `<id>-<anim>-<N>f.png` (horizontal sheet, frame size =
 `.preview.png` (4x animated PNG beside the still, pausing on the rest frame), `.contact.png`, and
 `<id>.gates.json`. Confirm the sheet exists and the JSON says `ok: true` before reporting anything.
 
-Facings before a walk cycle: four from one 2x2 sheet (`pxw.py dirs --grid 2x2`) or eight from a 3x3 ring
-(`pxw.py dirs`); see pixelwright-make "Hand-offs". Animate each kept facing as its own still.
-
 Animation names: `use` rests on its first frame, `place` on its last (it ends on the still), anything else on
 its first unless `"rest": "last"` or `"rest": "none"` (a loop; the seam gate applies).
 

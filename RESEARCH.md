@@ -114,6 +114,16 @@ Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P 
 - Notes, with page citations and the full proposal lists: kept with the owner's book-learnings records, outside
   this repository.
 
+### R-20261112-1 Â· 2026-11-12 Â· Klein 4B spritesheet LoRA for 2x2 four-view sheets (technique harvest)
+- Source: r/FluxAI 1qzbz0f (2026-02-08, links an X post); model fal/flux-2-klein-4b-spritesheet-lora on Hugging
+  Face, Apache-2.0 (commercial use fine; the FLUX.2 Klein 4B base is Apache-2.0 too). Related, not adopted:
+  Mystic07/flux-lora-spritesheet (Klein 9B base, non-commercial: never in sellable projects).
+- GPU test 2026-11-12 (technique-harvest tests/gpu1111/t_1qzbz0f.py): 6 subjects, Klein 4B distilled 4 steps,
+  LoRA at 1.1 vs none. Clean 2x2 grid 5/6 vs 3/6 (base often draws 6-8 figures); four distinct views 3/6 vs 2/6
+  (the LoRA repeats the back view on 2); identity held in all 12; 8.6 s vs 12.0 s per sheet, peak 15.5 GB.
+- Taken: the route in pixelwright-make "Hand-offs" and `dirs --grid 2x2` with a repeated-silhouette flag;
+  distinct views stay a human check.
+
 ### R-20261111-2 · 2026-11-11 · Edit-model border canvas and eight-direction ring sheets (technique harvest)
 - Source 1: r/aigamedev 1pa9ygr (idea only): an edit model keeps a sprite's grid better when the sprite goes in
   at an integer scale on a solid border and comes back out of the same box. On FLUX.2 Klein 4B edits of six
