@@ -121,6 +121,11 @@ lit from straight above; every surface mark has a cause. Replacing approved art:
   outward, bottom row front views, each figure clear of its cell edge. Klein 4B passed the gate on ~1 render in 5
   with the right rows; run 5-6 seeds. `pxw.py dirs sheet.png frames/` writes N..NW and fails on a filled centre,
   two subjects in a cell or an edge touch. It does not test facing: check every frame by eye, then `snap`.
+- Four facings, cheaper: Klein 4B + fal's spritesheet LoRA (Apache-2.0, strength 1.1, "2x2 sprite sheet", one
+  reference image, red background) drew a clean 2x2 grid 5/6 vs 3/6 without it, 8.6 s vs 12 s. It sets the layout,
+  not four distinct views (3/6; it repeats the back view). `pxw.py dirs sheet.png frames/ --grid 2x2` writes
+  S, E, N, W (`--names` to rename) and lists `repeated` silhouettes: a side pair is expected, a front/back pair
+  means a re-roll. Then `bg`, `snap`.
 - Engine import (point filter, no compression, integer pixels per unit): the engine plugin, named, not configured.
 - Other fixers: Pixel Snapper, unfake, proper-pixel-art (artwright-pixel's references). Use one when the human
   already has it; compare with `aw.py pixel` and keep whichever scores cleaner.
