@@ -49,7 +49,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.15.0"
+VERSION = "0.16.0"
 
 try:
     import numpy as np
@@ -3395,7 +3395,10 @@ def cmd_doctor(a):
 
 # PICO-8's 16 colours (CC0). Any other palette comes from a file or from reference sprites; nothing is fetched.
 PALETTES = {"pico-8": ["000000", "1d2b53", "7e2553", "008751", "ab5236", "5f574f", "c2c3c7", "fff1e8",
-                       "ff004d", "ffa300", "ffec27", "00e436", "29adff", "83769c", "ff77a8", "ffccaa"]}
+                       "ff004d", "ffa300", "ffec27", "00e436", "29adff", "83769c", "ff77a8", "ffccaa"],
+            "gameboy": ["0f380f", "306230", "8bac0f", "9bbc0f"]}  # DMG green shades
+# Console budgets for fit (idea credit: SpriteSwap Studio). gb: 4 shades in all; nes: 4 colours per 16x16 area.
+FIT_TARGETS = {"gb": dict(cell=8, tiles=256, colours=4, shades=4), "nes": dict(cell=8, tiles=256, colours=4, area=16)}
 BAYER = {2: [[0, 2], [3, 1]],
          4: [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]}
 BAYER[8] = [[4 * BAYER[4][y % 4][x % 4] + BAYER[2][y // 4][x // 4] for x in range(8)] for y in range(8)]
@@ -4125,6 +4128,47 @@ def cmd_tile(a):
         0 if new == 0 else 1)
 
 
+def cmd_fit(a):
+    """Hardware budget check: unique cells (flip-deduped with --flip), colours per cell and per attribute area."""
+    need_deps()
+    t = FIT_TARGETS.get(a.target, {})
+    cell, tiles = a.cell or t.get("cell", 8), a.tiles or t.get("tiles", 256)
+    per, area = a.colours or t.get("colours", 4), a.area or t.get("area", 0)
+    img = load_u8(a.input)
+    img[img[..., 3] == 0] = 0  # every clear pixel is one colour
+    h, w = img.shape[:2]
+    if h % cell or w % cell:
+        out(dict(ok=False, error=f"size {w}x{h} is not a multiple of the {cell} px cell"), 1)
+    key = img.astype(np.uint32)
+    key = (key[..., 0] << 24) | (key[..., 1] << 16) | (key[..., 2] << 8) | key[..., 3]
+    seen, worst, over = set(), 0, []
+    for y in range(0, h, cell):
+        for x in range(0, w, cell):
+            c = key[y:y + cell, x:x + cell]
+            forms = [c, c[:, ::-1], c[::-1], c[::-1, ::-1]] if a.flip else [c]
+            if not any(f.tobytes() in seen for f in forms):
+                seen.add(c.tobytes())
+            n = len(np.unique(c))
+            worst = max(worst, n)
+            if n > per and len(over) < 10:
+                over.append([x, y])
+    area_worst, area_over = 0, []
+    if area:
+        for y in range(0, h, area):
+            for x in range(0, w, area):
+                n = len(np.unique(key[y:y + area, x:x + area]))
+                area_worst = max(area_worst, n)
+                if n > per and len(area_over) < 10:
+                    area_over.append([x, y])
+    total = len(np.unique(key))
+    pal_ok = not t.get("shades") or total <= t["shades"]
+    ok = len(seen) <= tiles and worst <= per and not area_over and pal_ok
+    out(dict(ok=ok, target=a.target or "custom", cell=cell, cells=(h // cell) * (w // cell), unique_tiles=len(seen),
+             tile_budget=tiles, max_colours_per_cell=worst, colour_budget=per, cells_over=over,
+             area=area or None, max_colours_per_area=area_worst if area else None, areas_over=area_over,
+             colours=total, palette_ok=pal_ok), 0 if ok else 1)
+
+
 def cmd_palettes(a):
     out(dict(ok=True, palettes={k: len(v) for k, v in PALETTES.items()},
              files="any .hex, .txt or .gpl file, or from:<png>[,<png>...] for every colour of reference sprites"))
@@ -4380,6 +4424,15 @@ def main(argv=None):
     c.add_argument("out")
     c.add_argument("--band", type=int)
     c.set_defaults(fn=cmd_tile)
+    c = sub.add_parser("fit")
+    c.add_argument("input")
+    c.add_argument("--target", choices=sorted(FIT_TARGETS))
+    c.add_argument("--cell", type=int)
+    c.add_argument("--tiles", type=int)
+    c.add_argument("--colours", type=int)
+    c.add_argument("--area", type=int)
+    c.add_argument("--flip", action="store_true")
+    c.set_defaults(fn=cmd_fit)
     c = sub.add_parser("palettes")
     c.set_defaults(fn=cmd_palettes)
     c = sub.add_parser("frames")

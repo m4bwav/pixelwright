@@ -114,6 +114,11 @@ Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P 
 - Notes, with page citations and the full proposal lists: kept with the owner's book-learnings records, outside
   this repository.
 
+### R-20261111-1 · 2026-11-11 · Console budgets for retro sprites (technique harvest)
+- Source: r/aigamedev 1q4pgaa, SpriteSwap Studio (idea only, no code taken): AI sprites made to fit real console
+  limits. Taken: `pxw.py fit` (gb: 256 unique 8x8 tiles, 4 colours per tile, 4 shades in all; nes: 4 colours per
+  16x16 attribute area; `--flip` counts mirrored tiles once) and a 4-shade `gameboy` palette for `palette`.
+
 ### R-20261110-1 · 2026-11-10 · Model sprite sheets and OKLCH ramps (technique harvest)
 - Source 1: r/aigamedev 1wbmvnm (u/Practical_Low29): one line, "arrange it 4x4", gave a 16-frame combat sheet.
   Taken: the sheet prompt in model-effects.md and `pxw.py anim --sheet RxC`. Measured on a 4x4 sheet built from
