@@ -140,6 +140,10 @@ lit from straight above; every surface mark has a cause. Replacing approved art:
 
 A font, score digits or menu text on a pixel grid: read [references/pixel-type.md](references/pixel-type.md) before drawing. The snap and palette steps above still apply to each sheet.
 
+## Seasonal overlays
+
+Snow, frost or moss layered on finished building sprites: read [references/seasonal-overlays.md](references/seasonal-overlays.md) first. Roof finding is the cost; budget a look per sprite.
+
 ## Maintenance
 
 Evergreen unit at the plugin root: `evergreen.json`, [RESEARCH.md](../../RESEARCH.md),
