@@ -49,7 +49,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.16.0"
+VERSION = "0.17.0"
 
 try:
     import numpy as np
@@ -4361,6 +4361,112 @@ def cmd_review(a):
     server.serve_forever()
 
 
+def cmd_pad(a):
+    """Put a sprite into an edit model's canvas at the largest integer scale, centred on a solid border, and
+    write the exact box to a sidecar so `unpad` can undo it."""
+    need_deps()
+    img = load_u8(a.input)
+    h, w = img.shape[:2]
+    k = (a.canvas - 2 * a.margin) // max(w, h)
+    if k < 1:
+        fail(f"sprite {w}x{h} does not fit a {a.canvas} canvas with margin {a.margin}")
+    border = np.array(parse_rgb(a.border), np.float32)
+    al = img[..., 3:4].astype(np.float32) / 255
+    rgb = img[..., :3] * al + border * (1 - al)
+    big = np.repeat(np.repeat(rgb, k, 0), k, 1)
+    x0, y0 = (a.canvas - w * k) // 2, (a.canvas - h * k) // 2
+    can = np.empty((a.canvas, a.canvas, 4), np.float32)
+    can[..., :3], can[..., 3] = border, 255
+    can[y0:y0 + h * k, x0:x0 + w * k, :3] = big
+    save_u8(np.rint(can), a.out)
+    side = Path(a.box) if a.box else Path(a.out).with_suffix(".json")
+    info = dict(canvas=a.canvas, scale=k, size=[w, h], box=[x0, y0, x0 + w * k, y0 + h * k], border=a.border,
+                alpha=bool((img[..., 3] < 255).any()))
+    side.write_text(json.dumps(info, indent=2))
+    out(dict(ok=True, out=a.out, sidecar=side.as_posix(), **info,
+             prompt="keep the black border and the canvas size exactly; change only the sprite"))
+
+
+def cmd_unpad(a):
+    """Crop the known box from the edited canvas and box-downscale to the sprite's own size."""
+    need_deps()
+    try:
+        info = json.loads(Path(a.box).read_text())
+    except (OSError, ValueError) as e:
+        fail(f"cannot read the pad sidecar: {e}")
+    im = Image.open(a.input).convert("RGB")
+    f = im.width / info["canvas"]
+    if abs(im.height / info["canvas"] - f) > 1e-6:
+        fail(f"edited image is {im.width}x{im.height}, not square like the padded canvas")
+    box = [round(v * f) for v in info["box"]]
+    w, h = info["size"]
+    small = np.array(im.crop(box).resize((w, h), Image.BOX)).astype(np.int32)
+    o = np.dstack([small, np.full((h, w), 255, np.int32)])
+    cleared = 0
+    if info.get("alpha"):
+        near = np.abs(small - np.array(parse_rgb(info["border"]))).sum(-1) <= a.tol
+        o[near, 3] = 0
+        cleared = int(near.sum())
+    save_u8(o, a.out)
+    out(dict(ok=True, out=a.out, size=[w, h], box=box, scale_used=info["scale"] * f, cleared=cleared,
+             next="pxw.py palette / clean to lock colours"))
+
+
+DIRS = {(0, 0): "NW", (0, 1): "N", (0, 2): "NE", (1, 0): "W", (1, 2): "E", (2, 0): "SW", (2, 1): "S", (2, 2): "SE"}
+
+
+def _blobs(mask, min_px):
+    """Connected 4-neighbour regions of a bool mask: (pixel count, [x0, y0, x1, y1]) for each above min_px."""
+    h, w = mask.shape
+    seen = np.zeros_like(mask)
+    found = []
+    for y, x in zip(*np.nonzero(mask)):
+        if seen[y, x]:
+            continue
+        st, n, bb = [(y, x)], 0, [x, y, x, y]
+        seen[y, x] = True
+        while st:
+            cy, cx = st.pop()
+            n += 1
+            bb = [min(bb[0], cx), min(bb[1], cy), max(bb[2], cx), max(bb[3], cy)]
+            for ny, nx in ((cy + 1, cx), (cy - 1, cx), (cy, cx + 1), (cy, cx - 1)):
+                if 0 <= ny < h and 0 <= nx < w and mask[ny, nx] and not seen[ny, nx]:
+                    seen[ny, nx] = True
+                    st.append((ny, nx))
+        if n > min_px:
+            found.append((n, bb))
+    return found
+
+
+def cmd_dirs(a):
+    """Cut a 3x3 eight-direction ring sheet (centre empty) into N..NW frames, gated: one subject per cell, the
+    centre empty, no subject touching its cell edge. Facing is not checked: look at the frames."""
+    need_deps()
+    im = Image.open(a.input).convert("RGB")
+    cw, ch = im.width // 3, im.height // 3
+    bg = np.array(parse_rgb(a.bg) if a.bg else im.getpixel((1, 1)), np.int32)
+    Path(a.outdir).mkdir(parents=True, exist_ok=True)
+    cells, written = {}, []
+    for r in range(3):
+        for c in range(3):
+            cell = im.crop((c * cw, r * ch, (c + 1) * cw, (r + 1) * ch))
+            small = np.array(cell.resize((max(1, cw // 4), max(1, ch // 4)), Image.NEAREST)).astype(np.int32)
+            mask = np.abs(small - bg).sum(-1) > a.tol
+            bl = _blobs(mask, 0.01 * mask.size)
+            sh, sw = mask.shape
+            touch = any(b[0] == 0 or b[1] == 0 or b[2] == sw - 1 or b[3] == sh - 1 for _, b in bl)
+            name = DIRS.get((r, c), "centre")
+            ok = not bl if name == "centre" else (len(bl) == 1 and not touch)
+            cells[name] = dict(subjects=len(bl), touches_edge=touch, ok=ok)
+            if ok and name != "centre":
+                p = Path(a.outdir) / f"{name}.png"
+                cell.save(p)
+                written.append(p.as_posix())
+    ok = all(v["ok"] for v in cells.values())
+    out(dict(ok=ok, cells=cells, frames=written, failed=[k for k, v in cells.items() if not v["ok"]],
+             note="the gate does not test facing: check each frame faces its direction by eye"), 0 if ok else 1)
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="pxw.py", description=__doc__.split("\n")[0])
     p.add_argument("--version", action="version", version=VERSION)
@@ -4433,6 +4539,26 @@ def main(argv=None):
     c.add_argument("--area", type=int)
     c.add_argument("--flip", action="store_true")
     c.set_defaults(fn=cmd_fit)
+    c = sub.add_parser("pad", help="sprite into an edit model's canvas at an integer scale, box in a sidecar")
+    c.add_argument("input")
+    c.add_argument("out")
+    c.add_argument("--canvas", type=int, default=1024)
+    c.add_argument("--margin", type=int, default=32)
+    c.add_argument("--border", default="000000", help="hex border colour")
+    c.add_argument("--box", help="sidecar path (default: out with .json)")
+    c.set_defaults(fn=cmd_pad)
+    c = sub.add_parser("unpad", help="crop the pad box from an edited canvas and box-downscale")
+    c.add_argument("input")
+    c.add_argument("out")
+    c.add_argument("--box", required=True)
+    c.add_argument("--tol", type=int, default=40)
+    c.set_defaults(fn=cmd_unpad)
+    c = sub.add_parser("dirs", help="cut a 3x3 eight-direction ring sheet into N..NW frames, gated")
+    c.add_argument("input")
+    c.add_argument("outdir")
+    c.add_argument("--bg", help="hex background (default: the top-left pixel)")
+    c.add_argument("--tol", type=int, default=40)
+    c.set_defaults(fn=cmd_dirs)
     c = sub.add_parser("palettes")
     c.set_defaults(fn=cmd_palettes)
     c = sub.add_parser("frames")

@@ -114,6 +114,15 @@ Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P 
 - Notes, with page citations and the full proposal lists: kept with the owner's book-learnings records, outside
   this repository.
 
+### R-20261111-2 · 2026-11-11 · Edit-model border canvas and eight-direction ring sheets (technique harvest)
+- Source 1: r/aigamedev 1pa9ygr (idea only): an edit model keeps a sprite's grid better when the sprite goes in
+  at an integer scale on a solid border and comes back out of the same box. On FLUX.2 Klein 4B edits of six
+  sprites, colour match was 0.898 against 0.874 for a plain stretch, so the gain is small; `pad`/`unpad` ship for
+  the exact box and scale.
+- Source 2: r/aigamedev 1tlidho (u/Chologism, idea only, prompt rewritten): eight facings in a 3x3 ring with an
+  empty centre. Klein 4B passed the slicing gate 4/18 with correct rows on all four; Z-Image Turbo passed 7/18 but
+  often faced the wrong way. Taken: `dirs` (slice + gate) and the prompt; facing stays a human check.
+
 ### R-20261111-1 Â· 2026-11-11 Â· Console budgets for retro sprites (technique harvest)
 - Source: r/aigamedev 1q4pgaa, SpriteSwap Studio (idea only, no code taken): AI sprites made to fit real console
   limits. Taken: `pxw.py fit` (gb: 256 unique 8x8 tiles, 4 colours per tile, 4 shades in all; nes: 4 colours per

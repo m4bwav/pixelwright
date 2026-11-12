@@ -112,6 +112,15 @@ lit from straight above; every surface mark has a cause. Replacing approved art:
   normal texture. Both use green up; `--green-down` only for DirectX-style engines. Dark paint reads as low.
 - Retro console limits (Game Boy, NES): `pxw.py fit out/<id>.png --target gb|nes [--flip]` counts unique 8x8
   tiles and colours per tile or attribute area and fails when over; lock to `--palette gameboy` first.
+- Editing an existing sprite with an image-edit model (Klein, Qwen-Edit): `pxw.py pad in.png p.png` puts it on
+  a black 1024 canvas at the largest integer scale and writes the box to `p.json`; prompt "keep the black border
+  and canvas size, change only the sprite"; then `pxw.py unpad edited.png out.png --box p.json` and `palette`.
+  Measured gain over a plain stretch is small (colour match 0.90 vs 0.87); the win is the exact box. Back views
+  fail more often.
+- Eight facings from one render: prompt a 3x3 ring, centre empty, top row back views, middle row profiles facing
+  outward, bottom row front views, each figure clear of its cell edge. Klein 4B passed the gate on ~1 render in 5
+  with the right rows; run 5-6 seeds. `pxw.py dirs sheet.png frames/` writes N..NW and fails on a filled centre,
+  two subjects in a cell or an edge touch. It does not test facing: check every frame by eye, then `snap`.
 - Engine import (point filter, no compression, integer pixels per unit): the engine plugin, named, not configured.
 - Other fixers: Pixel Snapper, unfake, proper-pixel-art (artwright-pixel's references). Use one when the human
   already has it; compare with `aw.py pixel` and keep whichever scores cleaner.
