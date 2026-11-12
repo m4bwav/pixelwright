@@ -604,6 +604,47 @@ class TestRound2(Base):
         self.assertTrue(np.array_equal(self.load("out/far.png")[..., 3], a[..., 3]))
 
 
+class TestFont(Base):
+    """pxw.py font: a 3x1 atlas of 5x5 glyphs drawn at 4x, the third cell empty (a skipped letter)."""
+
+    def atlas(self):
+        A = ["01110", "10001", "11111", "10001", "10001"]
+        I = ["111", "010", "010", "010", "111"]
+        im = np.zeros((20, 60, 3), np.uint8)
+        for col, g in ((0, A), (1, I)):
+            for y, row in enumerate(g):
+                for x, b in enumerate(row):
+                    if b == "1":
+                        im[y * 4:(y + 1) * 4, col * 20 + x * 4:col * 20 + (x + 1) * 4] = 255
+        Image.fromarray(im).save(self.dir / "atlas.png")
+
+    def test_atlas_to_ttf(self):
+        try:
+            from fontTools.ttLib import TTFont
+        except ImportError:
+            self.skipTest("fontTools not installed")
+        self.atlas()
+        code, res = self.run_pxw("font", "atlas.png", "f.ttf", "--grid", "3x1", "--chars", "AIB", "--px", "5x5")
+        self.assertEqual(code, 1)
+        self.assertEqual(res["missing"], ["B"])
+        self.assertEqual(res["glyphs"], 2)
+        f = TTFont(self.dir / "f.ttf")
+        cmap = f.getBestCmap()
+        self.assertIn(ord("A"), cmap)
+        glyf = f["glyf"]
+        a = glyf[cmap[ord("A")]]
+        self.assertEqual(a.numberOfContours, 8)  # one contour per row run: 1+2+1+2+2
+        self.assertEqual(f["hmtx"][cmap[ord("I")]][0], 4 * 200)  # trimmed to 3 px ink + 1 gap
+        self.assertEqual(glyf[cmap[ord("B")]].numberOfContours, 0)
+        code, res = self.run_pxw("font", "atlas.png", "g.ttf", "--grid", "3x1", "--chars", "AI ", "--px", "5x5")
+        self.assertEqual(code, 0, res)
+
+    def test_too_many_chars(self):
+        self.atlas()
+        code, res = self.run_pxw("font", "atlas.png", "f.ttf", "--grid", "3x1", "--chars", "ABCD")
+        self.assertEqual(code, 1)
+
+
 class TestNormals(Base):
     def disc(self):
         y, x = np.mgrid[:20, :20]

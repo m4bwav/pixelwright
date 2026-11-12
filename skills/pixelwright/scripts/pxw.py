@@ -30,6 +30,8 @@ Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, wh
   breathe <prone.png> <outdir> [--frame-size WxH --pick N] [--scrub RRGGBB] [--no-z]
                                                              sleep loop: 4 frames of 1 px breathing + a "z"
   normals <in> <outdir> [--frame-size WxH] [--relit] [--green-down]  normal map <name>_n.png for 2D lights
+  font    <atlas.png> <out.ttf> --grid CxR --chars S [--px WxH] [--baseline N] [--mono]
+                                                             atlas to TTF (needs fontTools); empty cells = missing
   pack    <out.png> <frame.png>...                           horizontal strip in the order given
   review  <dir> [--port 8765] [--extra items.json]           click page; every click saves <dir>/picks.json
   doctor                                                     versions, dependencies, artwright's aw.py
@@ -49,7 +51,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.18.0"
+VERSION = "0.19.0"
 
 try:
     import numpy as np
@@ -4503,6 +4505,92 @@ def cmd_dirs(a):
     out(res, 0 if ok else 1)
 
 
+def cmd_font(a):
+    """Atlas sheet to a TTF: the sheet is cut into a COLSxROWS grid read left to right, top to bottom, one
+    character of --chars per cell; each cell is box-sampled to --px font pixels and every lit pixel becomes a
+    square outline (runs merged), so a pixel font stays on its grid. Empty cells are reported as missing (a
+    Ref2Font draft atlas skips letters): fill them and rerun. Needs fontTools (optional import)."""
+    need_deps()
+    try:
+        from fontTools.fontBuilder import FontBuilder
+        from fontTools.pens.ttGlyphPen import TTGlyphPen
+    except ImportError:
+        fail("missing dependency: fontTools; install with: python -m pip install fonttools")
+    chars = a.chars
+    try:
+        cols, rows = (int(v) for v in a.grid.lower().split("x"))
+        pw, ph = (int(v) for v in a.px.lower().split("x")) if a.px else (None, None)
+    except ValueError:
+        fail("--grid and --px take WxH, e.g. 10x7")
+    if len(chars) > cols * rows or len(set(chars)) != len(chars):
+        fail(f"--chars has {len(chars)} characters (or repeats one) for a {cols}x{rows} grid")
+    im = Image.open(a.input).convert("RGB")
+    cw, ch = im.width // cols, im.height // rows
+    pw, ph = pw or cw, ph or ch
+    bg = np.array(parse_rgb(a.bg) if a.bg else im.getpixel((0, 0)), np.float32)
+    ink = np.abs(np.array(im, np.float32) - bg).sum(-1) > a.tol
+    base = ph if a.baseline is None else a.baseline
+    U = max(1, 1000 // ph)
+    glyphs, adv, missing, report = {}, {}, [], {}
+    names = [".notdef", "space"]
+    cmap = {32: "space"}
+    for i, c in enumerate(chars):
+        if c == " ":
+            continue
+        r, k = divmod(i, cols)
+        cell = ink[r * ch:(r + 1) * ch, k * cw:(k + 1) * cw]
+        ys = (np.arange(ph + 1) * ch) // ph
+        xs = (np.arange(pw + 1) * cw) // pw
+        g = np.array([[cell[ys[y]:ys[y + 1], xs[x]:xs[x + 1]].mean() >= a.fill for x in range(pw)]
+                      for y in range(ph)])
+        name = f"uni{ord(c):04X}"
+        names.append(name)
+        cmap[ord(c)] = name
+        pen = TTGlyphPen(None)
+        if not g.any():
+            missing.append(c)
+            glyphs[name], adv[name] = pen.glyph(), (pw * U // 2, 0)
+            continue
+        on = np.where(g.any(0))[0]
+        x0 = 0 if a.mono else int(on[0])
+        for y in range(ph):
+            x = 0
+            while x < pw:
+                if g[y, x]:
+                    e = x
+                    while e < pw and g[y, e]:
+                        e += 1
+                    X0, X1, Y0 = (x - x0) * U, (e - x0) * U, (base - y - 1) * U
+                    pen.moveTo((X0, Y0)); pen.lineTo((X0, Y0 + U)); pen.lineTo((X1, Y0 + U)); pen.lineTo((X1, Y0))
+                    pen.closePath()
+                    x = e
+                else:
+                    x += 1
+        glyphs[name] = pen.glyph()
+        w = pw if a.mono else int(on[-1]) - x0 + 1 + a.gap
+        adv[name] = (w * U, 0)
+        report[c] = int(g.sum())
+    empty = TTGlyphPen(None).glyph()
+    glyphs[".notdef"], glyphs["space"] = empty, empty
+    adv[".notdef"], adv["space"] = (pw * U // 2, 0), (pw * U // 2, 0)
+    fb = FontBuilder(U * ph, isTTF=True)
+    fb.setupGlyphOrder(names)
+    fb.setupCharacterMap(cmap)
+    fb.setupGlyf(glyphs)
+    fb.setupHorizontalMetrics({n: (adv[n][0], 0) for n in names})
+    fb.setupHorizontalHeader(ascent=base * U, descent=-(ph - base) * U)
+    fb.setupNameTable({"familyName": a.name, "styleName": "Regular"})
+    fb.setupOS2(sTypoAscender=base * U, sTypoDescender=-(ph - base) * U, usWinAscent=base * U,
+                usWinDescent=(ph - base) * U)
+    fb.setupPost()
+    Path(a.out).parent.mkdir(parents=True, exist_ok=True)
+    fb.save(a.out)
+    ok = not missing
+    out(dict(ok=ok, out=Path(a.out).as_posix(), glyphs=len(report), missing=missing, cell=[cw, ch], px=[pw, ph],
+             units_per_em=U * ph, note="no kerning or hinting; missing cells became blank glyphs: redraw them "
+             "in the atlas (or a second render) and rerun"), 0 if ok else 1)
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="pxw.py", description=__doc__.split("\n")[0])
     p.add_argument("--version", action="version", version=VERSION)
@@ -4598,6 +4686,20 @@ def main(argv=None):
     c.add_argument("--bg", help="hex background (default: the top-left pixel)")
     c.add_argument("--tol", type=int, default=40)
     c.set_defaults(fn=cmd_dirs)
+    c = sub.add_parser("font", help="atlas sheet (one character per grid cell) to a TTF, empty cells reported")
+    c.add_argument("input")
+    c.add_argument("out")
+    c.add_argument("--grid", required=True, help="COLSxROWS of the atlas")
+    c.add_argument("--chars", required=True, help="the characters in reading order; a space skips a cell")
+    c.add_argument("--px", help="font pixels per cell WxH (default: the cell's image pixels)")
+    c.add_argument("--baseline", type=int, help="font-pixel row from the top where the baseline sits (default: the bottom)")
+    c.add_argument("--mono", action="store_true", help="fixed advance = cell width (default: trimmed to the ink + --gap)")
+    c.add_argument("--gap", type=int, default=1)
+    c.add_argument("--fill", type=float, default=0.5, help="share of a sampled block that must be ink")
+    c.add_argument("--name", default="PixelFont")
+    c.add_argument("--bg", help="hex background (default: the top-left pixel)")
+    c.add_argument("--tol", type=int, default=120)
+    c.set_defaults(fn=cmd_font)
     c = sub.add_parser("palettes")
     c.set_defaults(fn=cmd_palettes)
     c = sub.add_parser("frames")

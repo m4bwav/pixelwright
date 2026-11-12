@@ -38,3 +38,10 @@ For a font or lettering drawn on a pixel grid: scores, menus, name entry, signs.
 ## Using it in an engine
 
 A real font file is worth the setup when text changes at run time. Omagari built colour fonts from screenshots with a script into OpenType SVG (p. 266). Support differs by engine and has moved since 2019; check the target engine's docs. A bitmap font sheet is the safe default.
+
+## Atlas to font file
+
+| Route | Use | Expect |
+|---|---|---|
+| Ref2FontV3 LoRA on FLUX.2 Klein 9B (an "Aa" reference in, a 1280x1280 atlas out) | draft atlas only, then fill the gaps by hand or a second render | 10-25 of 70 glyphs missing or repeated (serif ~10, display ~12, pixel ~25; skipped letters, not malformed ones); style carries over. Klein 9B is non-commercial: never in sold projects. |
+| `pxw.py font atlas.png out.ttf --grid CxR --chars "..." --px WxH [--baseline N]` | any atlas with one character per cell, read left to right | one square per lit font pixel (runs merged), proportional advance unless `--mono`; empty cells listed in `missing` (exit 1). No kerning or hinting. Needs fontTools. |
