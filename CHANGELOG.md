@@ -4,6 +4,12 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261113-1 · 2026-11-13 · 0.19.1: pose from a mannequin render (Qwen-Image-Edit-2511, AnyPose fix)
+- because: R-20261113-1; user request (technique-harvest, r/StableDiffusion 1pw1s08, GPU-tested 2026-11-12d)
+- files: skills/pixelwright-animate/references/model-effects.md (Pose from a mannequin render), RESEARCH.md,
+  plugin.json, pxw.py VERSION
+- Docs only; no command output changed.
+
 ### C-20261112-3 · 2026-11-12 · 0.19.0: `pxw.py font` (atlas to TTF) and the Ref2Font route row
 - because: R-20261112-2; user request (technique-harvest, r/StableDiffusion 1qw83f5, GPU-tested 2026-11-12b)
 - files: skills/pixelwright/scripts/pxw.py (font), skills/pixelwright-make/references/pixel-type.md (Atlas to font

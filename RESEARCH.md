@@ -114,6 +114,14 @@ Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P 
 - Notes, with page citations and the full proposal lists: kept with the owner's book-learnings records, outside
   this repository.
 
+### R-20261113-1 · 2026-11-13 · AnyPose LoRA on Qwen-Image-Edit-2511 for mannequin poses (technique harvest)
+- Source: r/StableDiffusion 1pw1s08; AnyPose base + helper LoRAs (Apache-2.0), 2511 Lightning LoRA (lightx2v,
+  Apache-2.0), Qwen-Image-Edit-2511 fp8mixed (Apache-2.0).
+- GPU test 2026-11-12d (technique-harvest tests/1pw1s08), 3 characters x 3 poses, 4 steps: pose error 0.240 (6/9
+  scored) with AnyPose 0.7/0.7 vs 0.235 (5/9) plain; bleed 2/9 vs 1/9; 43.3 vs 38.6 s per image; same peak VRAM.
+  Plain turned character a into pixel art 3/3, AnyPose kept her a photo. Verdict adopt-partly: plain 2511 is the
+  default, AnyPose the fix when the style slips.
+
 ### R-20261112-2 · 2026-11-12 · Ref2FontV3 font atlas on FLUX.2 Klein 9B (technique harvest)
 - Source: r/StableDiffusion 1qw83f5 (2026-02-05); SnJake/Ref2Font (MIT). Base FLUX.2 Klein 9B: non-commercial
   licence, so never in sold projects.
