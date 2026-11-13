@@ -50,3 +50,20 @@ an effect does, so treat each clip as a draft to clean with `pxw.py anim`.
 - Short actions: H3 renders at least 4 s, so render the minimum and retime after to one fixed frame count for
   every action.
 - The game draws the hit (flash, stars, numbers) on the strike frame; that is game-juice's job.
+
+## Pose from a mannequin render
+
+Tested 2026-11-12 (R-20261113-1, 3 characters x 3 poses). To put a character in the pose of a grey mannequin
+render (`pw.py`, or any posed figure), give an edit model the character picture and the pose picture.
+
+- Default: Qwen-Image-Edit-2511 `qwen_image_edit_2511_fp8mixed` with the 2511 Lightning LoRA at 1.0, 4 steps,
+  cfg 1, euler/simple, 1 MP. All Apache-2.0. About 39 s per image on a 16 GB card. Prompt: put the person from
+  the first picture in the exact pose of the mannequin in the second, keep their face, clothes and background.
+- It copied all three poses on all three people. Pose error (keypoint distance, lower is better) was 0.235.
+- Fix when the style slips: add the AnyPose LoRAs (base 0.7, helper 0.7; Apache-2.0). Plain 2511 turned one
+  photographic character into pixel art in 3 of 3 poses; AnyPose kept her a photo. Pose error is a tie (0.240),
+  about 12% slower.
+- Pitfall, background bleed: the output takes the mannequin's grey studio backdrop. AnyPose did it 2 of 9,
+  plain 1 of 9, both on the same character. Render the mannequin on the character's own background, or check
+  the border and reroll.
+- Folded poses (sitting, hugging knees) gave no keypoints to score; judge those by eye.
