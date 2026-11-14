@@ -88,6 +88,7 @@ Each of these plugins works on its own. Together:
 - **[sfxwright](https://github.com/m4bwav/sfxwright)**: pixelwright makes no sound. With sfxwright installed, the actions that need sound go to it (`synth retro` suits pixel games and needs no model), and its `sounds.json` pairs files with strips.
 - **[askwright](https://github.com/m4bwav/askwright)**: pixelwright's review page links to an askwright question set or inbox, so keep/redo picks and the questions that go with them sit together.
 - **[grindwright](https://github.com/m4bwav/grindwright)**: grindwright's animation lane runs pixelwright and tracks each render's start and end images, so a changed input files a redo.
+- **[fractalwright](https://github.com/m4bwav/fractalwright)**: fractalwright's renders become pixel-art fractals through pixelwright's grid snap and palette lock.
 
 More on each pairing, with an example flow: [Works with](https://github.com/m4bwav/pixelwright/wiki/Works-with) on the wiki.
 
