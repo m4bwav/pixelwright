@@ -52,6 +52,12 @@
       "kind": "hn",
       "query": "sprite",
       "keep": "sprite tools and generators, points > 50"
+    },
+    {
+      "kind": "reddit",
+      "sub": "blender",
+      "weight": "low",
+      "keep": "3D-to-pixel render pipelines only"
     }
   ]
 }
