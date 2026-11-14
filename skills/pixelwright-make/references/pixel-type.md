@@ -14,6 +14,7 @@ For a font or lettering drawn on a pixel grid: scores, menus, name entry, signs.
 - Stem width decides symmetry: an even stem cannot hold a centred one-pixel notch in Y, so pick odd stems if you need that detail (p. 74).
 - Give a shape up when the counter needs the room: a sloped A may have to become an octagon or square (p. 74).
 - Pick one corner rule and apply it through the set. Omagari's main complaint about Atari's Quiz Show font is that C, D and G are rounded differently from B, O, P and R (p. 74).
+- Lowercase on an 8-row cell has no room below the baseline: either raise the descenders of g, j, p, q, y (the old printer and arcade habit) or use a taller cell, and choose once for the whole set (Wagner, *From ASCII Art to Comic Sans*, ch. 4).
 - Test the extremes: over-cropped lowercase p and q go unreadable first (p. 127).
 - Colour is part of the design in a pixel font, not a later setting. Rows of graded colour, or an alternating palette, give many looks from one small grid (pp. 14, 142).
 - A style can date: square MICR-style letters said future until they said retro (pp. 130-131).
