@@ -6,6 +6,13 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-092 · 2026-11-14 · Natural construction: never a rise or scan line; scaffold only where a builder would use one
+- Trigger: five Place strips for odd shapes (field, stump, tower, open camp) were made with a home-made rise (the still revealed bottom-up behind a 2 px work front) instead of `assemble`'s natural site recipe. The owner read it as "futuristic construction with a laser line"; the redo then put a scaffold round a tree stump ("a stump is grown and then cut").
+- Hypothesis: a reveal line is `buildup`'s sci-fi weld seam in disguise; and a scaffold is a builder's tool, so it only reads where a builder would climb.
+- Rule: for a medieval or village building every placement strip is `pxw.py assemble` with `"vocabulary": "natural"`, adapting the plan to the shape (pit mode with `floor` and `props` for camps, fields and props) rather than writing a reveal. Scaffold (`walls` or `ring`) only on walled or tall buildings; fields, stumps, camps and fences get stakes, digging and parts set, no scaffold. A grown thing (stump, tree) stands from frame 0 and only what people add arrives. When a polygon cannot separate a part (sails over a cap, an axe in a stump), give the region a `maskImage`: for a looping still, the pixels that differ between its frames are the moving part.
+- Evidence: a game project's PR redo (Blacksmith and Mill scaffolded; Camp Site, Farm, Firewood Station without), all five gates pass (last frame identical, 0 new colours, 0 outside silhouette).
+- Scope: skill
+
 ### L-013 · 2026-10-23 · A spill whose source box equals its region reads as a flat tinted box
 - Trigger: launchpad_stage_1 use: an amber `spill` per tower band (region and source both the band rect,
   strength 0.8) drew solid amber rectangles over the lattice.
