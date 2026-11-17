@@ -139,6 +139,19 @@ Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P 
 - Taken: the route in pixelwright-make "Hand-offs" and `dirs --grid 2x2` with a repeated-silhouette flag;
   distinct views stay a human check.
 
+### R-20261117-1 Â· 2026-11-17 Â· Code-drawn cost baseline and a skeletal-sprite route (technique harvest)
+- Source 1: r/aigamedev 1xso9c4 (u/HugoDzz, https://www.reddit.com/r/aigamedev/comments/1xso9c4/, author's own
+  numbers, n=6): Fable 5.2 at xhigh drawing sprites pixel by pixel took 3.5-6 min and 20.8k-33.8k output tokens
+  per sprite, about $1.55 each at API price (~$9.30 for six); quality "not bad but not pro-grade". ComfyUI plus
+  snap takes seconds and no API tokens, so code-drawn stays for tiny or edit-in-place sprites. Baseline for the
+  queued LLM-paint vs ComfyUI+snap test (add token and time columns).
+- Source 2: github.com/enoch3712/spine-hero-skill (r/aigamedev 1xtqr8f; no licence, README read, nothing run): one
+  painting cut onto a Spine rig, the coding model writes keys and IK per move, an image model paints hidden parts
+  and gear, a deterministic gate checks foot slide, ground speed, cracks, return to rest and drawing outside the
+  box. Noted as the skeletal-sprite route for a character game with gear swaps (Spine is paid, rig scripts
+  missing). Nothing taken; re-implement only the foot-slide and return-to-rest gate idea if pixelwright gets a
+  character route.
+
 ### R-20261111-2 · 2026-11-11 · Edit-model border canvas and eight-direction ring sheets (technique harvest)
 - Source 1: r/aigamedev 1pa9ygr (idea only): an edit model keeps a sprite's grid better when the sprite goes in
   at an integer scale on a solid border and comes back out of the same box. On FLUX.2 Klein 4B edits of six
