@@ -4,6 +4,11 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261117-1 · 2026-11-17 · 0.19.3: code-drawn cost baseline; skeletal-sprite route noted
+- because: R-20261117-1; user request (technique harvest D8, D4)
+- files: skills/pixelwright/SKILL.md (Route, code-drawn row), RESEARCH.md, plugin.json, pxw.py VERSION
+- Docs only; no command output changed.
+
 ### C-20261114-1 · 2026-11-14 · 0.19.2: raised descenders or a taller cell for lowercase pixel type
 - because: user request (technique-harvest book round 16, Wagner *From ASCII Art to Comic Sans*, ch. 4)
 - files: skills/pixelwright-make/references/pixel-type.md (Drawing), plugin.json, pxw.py VERSION
