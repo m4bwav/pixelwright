@@ -187,3 +187,8 @@ Write an entry the moment a real signal happens: a user correction, the same err
 Chibi 32 px characters do not survive a 90 deg rotation to "lie down" (head is half the body; blankets read as crates). Cheapest convincing sleep: the pack's own prone (death) frame, middle half of the body columns shifted up 1 px on 2 of 4 frames, a 3x3 white z drifting up from the head end (taller end), skip the hit frame and scrub the blood colour. Now `pxw.py breathe` (0.14.0); reproduces the hand script's sleep rows pixel-for-pixel on all nine sheets.
 - Scope: skill (pixelwright-animate)
 - Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-10
+
+## 2026-11-18 natural site plans: eave must run parallel to the ridge
+`pxw.py frames` natural site rafters join matching points on `eave` and `ridge`. When the eave slopes the other way from the ridge (Blacksmith PR 129: eave [[12,48],[74,52]], ridge [[20,28],[70,12]]) the rafters cross into a zig-zag the owner called "all jacked". Put the ridge on the still's top roof edge and the eave on the same slope, moved down by the roof's depth (Arvum batch34/measure.py does this automatically). Also: a roof region that misses part of the roof lets it show during the wall stage and pop in at the end; make the roof mask deep enough (batch35 DEPTH).
+- Scope: skill (pixelwright-animate, site plans)
+- Status: active · helpful 1 · harmful 0 · last_confirmed 2026-11-18
