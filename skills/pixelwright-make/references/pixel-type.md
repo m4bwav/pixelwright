@@ -11,7 +11,7 @@ For a font or lettering drawn on a pixel grid: scores, menus, name entry, signs.
 
 ## Drawing
 
-- Stem width decides symmetry: an even stem cannot hold a centred one-pixel notch in Y, so pick odd stems if you need that detail (p. 74).
+- Stem width decides symmetry: an even stem cannot hold a centred one-pixel notch in Y, so pick odd stems if you need that detail (p. 74). Knitted lettering, where every cell is a stitch, lands on the same rule: odd grid widths and odd stems are what let a letter sit centred (Schlomer, *Typographic Knitting*).
 - Give a shape up when the counter needs the room: a sloped A may have to become an octagon or square (p. 74).
 - Pick one corner rule and apply it through the set. Omagari's main complaint about Atari's Quiz Show font is that C, D and G are rounded differently from B, O, P and R (p. 74).
 - Lowercase on an 8-row cell has no room below the baseline: either raise the descenders of g, j, p, q, y (the old printer and arcade habit) or use a taller cell, and choose once for the whole set (Wagner, *From ASCII Art to Comic Sans*, ch. 4).
@@ -35,6 +35,15 @@ For a font or lettering drawn on a pixel grid: scores, menus, name entry, signs.
 
 - No program recovers a designer's intent from pixels; five designers give five answers (p. 74). Do not hand a low-resolution font to an upscaler and call it done.
 - The three routes: universal diagonals stay close but do not gain from the resolution; universal rounding reads naturally but exposes the source's inconsistencies; a harmonised redraw is the usual middle ground (p. 74).
+
+## Non-square output cells
+
+When the art leaves the screen for a medium whose cells are not square (knit stitches, cross-stitch on uneven cloth, some LED panels and terminals), square pixels come out squashed. Knit stitches are wider than tall, roughly 3:4 to 2:3 width to height (Schlomer, *Typographic Knitting*; book rule, unverified on our tools).
+
+- Measure the cell first: count cells across and down a known span of a real swatch or panel, and take the ratio.
+- Stretch the template, not the art: scale the pixel art by the inverse ratio in whole cell blocks per pixel (a 2:3 cell means three cells across for every two down, so each pixel becomes a block that keeps the shape square once made). Never resample by a fraction; that brings back blended edges.
+- A grey or blended edge pixel has no stitch to become. Treat it as dither: give it to one of the two neighbouring colours in a checker or pick the one that keeps the stem width, then gate the palette as usual.
+- Small serifs and one-pixel details drop out first at this scale; check them on the stretched template before making anything.
 
 ## Using it in an engine
 

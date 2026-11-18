@@ -4,6 +4,13 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261118-2 · 2026-11-18 · 0.21.1: non-square output cells note for pixel type
+- because: user request (technique-harvest book round 20, Schlomer, *Typographic Knitting*; book rule, unverified on our tools)
+- files: skills/pixelwright-make/references/pixel-type.md (Drawing, new Non-square output cells),
+  skills/pixelwright-make/SKILL.md (pixel type line), plugin.json, pxw.py VERSION
+- Docs only; no command output changed. Measure the cell aspect, stretch the template by whole cell blocks, treat
+  grey edge pixels as dither; the knitting book is cited as support for the odd-stem rule.
+
 ### C-20261118-1 · 2026-11-18 · 0.21.0: walk/combat sheet route and `dirs --grid 6x4`
 - because: user request (technique harvest D9 civitai 3046939, GPU-tested 2026-11-18: adopt-partly)
 - files: skills/pixelwright/SKILL.md (Route), skills/pixelwright-make/SKILL.md (Step 1, Hand-offs), pxw.py (`dirs
