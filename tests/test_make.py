@@ -744,5 +744,59 @@ class OverlapTest(unittest.TestCase):
         self.assertTrue(res["ok"])
 
 
+class ShadowTest(unittest.TestCase):
+    """shadow: feet anchor on the lowest opaque row's centre, shadow centred under it, engine pivots."""
+
+    def setUp(self):
+        self.td = tempfile.TemporaryDirectory()
+        self.dir = Path(self.td.name)
+        a = np.zeros((40, 30, 4), np.uint8)
+        a[5:30, 8:22] = [120, 70, 30, 255]   # a post
+        a[30:34, 10:16] = [90, 50, 20, 255]  # an off-centre foot: the lowest row is x 10..15
+        save(a, self.dir / "prop.png")
+
+    def tearDown(self):
+        self.td.cleanup()
+
+    def run_shadow(self, *args, src="prop.png"):
+        r = subprocess.run([sys.executable, str(PXW), "shadow", str(self.dir / src), str(self.dir / "out")] +
+                           list(args), capture_output=True, text=True)
+        return r.returncode, json.loads(r.stdout)
+
+    def test_anchor_and_soft_shadow(self):
+        code, res = self.run_shadow()
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["pixel"], [13.0, 34.0])
+        j = json.loads((self.dir / "out" / "prop_anchor.json").read_text())
+        self.assertEqual(j["engines"]["unity"]["pivot"], [round(13 / 30, 4), round(1 - 34 / 40, 4)])
+        self.assertEqual(j["engines"]["phaser"]["setOrigin"], [round(13 / 30, 4), 0.85])
+        self.assertEqual(j["engines"]["godot"]["offset"], [2.0, -14.0])
+        al = np.array(Image.open(self.dir / "out" / "prop_shadow.png"))[..., 3].astype(float)
+        self.assertGreater(len(np.unique(al)), 3)  # soft
+        ys, xs = np.mgrid[0:al.shape[0], 0:al.shape[1]]
+        cx = (al * xs).sum() / al.sum() + 0.5 + j["shadow"]["offset"][0]
+        cy = (al * ys).sum() / al.sum() + 0.5 + j["shadow"]["offset"][1]
+        self.assertAlmostEqual(cx, 13.0, delta=0.5)
+        self.assertAlmostEqual(cy, 34.0, delta=0.5)
+
+    def test_pixel_cast_and_guide(self):
+        code, res = self.run_shadow("--style", "pixel", "--shape", "cast", "--opacity", "0.5")
+        self.assertEqual(code, 0, res)
+        al = np.array(Image.open(self.dir / "out" / "prop_shadow.png"))[..., 3]
+        self.assertEqual(set(np.unique(al)) - {0}, {128})
+        flat = np.zeros((40, 30, 4), np.uint8)
+        flat[...] = [250, 250, 250, 255]
+        flat[10:36, 4:12] = [20, 20, 20, 255]
+        save(flat, self.dir / "guide.png")
+        code, res = self.run_shadow("--guide", str(self.dir / "guide.png"))
+        self.assertEqual(res["pixel"], [8.0, 36.0])
+
+    def test_empty_fails(self):
+        save(np.zeros((8, 8, 4), np.uint8), self.dir / "empty.png")
+        code, res = self.run_shadow(src="empty.png")
+        self.assertEqual(code, 1)
+        self.assertFalse(res["ok"])
+
+
 if __name__ == "__main__":
     unittest.main()

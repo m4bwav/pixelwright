@@ -88,7 +88,9 @@ Choosing:
 
 A repaint of a 3D guide render (a prop painted over its clay) also runs `pxw.py overlap <guide> <repaint>...`:
 raw silhouette IoU, warn under 0.85, fail under 0.70; `iou_fit` says whether it only moved or scaled
-([references/recipe.md](references/recipe.md)).
+([references/recipe.md](references/recipe.md)). Its colours go through the palette step with `from:` the set's
+sprites, which is the colour match (img2img pales them toward the clay). A prop for a 2D scene then gets
+`pxw.py shadow <sprite> <outdir>`: a drop-shadow sprite and a feet anchor JSON (Phaser, Godot, Unity).
 
 A gate that fails twice on the same sprite stops the work: report the gate JSON, do not loosen the budget to pass.
 

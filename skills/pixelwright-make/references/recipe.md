@@ -35,6 +35,7 @@ pxw.py crop <in> <out> [--pad N] [--size pow2|WxH] [--anchor bottom|centre]
 pxw.py tile <in> <out> [--band N]
 pxw.py palettes
 pxw.py overlap <guide.png> <repaint.png>... [--warn 0.85] [--fail 0.70] [--tol 60]
+pxw.py shadow <sprite.png> <outdir> [--guide g.png] [--style soft|pixel] [--shape ellipse|cast] [--opacity 0.45]
 ```
 
 `overlap` is the silhouette gate for a repaint over a guide render (SpriteCast's fit-back check, github.com/
@@ -44,6 +45,21 @@ transparency is keyed from its border colour, opened, specks dropped and holes f
 (exit 1). In the test, img2img over the clay kept solid props at 0.93-0.98 (barrel, crate) and thin ones at
 0.66-0.85 (table legs, lamppost: read warn as "look at it", not a reroll); depth control alone drew a table at
 3x scale (0.08, fail) and a crate off-centre (0.135 raw, 0.92 fitted, so it only needs moving).
+
+Colour match after a repaint is the palette step, not a new command: `palette` with `from:` the set's sprites (or
+the source sprite) maps every pixel to the nearest set colour, so a repaint lands on the set's palette. If the
+repaint came out paler than the set (img2img over clay does), the nearest colours are the set's pale ones; repaint
+at a lower denoise or with a colour reference rather than stretching the tones in code.
+
+`shadow` writes `<stem>_shadow.png` and `<stem>_anchor.json` for a 2D prop (SpriteCast's shadow and anchor
+outputs, own code). The anchor is the centre of the lowest opaque row's span at its bottom edge, in pixels and
+normalized, with ready values for Phaser (`setOrigin`), Godot (`Sprite2D` `offset` with `centered`) and Unity (custom
+pivot, y up). The shadow is a contact ellipse centred on the anchor, as wide as the bottom 15 % of the silhouette
+times `--width` (default), or with `--shape cast` the silhouette laid flat behind the base; `--style pixel` gives one
+flat alpha for pixel art, `soft` a blurred one. Draw it below the sprite at the sprite's top-left plus
+`shadow.offset`. `--guide` takes the silhouette from the clay or depth render when the sprite has no clean alpha.
+On the 1024 px D2 repaints (barrel, crate, lamppost) the shadow centroid landed on the anchor to 0.1 px; an
+isometric crate's lowest row is one corner pixel, so its anchor is that corner.
 
 ## How each step works
 

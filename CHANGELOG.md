@@ -4,6 +4,14 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261118-3 · 2026-11-18 · 0.22.0: `pxw.py shadow` (drop shadow + feet anchor) and the colour-match note
+- because: user request (technique harvest D2 SpriteCast, owed shadow/anchor export and colour match)
+- files: pxw.py (new `shadow` command), tests/test_make.py (ShadowTest), skills/pixelwright-make/SKILL.md (Step 3),
+  references/recipe.md (Commands), plugin.json, pxw.py VERSION
+- `shadow` writes a soft or pixel drop-shadow sprite and an anchor JSON (lowest opaque row centre, pixel and
+  normalized, Phaser/Godot/Unity values). Colour match is the existing `palette` with `from:`; documented, no new
+  step. Existing commands unchanged.
+
 ### C-20261118-2 · 2026-11-18 · 0.21.1: non-square output cells note for pixel type
 - because: user request (technique-harvest book round 20, Schlomer, *Typographic Knitting*; book rule, unverified on our tools)
 - files: skills/pixelwright-make/references/pixel-type.md (Drawing, new Non-square output cells),
