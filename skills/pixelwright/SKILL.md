@@ -18,6 +18,7 @@ JSON object; exit 1 means a check failed, 2 a usage error (argparse's usage text
 | A new sprite, icon, tile or item from a description | render it (comfyui-gen, or PixelLab when the human pays for it), then pixelwright-make |
 | A small new icon, tile or UI piece with a settled palette (untested here) | draw it as a palette-keyed grid of strings in code (or claude-pxl, MIT, when installed), then pixelwright-make without snap; costs about 20-34k output tokens and 3.5-6 min per sprite at xhigh, not pro-grade ([1xso9c4](https://www.reddit.com/r/aigamedev/comments/1xso9c4/)) |
 | A render or drawing that should become clean pixel art, a palette, an outline, a tile, a size | [pixelwright-make](../pixelwright-make/SKILL.md) |
+| A 4-direction walk/attack/hurt sheet (6x4 cells of 32x48) from one character reference | comfyui-gen `boogu-walk-sheet`, then `pxw.py snap --scale 4 --offset 0,0` (auto snap misses this soft 4x grid), `bg`, `palette`, `dirs --grid 6x4`; [pixelwright-make](../pixelwright-make/SKILL.md#hand-offs) |
 | An existing still that should move (use, placement, idle loop), a sprite sheet, a review page | [pixelwright-animate](../pixelwright-animate/SKILL.md) |
 | Normal maps so 2D lights shade a sprite, sheet or GIF | [pixelwright-make](../pixelwright-make/SKILL.md#hand-offs) (`pxw.py normals`) |
 | Edit an existing sprite with an image model, or cut an 8-direction ring sheet | [pixelwright-make](../pixelwright-make/SKILL.md#hand-offs) (`pxw.py pad`/`unpad`, `pxw.py dirs`) |

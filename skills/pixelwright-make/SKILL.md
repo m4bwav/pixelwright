@@ -34,6 +34,8 @@ thousands of colours. Then `pxw.py snap <render.png> snapped.png` alone and read
   under 0.5): the image is painted, not pixel art. Do not snap it; downscale the render to the native size in the
   pipeline that made it (comfyui-gen's `make_sprite.py`), then run palette and clean only.
 - A wrong `native` (half or double): pass `--scale` (render width / native width) and check again.
+- A soft grid from an image-edit model (lattice under ~50% aligned) can read as scale 1 although the layout is a
+  known 4x: pass `--scale 4 --offset 0,0` rather than trusting auto (boogu walk sheets, 4/4 missed).
 - `uniform_blocks` far under 1 on a clean upscale means the offset is wrong; give `--offset`.
 
 ## Step 2: write the recipe and make
@@ -130,6 +132,10 @@ lit from straight above; every surface mark has a cause. Replacing approved art:
   not four distinct views (3/6; it repeats the back view). `pxw.py dirs sheet.png frames/ --grid 2x2` writes
   S, E, N, W (`--names` to rename) and lists `repeated` silhouettes: a side pair is expected, a front/back pair
   means a re-roll. Then `bg`, `snap`.
+- Walk/attack/hurt sheet, 6x4 cells of 32x48: comfyui-gen's `boogu-walk-sheet` (768x768, civitai 3046939 LoRA,
+  credit its author; plain-backdrop reference only, scenery leaks into a ground strip). Its 4x grid is soft:
+  auto snap missed it on 4/4 sheets, so force `pxw.py snap sheet.png s.png --scale 4 --offset 0,0` (192x192),
+  then `bg`, `palette`, and `pxw.py dirs s.png frames/ --grid 6x4` (24 frames, walk baselines per row).
 - Engine import (point filter, no compression, integer pixels per unit): the engine plugin, named, not configured.
 - Other fixers: Pixel Snapper, unfake, proper-pixel-art (artwright-pixel's references). Use one when the human
   already has it; compare with `aw.py pixel` and keep whichever scores cleaner.

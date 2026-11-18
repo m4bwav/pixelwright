@@ -54,7 +54,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.20.0"
+VERSION = "0.21.0"
 
 try:
     import numpy as np
@@ -4727,8 +4727,12 @@ def cmd_dirs(a):
     """Cut a direction sheet into frames, gated: a 3x3 eight-direction ring (centre empty) into N..NW, or a 2x2
     four-view sheet (--grid 2x2, e.g. the Klein 4B spritesheet LoRA) into S, E, N, W. One subject per cell, no
     subject touching its cell edge; 2x2 also flags cells whose silhouette repeats another's (or its mirror).
-    Facing is not checked: look at the frames."""
+    Facing is not checked: look at the frames. --grid 6x4 cuts a walk/attack/hurt sheet (rows down, left, right,
+    up; 3 walk, 2 attack, 1 hurt each, e.g. comfyui-gen's boogu-walk-sheet after snap --scale 4) into 24 RGBA
+    frames and reports each row's walk baselines."""
     need_deps()
+    if a.grid == "6x4":
+        return _dirs_sheet(a)
     im = Image.open(a.input).convert("RGB")
     n = 2 if a.grid == "2x2" else 3
     names = [x.strip() for x in a.names.split(",")] if a.names else None
@@ -4774,6 +4778,50 @@ def cmd_dirs(a):
         res["note"] += ("; 'repeated' pairs share a silhouette (or its mirror): a side pair is expected, "
                         "a front/back pair usually means the model drew the same view twice")
     out(res, 0 if ok else 1)
+
+
+SHEET_ROWS = ("down", "left", "right", "up")
+SHEET_COLS = ("walk1", "walk2", "walk3", "attack1", "attack2", "hurt")
+
+
+def _dirs_sheet(a):
+    """6x4 walk/attack/hurt sheet: subject from alpha when the sheet has transparency (after bg), else by colour
+    distance from --bg; each cell must hold a subject that does not touch its edge."""
+    im = Image.open(a.input).convert("RGBA")
+    arr = np.array(im).astype(np.int32)
+    if (arr[..., 3] < 255).any():
+        full = arr[..., 3] > 0
+    else:
+        bg = np.array(parse_rgb(a.bg) if a.bg else im.getpixel((1, 1))[:3], np.int32)
+        full = np.abs(arr[..., :3] - bg).sum(-1) > a.tol
+    names = [x.strip() for x in a.names.split(",")] if a.names else [f"{r}_{c}" for r in SHEET_ROWS for c in SHEET_COLS]
+    if len(names) != 24:
+        fail("--names needs 24 names for 6x4")
+    cw, ch = im.width // 6, im.height // 4
+    Path(a.outdir).mkdir(parents=True, exist_ok=True)
+    cells, written, baselines = {}, [], {}
+    for r in range(4):
+        for c in range(6):
+            name = names[r * 6 + c]
+            mask = full[r * ch:(r + 1) * ch, c * cw:(c + 1) * cw]
+            bl = _blobs(mask, 0.01 * mask.size)
+            sh, sw = mask.shape
+            touch = any(b[0] == 0 or b[1] == 0 or b[2] == sw - 1 or b[3] == sh - 1 for _, b in bl)
+            ok = bool(bl) and not touch
+            rows = np.nonzero(mask.any(1))[0]
+            base = int(rows[-1]) if rows.size else None
+            cells[name] = dict(subjects=len(bl), touches_edge=touch, ok=ok, baseline=base)
+            if c < 3 and base is not None:
+                baselines.setdefault(SHEET_ROWS[r], []).append(base)
+            if ok:
+                q = Path(a.outdir) / f"{name}.png"
+                im.crop((c * cw, r * ch, (c + 1) * cw, (r + 1) * ch)).save(q)
+                written.append(q.as_posix())
+    ok = all(v["ok"] for v in cells.values())
+    out(dict(ok=ok, cell=[cw, ch], cells=cells, frames=written, failed=[k for k, v in cells.items() if not v["ok"]],
+             walk_baselines=baselines,
+             note="the gate does not test facing or frame order: check by eye; walk baselines should differ by "
+                  "a few pixels at most"), 0 if ok else 1)
 
 
 def cmd_font(a):
@@ -4948,11 +4996,11 @@ def main(argv=None):
     c.add_argument("--box", required=True)
     c.add_argument("--tol", type=int, default=40)
     c.set_defaults(fn=cmd_unpad)
-    c = sub.add_parser("dirs", help="cut a 3x3 eight-direction ring or a 2x2 four-view sheet into frames, gated")
+    c = sub.add_parser("dirs", help="cut a 3x3 eight-direction ring, a 2x2 four-view sheet or a 6x4 walk/attack/hurt sheet into frames, gated")
     c.add_argument("input")
     c.add_argument("outdir")
-    c.add_argument("--grid", default="3x3", choices=["3x3", "2x2"])
-    c.add_argument("--names", help="comma list of frame names in reading order (8 for 3x3 skipping the centre, 4 for 2x2)")
+    c.add_argument("--grid", default="3x3", choices=["3x3", "2x2", "6x4"])
+    c.add_argument("--names", help="comma list of frame names in reading order (8 for 3x3 skipping the centre, 4 for 2x2, 24 for 6x4)")
     c.add_argument("--repeat", type=float, default=0.9, help="2x2: silhouette overlap that counts as a repeated view")
     c.add_argument("--bg", help="hex background (default: the top-left pixel)")
     c.add_argument("--tol", type=int, default=40)

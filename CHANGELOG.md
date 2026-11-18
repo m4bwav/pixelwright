@@ -4,6 +4,15 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261118-1 · 2026-11-18 · 0.21.0: walk/combat sheet route and `dirs --grid 6x4`
+- because: user request (technique harvest D9 civitai 3046939, GPU-tested 2026-11-18: adopt-partly)
+- files: skills/pixelwright/SKILL.md (Route), skills/pixelwright-make/SKILL.md (Step 1, Hand-offs), pxw.py (`dirs
+  --grid 6x4`), tests/test_make.py (test_dirs_6x4_sheet), plugin.json, pxw.py VERSION, CHANGELOG.md (two stray
+  Latin-1 middle dots in C-20261111-2 re-encoded as UTF-8)
+- Hub row: comfyui-gen's boogu-walk-sheet, then a forced `snap --scale 4 --offset 0,0` (auto snap missed the soft
+  4x grid on 4/4 sheets), bg, palette, and `dirs --grid 6x4`, which cuts 24 RGBA frames of 32x48 and reports each
+  row's walk baselines (the real D9 sheet: 46/44/46 in every row). 3x3 and 2x2 output is unchanged.
+
 ### C-20261117-2 · 2026-11-17 · 0.20.0: `anim --slots` (ten characters from one clip) and the `overlap` gate
 - because: user request (technique harvest D1 r/aigamedev 1xsvbmr, D2 SpriteCast), both GPU-tested 2026-11-17
 - files: pxw.py (`anim --slots/--align-feet/--find-loop`, new `overlap` command), tests/test_pxw.py (SlotsTest),
@@ -49,7 +58,7 @@ Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (ID
 - `dirs` cuts a 2x2 four-view sheet into S, E, N, W (or `--names`) and reports repeated silhouettes; the 3x3
   default is unchanged. pixelwright-animate is at its 200-line budget, so the route lives in make only.
 
-### C-20261111-2 � 2026-11-11 � 0.17.0: `pxw.py pad`/`unpad` for edit models, `pxw.py dirs` ring-sheet cutter
+### C-20261111-2 · 2026-11-11 · 0.17.0: `pxw.py pad`/`unpad` for edit models, `pxw.py dirs` ring-sheet cutter
 - because: R-20261111-2; user request (technique-harvest, r/aigamedev 1pa9ygr and 1tlidho, GPU-tested 2026-11-11)
 - files: skills/pixelwright/scripts/pxw.py (pad, unpad, dirs), skills/pixelwright-make/SKILL.md (Hand-offs),
   tests/test_make.py (PadDirs), RESEARCH.md, plugin.json
