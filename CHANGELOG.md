@@ -4,6 +4,17 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261117-2 · 2026-11-17 · 0.20.0: `anim --slots` (ten characters from one clip) and the `overlap` gate
+- because: user request (technique harvest D1 r/aigamedev 1xsvbmr, D2 SpriteCast), both GPU-tested 2026-11-17
+- files: pxw.py (`anim --slots/--align-feet/--find-loop`, new `overlap` command), tests/test_pxw.py (SlotsTest),
+  tests/test_make.py (OverlapTest), skills/pixelwright-animate/SKILL.md (Fallback), references/model-effects.md
+  (Ten characters from one clip), skills/pixelwright-make/SKILL.md (Step 3), references/recipe.md (Commands)
+- `anim --slots CxR` splits one i2v clip of a character sheet into slots, keys each from its own border colour,
+  refuses a slot whose character overlaps the key or whose feet jump, aligns feet and centre and keeps the
+  smoothest loop window. On the real H3 clip: 9 of 10 slots clean, the green frog refused. `overlap` scores a
+  repaint's silhouette against its guide (raw and bbox-fitted IoU; warn < 0.85, fail < 0.70): the depth-only table
+  (0.08) fails, barrel and crate pass. Existing `anim` output is unchanged without `--slots`.
+
 ### C-20261117-1 · 2026-11-17 · 0.19.3: code-drawn cost baseline; skeletal-sprite route noted
 - because: R-20261117-1; user request (technique harvest D8, D4)
 - files: skills/pixelwright/SKILL.md (Route, code-drawn row), RESEARCH.md, plugin.json, pxw.py VERSION

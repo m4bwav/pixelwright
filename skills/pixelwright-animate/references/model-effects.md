@@ -51,6 +51,30 @@ an effect does, so treat each clip as a draft to clean with `pxw.py anim`.
   every action.
 - The game draws the hit (flash, stars, numbers) on the strike frame; that is game-juice's job.
 
+## Ten characters from one clip (`anim --slots`)
+
+From an r/aigamedev post, "ten 2D characters from one i2v walk" (reddit.com/r/aigamedev/comments/1xsvbmr), tested
+2026-11-17 on MiniMax H3: put up to 10 characters in fixed slots of one start image (2x5 at 1056x608, each about
+250 px tall on a darker floor strip), one i2v clip "everyone walks in place, don't interact", then cut it apart:
+
+```
+pxw.py anim <clip.mp4|frames/> <outdir> --slots 5x2 --align-feet --find-loop [--slot-height 200] [--name walk]
+```
+
+- Each slot is keyed from its own border colour (a hue key when the border is saturated), so slots may sit on
+  different colours.
+- A slot whose character wears the key's colour is refused (`key_overlap` over `--max-overlap` 0.1, checked on five
+  frames), and so is one whose raw foot row jumps more than `--max-jitter` (5 % of its height): re-render that
+  character on a background colour no character uses. In the test the green frog on green was refused (overlap
+  0.21) and the other nine passed (0.00-0.07).
+- `--align-feet` pins every frame's lowest row and centre to the slot's median (foot jitter 0.9-2.2 px raw, under
+  0.3 px after). `--find-loop` keeps the window of at least `--loop-min` 12 frames whose wrap jump is smallest;
+  `jump_over_step` under 1 means the seam is smoother than an ordinary step (0.22-0.57 in the test).
+- Output per slot: `<name>_sNN/frames/`, a sheet and its JSON, plus `<name>_slots.json`; exit 1 when a slot was
+  refused. A video input needs ffmpeg on PATH; a folder of frames does not.
+- Cost: 6.3x less GPU time per character than one clip each; at 200 px the result is softer (0.72x the Laplacian
+  sharpness of a solo clip), so render a character alone when it is shown larger than about 250 px.
+
 ## Pose from a mannequin render
 
 Tested 2026-11-12 (R-20261113-1, 3 characters x 3 poses). To put a character in the pose of a grey mannequin

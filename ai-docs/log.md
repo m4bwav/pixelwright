@@ -217,3 +217,4 @@ Hugo-Dz/spritefusion-sprite-normals (MIT, credited in R-20261109-2). Came from t
 Added a README "Works with" section and a wiki Works-with page covering artwright, sfxwright, askwright, grindwright, taken from the real handoffs in both plugins' skills (askwright and tokenwright added where they fit). Part of a cross-plugin pass on Mark's request that each pairing be described from both sides.
 
 ## [2026-11-14] update | README Works with: fractalwright (new public plugin), mirroring its own section
+- 2026-11-17: 0.20.0 adds `pxw.py anim --slots` (technique harvest D1) and `pxw.py overlap` (D2); verified on the real H3 sheet clip (9/10 clean, frog refused) and the D2 repaints (depth-only table 0.08 fails; barrel, crate pass).
