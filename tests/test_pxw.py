@@ -1608,5 +1608,60 @@ class Breathe(unittest.TestCase):
             self.assertTrue(Path(res["preview"]).exists())
 
 
+class SlotsTest(unittest.TestCase):
+    """anim --slots: one clip of a 2x2 character sheet on green; a green character is refused, the others are keyed
+    from their own slot border, foot-aligned and cut to a seamless loop (period 8)."""
+    BG = [96, 222, 108]
+
+    def clip(self, d, n=30):
+        cols = [[200, 40, 40], [40, 60, 200], [20, 120, 30], [230, 200, 40]]  # slot 3 wears the key's hue
+        paths = []
+        for i in range(n):
+            f = np.zeros((120, 80, 3), np.uint8)
+            f[:] = self.BG
+            for k, c in enumerate(cols):
+                r, q = divmod(k, 2)
+                x0, y0 = q * 40 + 12, r * 60 + 10
+                bob = 1 if (k == 1 and i % 3 == 0) else 0  # slot 2's feet jitter by a pixel
+                f[y0 + bob:y0 + 40 + bob, x0:x0 + 16] = c
+                leg = (i % 8) - 4  # eight distinct poses
+                f[y0 + 40 + bob:y0 + 46 + bob, x0 + 2 + leg:x0 + 6 + leg] = c
+                f[y0 + 40 + bob:y0 + 46 + bob, x0 + 10 - leg:x0 + 14 - leg] = c
+            p = Path(d) / f"f{i:03d}.png"
+            Image.fromarray(f).save(p)
+            paths.append(str(p))
+        return paths
+
+    def test_slots_refuse_key_coloured_and_loop(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.clip(d)
+            r = subprocess.run([sys.executable, str(SW), "anim", d, f"{d}/out", "--slots", "2x2", "--align-feet",
+                                "--find-loop", "--name", "t"], capture_output=True, text=True)
+            res = json.loads(r.stdout)
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+            self.assertEqual(res["refused"], [3])
+            self.assertEqual(res["clean"], 3)
+            rows = {x["slot"]: x for x in res["report"]}
+            self.assertIn("overlap the key", rows[3]["refused"])
+            self.assertGreater(rows[2]["foot_jitter_px"], 0.3)
+            self.assertEqual(rows[2]["foot_jitter_after_px"], 0)
+            for k in (1, 2, 4):
+                self.assertEqual(rows[k]["loop"]["frames"] % 8, 0, rows[k])
+                self.assertLess(rows[k]["loop"]["jump_over_step"], 0.05)
+            sheet = Image.open(Path(rows[1]["out"]) / "t_s01_sheet.png")
+            self.assertEqual(sheet.size[0], 40 * rows[1]["loop"]["frames"])
+            a = np.array(sheet)
+            self.assertEqual(a[0, 0, 3], 0)                     # key cleared
+            self.assertEqual(a[30, 20, :3].tolist(), [200, 40, 40])  # body kept
+
+    def test_slots_usage(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.clip(d, 3)
+            r = subprocess.run([sys.executable, str(SW), "anim", d, f"{d}/o", "--slots", "two"],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("CxR", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

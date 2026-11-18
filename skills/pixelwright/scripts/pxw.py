@@ -29,6 +29,9 @@ Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, wh
   contact <sheet.png> <out.png> --frames N [--per 5] [--zoom 3]
   breathe <prone.png> <outdir> [--frame-size WxH --pick N] [--scrub RRGGBB] [--no-z]
                                                              sleep loop: 4 frames of 1 px breathing + a "z"
+  anim    <clip|frames> <outdir> --slots CxR [--align-feet] [--find-loop] [--slot-height 200]
+                                                             i2v clip of a character sheet -> one loop per slot
+  overlap <guide.png> <repaint.png>... [--warn 0.85] [--fail 0.70]  repaint silhouette IoU vs its guide
   normals <in> <outdir> [--frame-size WxH] [--relit] [--green-down]  normal map <name>_n.png for 2D lights
   font    <atlas.png> <out.ttf> --grid CxR --chars S [--px WxH] [--baseline N] [--mono]
                                                              atlas to TTF (needs fontTools); empty cells = missing
@@ -51,7 +54,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.19.3"
+VERSION = "0.20.0"
 
 try:
     import numpy as np
@@ -3150,6 +3153,19 @@ def cmd_anim(a):
     background, put every frame on ONE pixel grid, give all frames ONE palette, pin effects to their ground point,
     write frames, a sheet and its JSON. Per-frame snap and palette give every frame its own grid and colours."""
     need_deps()
+    if a.slots:
+        ins = a.inputs
+        if len(ins) == 1 and Path(ins[0]).is_dir():
+            ins = [str(f) for f in sorted(Path(ins[0]).glob("*.png"))]
+        if len(ins) == 1 and Path(ins[0]).suffix.lower() in (".mp4", ".webm", ".mov", ".mkv"):
+            frames = _video_frames(ins[0])
+            durs = [42] * len(frames)
+        else:
+            frames, durs = _anim_load(ins)
+        if a.only:
+            lo, hi = (int(v) for v in a.only.split("-"))
+            frames, durs = frames[lo:hi + 1], durs[lo:hi + 1]
+        return _anim_slots(a, frames, durs)
     frames, durs = _anim_load(a.inputs)
     sheetInfo = None
     if a.sheet:
@@ -3265,6 +3281,261 @@ def cmd_anim(a):
     out(dict(ok=True, out=str(od), frames=len(outs), scale=round(s, 3), offset=[round(ox, 2), round(oy, 2)],
              detected=detected, native=[w, h], colours_after_snap=int(before), colours_final=int(len(pal)),
              accent_colours=extra, fringe_pixels=fringe_total, wobble_before=before_w, wobble_after=after_w, sheet=sheetInfo))
+
+
+def _components(m, min_share=0.0):
+    """Keep the largest 4-connected region of a bool mask plus any region of at least min_share of its size."""
+    h, w = m.shape
+    lab = np.zeros((h, w), np.int32)
+    sizes = [0]
+    for y, x in zip(*np.nonzero(m)):
+        if lab[y, x]:
+            continue
+        k = len(sizes)
+        lab[y, x] = k
+        st, n = [(y, x)], 0
+        while st:
+            cy, cx = st.pop()
+            n += 1
+            for ny, nx in ((cy + 1, cx), (cy - 1, cx), (cy, cx + 1), (cy, cx - 1)):
+                if 0 <= ny < h and 0 <= nx < w and m[ny, nx] and not lab[ny, nx]:
+                    lab[ny, nx] = k
+                    st.append((ny, nx))
+        sizes.append(n)
+    if len(sizes) == 1:
+        return m.copy()
+    sizes = np.array(sizes)
+    sizes[0] = 0
+    big = sizes.max()
+    keep = np.flatnonzero(sizes >= max(1, min_share * big)) if min_share else np.flatnonzero(sizes == big)
+    return np.isin(lab, keep[keep > 0])
+
+
+def _fill_holes(m):
+    """Background regions not connected to the image border become foreground."""
+    h, w = m.shape
+    seeds = [(y, x) for y in range(h) for x in (0, w - 1)] + [(y, x) for x in range(w) for y in (0, h - 1)]
+    return ~_flood(~m, seeds)
+
+
+def _border_ring(rgb, band):
+    return np.concatenate([rgb[:band].reshape(-1, 3), rgb[-band:].reshape(-1, 3),
+                           rgb[:, :band].reshape(-1, 3), rgb[:, -band:].reshape(-1, 3)])
+
+
+def _slot_key(rgb, band=3, hue_tol=0.08, tol=40, overlap=True):
+    """A slot's key from its own border: the border's median colour (a hue key when saturated, else OKLab distance
+    to the border colours), and the share of the character (pixels unlike every border colour) that the key
+    would still clear: high when the character wears the key's colour."""
+    ring = _border_ring(rgb, band)
+    kc = np.median(ring, axis=0)
+    kh, ks, kv = (float(np.asarray(v).ravel()[0]) for v in hsv(kc[None, None] / 255.0))
+    differs = None
+    if overlap or ks < 0.25:
+        pal = median_cut(ring.astype(np.uint8), 4)
+        lab = oklab(rgb)
+        dist = np.min(np.stack([np.linalg.norm(lab - oklab(c), axis=2) for c in pal]), axis=0) * 255
+        differs = dist > tol
+    if ks >= 0.25:
+        h, s, v = hsv(rgb / 255.0)
+        dh = np.abs(h - kh)
+        bg = (np.minimum(dh, 1 - dh) < hue_tol) & (s > 0.25) & (v > 0.12)
+    else:
+        bg = ~differs
+    share = 0.0
+    if overlap:
+        inner = np.zeros(bg.shape, bool)
+        inner[band:-band, band:-band] = True
+        d = differs & inner
+        share = float((d & bg).sum() / max(d.sum(), 1))
+    return bg, share, [int(round(v)) for v in kc]
+
+
+def _slot_mask(bg):
+    """Character mask from a key: opened, then the largest part (and parts a tenth its size, such as a held prop)."""
+    m = _dilate(_erode(~bg, 1), 1)
+    keep = _components(m[::2, ::2], 0.1)
+    up = np.repeat(np.repeat(keep, 2, 0), 2, 1)[:m.shape[0], :m.shape[1]]
+    return m & _dilate(up, 2, square=True)
+
+
+def _video_frames(path):
+    """Frames of a video through ffmpeg (on PATH) into a temporary folder, read back as RGBA."""
+    import shutil
+    import tempfile
+    if not shutil.which("ffmpeg"):
+        fail("reading a video needs ffmpeg on PATH; or pass the extracted frames (a folder or the PNGs in order)")
+    td = tempfile.mkdtemp(prefix="pxw_")
+    try:
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-i", path, os.path.join(td, "f%05d.png")], check=True)
+        return [np.array(Image.open(f).convert("RGBA")) for f in sorted(Path(td).glob("*.png"))]
+    finally:
+        shutil.rmtree(td, ignore_errors=True)
+
+
+def _loop_search(al, least):
+    """Window [i, j) of at least `least` frames whose wrap jump (frame j back to frame i) is smallest, reported
+    against the median step between neighbouring frames (under 1: the seam is smoother than a normal step)."""
+    n = len(al)
+    if n <= least:
+        return None
+    v = np.stack([f.astype(np.float32) for f in al])
+    step = float(np.median([np.abs(v[i + 1] - v[i]).mean() for i in range(n - 1)]))
+    best = None
+    for i in range(n - least):
+        d = np.abs(v[i + least:] - v[i]).reshape(n - i - least, -1).mean(1)
+        k = int(d.argmin())
+        if best is None or d[k] < best[0]:
+            best = (float(d[k]), i, i + least + k)
+    return dict(start=best[1], end=best[2], frames=best[2] - best[1],
+                jump_over_step=round(best[0] / max(step, 1e-6), 2))
+
+
+def _anim_slots(a, frames, durs):
+    """One i2v clip of a C x R character sheet -> per-slot frames: key each slot from its own border colour,
+    refuse a slot whose character shares the key's colours, align the feet and centre, find the best loop."""
+    try:
+        cols, rows = (int(v) for v in a.slots.lower().split("x"))
+        assert cols > 0 and rows > 0
+    except (ValueError, AssertionError):
+        fail(f"--slots wants CxR (columns x rows), e.g. 5x2, got {a.slots!r}")
+    H, W = frames[0].shape[:2]
+    sw, sh = W // cols, H // rows
+    od = Path(a.outdir)
+    od.mkdir(parents=True, exist_ok=True)
+    name = a.name or "slot"
+    report, refused = [], []
+    for r in range(rows):
+        for c in range(cols):
+            idx = r * cols + c + 1
+            crops = [f[r * sh:(r + 1) * sh, c * sw:(c + 1) * sw, :3] for f in frames]
+            probe = [_slot_key(crops[i], hue_tol=a.hue_tol, tol=a.tol)
+                     for i in sorted({0, len(crops) // 4, len(crops) // 2, 3 * len(crops) // 4, len(crops) - 1})]
+            share, kc = max(x[1] for x in probe), probe[0][2]
+            row = dict(slot=idx, key=_hex(kc), key_overlap=round(share, 3))
+            if share > a.max_overlap:
+                row.update(ok=False, refused=f"character colours overlap the key colour {_hex(kc)} ({share:.0%} of "
+                           "the character would be keyed out): re-render on a background colour no character uses")
+                refused.append(idx)
+                report.append(row)
+                continue
+            ms = [_slot_mask(_slot_key(f, hue_tol=a.hue_tol, tol=a.tol, overlap=False)[0]) for f in crops]
+            if not all(m.any() for m in ms):
+                row.update(ok=False, refused="the slot is empty in some frames")
+                refused.append(idx)
+                report.append(row)
+                continue
+            feet = np.array([np.nonzero(m.any(1))[0].max() for m in ms])
+            tops = np.array([np.nonzero(m.any(1))[0].min() for m in ms])
+            cxs = np.array([np.nonzero(m.any(0))[0].mean() for m in ms])
+            edge = float(np.mean([m[:, :2].any() or m[:, -2:].any() or m[:2].any() for m in ms]))
+            hgt = float(np.median(feet - tops)) or 1.0
+            outs = []
+            for f, m, fy, cx in zip(crops, ms, feet, cxs):
+                rgba = np.dstack([f, np.where(m, 255, 0)]).astype(np.uint8)
+                if a.align_feet:
+                    rgba = _shift(rgba, int(round(np.median(feet) - fy)), int(round(np.median(cxs) - cx)), 0)
+                outs.append(rgba)
+            if a.slot_height:
+                sc = a.slot_height / hgt
+                size = (max(1, int(round(sw * sc))), max(1, int(round(sh * sc))))
+                outs = [np.array(Image.fromarray(f).resize(size, Image.LANCZOS)) for f in outs]
+                for f in outs:
+                    f[..., 3] = np.where(f[..., 3] >= 128, 255, 0)
+            after = [np.nonzero(f[..., 3].any(1))[0].max() for f in outs if f[..., 3].any()]
+            row.update(height_px=round(hgt, 1), foot_jitter_px=round(float(np.std(feet)), 2),
+                       foot_jitter_after_px=round(float(np.std(after)), 2), edge_touch=round(edge, 2))
+            if np.std(feet) > a.max_jitter * hgt:
+                row.update(ok=False, refused=f"the key is unstable: the foot row jumps {np.std(feet):.1f} px "
+                           f"(over {a.max_jitter:.0%} of the height); check the key colour against the character")
+                refused.append(idx)
+                report.append(row)
+                continue
+            row["ok"] = True
+            keep = list(range(len(outs)))
+            if a.find_loop:
+                lp = _loop_search(outs, a.loop_min)
+                if lp:
+                    row["loop"] = lp
+                    keep = list(range(lp["start"], lp["end"]))
+            sel = [outs[i] for i in keep]
+            tag = f"{name}_s{idx:02d}"
+            sd = od / tag
+            (sd / "frames").mkdir(parents=True, exist_ok=True)
+            for k, f in enumerate(sel):
+                save_u8(f, str(sd / "frames" / f"{k:03d}.png"))
+            h, w = sel[0].shape[:2]
+            sheet = np.zeros((h, w * len(sel), 4), np.uint8)
+            for k, f in enumerate(sel):
+                sheet[:, k * w:(k + 1) * w] = f
+            save_u8(sheet, str(sd / f"{tag}_sheet.png"))
+            (sd / f"{tag}_sheet.json").write_text(json.dumps(dict(
+                image=f"{tag}_sheet.png", frame_size=[w, h], source_range=[keep[0], keep[-1]],
+                frames=[dict(x=k * w, y=0, w=w, h=h, duration=durs[i]) for k, i in enumerate(keep)]), indent=1))
+            row["out"] = sd.as_posix()
+            report.append(row)
+    (od / f"{name}_slots.json").write_text(json.dumps(report, indent=1))
+    out(dict(ok=not refused, out=od.as_posix(), slots=len(report), clean=sum(1 for x in report if x.get("ok")),
+             refused=refused, report=report), 0 if not refused else 1)
+
+
+SIL_WARN, SIL_FAIL = 0.85, 0.70  # technique-harvest D2: good repaints >= 0.81 raw IoU, broken ones <= 0.65
+
+
+def _sil_mask(a, tol=60):
+    """Silhouette of an RGBA image: its alpha when it has transparency, else everything that differs from the
+    border's median colour (opened, specks under 2 % of the largest part dropped, holes filled)."""
+    if (a[..., 3] < 128).any():
+        return a[..., 3] >= 128
+    rgb = a[..., :3].astype(np.int32)
+    bgc = np.median(_border_ring(rgb, 1), axis=0)
+    fg = np.abs(rgb - bgc).sum(-1) > tol
+    fg = _dilate(_erode(fg, 2), 2)
+    if not fg.any():
+        return fg
+    return _fill_holes(_components(fg, 0.02))
+
+
+def _iou(p, g):
+    return float((p & g).sum() / max((p | g).sum(), 1))
+
+
+def _bbox_fit(p, g):
+    """p's bounding box scaled and moved onto g's (a repaint drawn smaller or off-centre is fitted back)."""
+    ys, xs = np.nonzero(p)
+    gy, gx = np.nonzero(g)
+    crop = Image.fromarray((p[ys.min():ys.max() + 1, xs.min():xs.max() + 1] * 255).astype(np.uint8))
+    crop = crop.resize((int(gx.max() - gx.min() + 1), int(gy.max() - gy.min() + 1)), Image.NEAREST)
+    o = np.zeros_like(g)
+    o[gy.min():gy.max() + 1, gx.min():gx.max() + 1] = np.array(crop) > 127
+    return o
+
+
+def cmd_overlap(a):
+    """Silhouette-overlap gate: each repaint's outline against the guide render it was painted over."""
+    need_deps()
+    if a.fail > a.warn:
+        fail("--fail must not be above --warn")
+    g = _sil_mask(load_u8(a.guide), a.tol)
+    if not g.any():
+        fail("the guide has no silhouette (no transparency and nothing differs from its border)")
+    rows = []
+    for path in a.repaints:
+        p = _sil_mask(load_u8(path), a.tol)
+        if p.shape != g.shape:
+            p = np.array(Image.fromarray(p).resize(g.shape[::-1], Image.NEAREST))
+        iou = _iou(p, g)
+        fit = _iou(_bbox_fit(p, g), g) if p.any() else 0.0
+        verdict = "pass" if iou >= a.warn else "warn" if iou >= a.fail else "fail"
+        note = None
+        if verdict != "pass" and fit >= a.warn:
+            note = "outline matches once fitted: drawn at another size or place; re-render or fit it back"
+        elif verdict != "pass":
+            note = "outline differs from the guide (another angle or shape); paint over the guide (img2img) instead"
+        rows.append(dict(file=Path(path).name, iou=round(iou, 3), iou_fit=round(fit, 3), verdict=verdict, note=note))
+    bad = [r["file"] for r in rows if r["verdict"] == "fail"]
+    out(dict(ok=not bad, guide=Path(a.guide).name, warn_below=a.warn, fail_below=a.fail, results=rows, failed=bad,
+             warned=[r["file"] for r in rows if r["verdict"] == "warn"]), 0 if not bad else 1)
 
 
 def _nm_shift(f, dy, dx):
@@ -4785,7 +5056,24 @@ def main(argv=None):
     c.add_argument("--sheet", help="RxC: the one input is a grid sheet (a model's 4x4); cut it at the gutters")
     c.add_argument("--sheet-cut", default="gutter", choices=["gutter", "equal"], help="equal: skip gutter search")
     c.add_argument("--zoom", type=int, default=3)
+    c.add_argument("--slots", help="CxR: the input is one i2v clip of a C x R character sheet; one loop per slot")
+    c.add_argument("--align-feet", action="store_true", help="with --slots: pin each slot's foot row and centre")
+    c.add_argument("--find-loop", action="store_true", help="with --slots: keep the window with the smallest wrap jump")
+    c.add_argument("--loop-min", type=int, default=12, help="shortest loop window in frames")
+    c.add_argument("--slot-height", type=int, help="with --slots: scale each character to this height in pixels")
+    c.add_argument("--hue-tol", type=float, default=0.08, help="with --slots: key hue width (share of the wheel)")
+    c.add_argument("--max-jitter", type=float, default=0.05,
+                   help="with --slots: refuse a slot whose raw foot row moves more than this share of its height")
+    c.add_argument("--max-overlap", type=float, default=0.1,
+                   help="with --slots: refuse a slot when more than this share of its character matches the key")
     c.set_defaults(fn=cmd_anim)
+    c = sub.add_parser("overlap", help="silhouette-overlap gate: repaint outline vs its guide render (IoU)")
+    c.add_argument("guide", help="the guide render (alpha, or a flat background)")
+    c.add_argument("repaints", nargs="+")
+    c.add_argument("--warn", type=float, default=SIL_WARN, help="warn below this raw IoU")
+    c.add_argument("--fail", type=float, default=SIL_FAIL, help="fail below this raw IoU")
+    c.add_argument("--tol", type=float, default=60, help="border-colour key tolerance (sum of RGB differences)")
+    c.set_defaults(fn=cmd_overlap)
     c = sub.add_parser("normals", help="normal map for 2D lights from a sprite, sheet or GIF")
     c.add_argument("input", help="a sprite, a sheet (with --frame-size) or an animated GIF/APNG")
     c.add_argument("outdir")

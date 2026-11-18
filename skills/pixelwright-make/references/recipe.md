@@ -34,7 +34,16 @@ pxw.py swap <in.png|frames/> <out.png|out/> (--map map.json | --from a.gpl --to 
 pxw.py crop <in> <out> [--pad N] [--size pow2|WxH] [--anchor bottom|centre]
 pxw.py tile <in> <out> [--band N]
 pxw.py palettes
+pxw.py overlap <guide.png> <repaint.png>... [--warn 0.85] [--fail 0.70] [--tol 60]
 ```
+
+`overlap` is the silhouette gate for a repaint over a guide render (SpriteCast's fit-back check, github.com/
+Sunghwan0112/spritecast, MIT; tested 2026-11-17). The guide's silhouette is its alpha; a repaint without
+transparency is keyed from its border colour, opened, specks dropped and holes filled. It reports `iou` (raw) and
+`iou_fit` (the repaint's bounding box scaled onto the guide's): pass at 0.85 or more, warn from 0.70, fail below
+(exit 1). In the test, img2img over the clay kept solid props at 0.93-0.98 (barrel, crate) and thin ones at
+0.66-0.85 (table legs, lamppost: read warn as "look at it", not a reroll); depth control alone drew a table at
+3x scale (0.08, fail) and a crate off-centre (0.135 raw, 0.92 fitted, so it only needs moving).
 
 ## How each step works
 

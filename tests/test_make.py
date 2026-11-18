@@ -679,5 +679,50 @@ class TestNormals(Base):
         self.assertEqual(code, 1)
 
 
+class OverlapTest(unittest.TestCase):
+    """overlap: repaint silhouette vs the guide render; raw and bbox-fitted IoU, warn 0.85, fail 0.70."""
+
+    def setUp(self):
+        self.td = tempfile.TemporaryDirectory()
+        self.dir = Path(self.td.name)
+        g = np.zeros((80, 80, 4), np.uint8)
+        g[20:60, 25:55] = [150, 150, 150, 255]  # clay crate with alpha
+        save(g, self.dir / "guide.png")
+
+    def tearDown(self):
+        self.td.cleanup()
+
+    def paint(self, name, box):
+        a = np.zeros((80, 80, 4), np.uint8)
+        a[...] = [250, 250, 250, 255]  # flat background, no alpha: keyed from the border
+        y0, y1, x0, x1 = box
+        a[y0:y1, x0:x1] = [140, 80, 30, 255]
+        a[y0 + 8:y0 + 12, x0 + 4:x1 - 4] = [250, 250, 250, 255]  # a light plank stripe: a hole the fill closes
+        save(a, self.dir / name)
+
+    def run_overlap(self, *names):
+        r = subprocess.run([sys.executable, str(PXW), "overlap", str(self.dir / "guide.png")] +
+                           [str(self.dir / n) for n in names], capture_output=True, text=True)
+        return r.returncode, json.loads(r.stdout)
+
+    def test_pass_warn_fail(self):
+        self.paint("same.png", (20, 60, 25, 55))
+        self.paint("thin.png", (20, 60, 25, 47))      # IoU 0.73: warn band
+        self.paint("moved.png", (2, 22, 2, 17))       # half size, off-centre: fails raw, fits back
+        code, res = self.run_overlap("same.png", "thin.png", "moved.png")
+        self.assertEqual(code, 1)
+        v = {r["file"]: r for r in res["results"]}
+        self.assertEqual(v["same.png"]["verdict"], "pass")
+        self.assertGreater(v["same.png"]["iou"], 0.97)
+        self.assertEqual(v["thin.png"]["verdict"], "warn")
+        self.assertEqual(v["moved.png"]["verdict"], "fail")
+        self.assertGreater(v["moved.png"]["iou_fit"], 0.9)
+        self.assertIn("fitted", v["moved.png"]["note"])
+        self.assertEqual(res["failed"], ["moved.png"])
+        code, res = self.run_overlap("same.png")
+        self.assertEqual(code, 0)
+        self.assertTrue(res["ok"])
+
+
 if __name__ == "__main__":
     unittest.main()

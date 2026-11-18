@@ -84,6 +84,10 @@ Choosing:
 | `seam_ok` | tiles: the step across the wrap edge is at most 1.5x the mean step inside |
 | `aw_pixel.clean_pixel_art` | artwright's verdict (integer scale, alignment, uniform blocks, no blend pixels, budget, alpha); `problems` says why not |
 
+A repaint of a 3D guide render (a prop painted over its clay) also runs `pxw.py overlap <guide> <repaint>...`:
+raw silhouette IoU, warn under 0.85, fail under 0.70; `iou_fit` says whether it only moved or scaled
+([references/recipe.md](references/recipe.md)).
+
 A gate that fails twice on the same sprite stops the work: report the gate JSON, do not loosen the budget to pass.
 
 ## Step 4: look
