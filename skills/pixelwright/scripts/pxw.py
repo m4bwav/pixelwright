@@ -54,7 +54,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.21.1"
+VERSION = "0.22.0"
 
 try:
     import numpy as np
@@ -3538,6 +3538,83 @@ def cmd_overlap(a):
              warned=[r["file"] for r in rows if r["verdict"] == "warn"]), 0 if not bad else 1)
 
 
+def _anchor(m):
+    """Feet point of a silhouette: the centre of the lowest opaque row's span, at that row's bottom edge."""
+    ys, xs = np.nonzero(m)
+    y = int(ys.max())
+    row = xs[ys == y]
+    return (int(row.min()) + int(row.max()) + 1) / 2.0, float(y + 1), int(row.min()), int(row.max())
+
+
+def cmd_shadow(a):
+    """Drop shadow sprite + feet anchor for a 2D prop, from its alpha (or a guide's silhouette)."""
+    need_deps()
+    img = load_u8(a.input)
+    h, w = img.shape[:2]
+    if a.guide:
+        m = _sil_mask(load_u8(a.guide), a.tol)
+        if m.shape != (h, w):
+            m = np.array(Image.fromarray(m).resize((w, h), Image.NEAREST))
+    else:
+        m = _sil_mask(img, a.tol)
+    if not m.any():
+        fail("no opaque pixels: the sprite (or guide) has no silhouette")
+    ax, ay, x0, x1 = _anchor(m)
+    ys, xs = np.nonzero(m)
+    band = ys >= ys.max() - max(1, int(round((ys.max() - ys.min() + 1) * a.base)))
+    bx0, bx1 = int(xs[band].min()), int(xs[band].max())
+    rx = (bx1 - bx0 + 1) / 2.0 * a.width
+    ry = max(1.0, rx * a.squash)
+    pad = int(math.ceil(max(rx, ry) + 3 * a.blur + abs(a.offset[0]) + abs(a.offset[1]) + 2))
+    H, W = h + 2 * pad, w + 2 * pad
+    cx, cy = ax + pad + a.offset[0], ay + pad + a.offset[1]
+    yy, xx = np.mgrid[0:H, 0:W].astype(np.float32) + 0.5
+    if a.shape == "cast":  # the silhouette laid flat behind the base: flipped, squashed, sheared to the right
+        sh = np.zeros((H, W), np.float32)
+        sy, sx = np.nonzero(m)
+        ty = np.round(ay + pad + a.offset[1] - (ay - sy) * a.squash).astype(int)
+        tx = np.round(sx + pad + a.offset[0] + (ay - sy) * a.squash * a.shear).astype(int)
+        ok = (ty >= 0) & (ty < H) & (tx >= 0) & (tx < W)
+        sh[ty[ok], tx[ok]] = 1.0
+        sh = np.maximum(sh, _dilate(sh > 0, 1).astype(np.float32))
+    else:
+        sh = ((((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2) <= 1.0).astype(np.float32)
+    if a.style == "soft" and a.blur > 0:
+        sh = _nm_blur(sh, a.blur)
+    alpha = np.clip(sh, 0, 1) * a.opacity * 255
+    if a.style == "pixel":
+        alpha = np.where(sh >= 0.5, round(a.opacity * 255), 0)
+    rgba = np.zeros((H, W, 4), np.uint8)
+    rgba[..., :3] = a.color
+    rgba[..., 3] = np.round(alpha).astype(np.uint8)
+    nz = np.nonzero(rgba[..., 3])
+    if not len(nz[0]):
+        fail("the shadow came out empty; raise --opacity or --width")
+    t, b, l, r = int(nz[0].min()), int(nz[0].max()) + 1, int(nz[1].min()), int(nz[1].max()) + 1
+    rgba = rgba[t:b, l:r]
+    od = Path(a.outdir)
+    od.mkdir(parents=True, exist_ok=True)
+    stem = a.name or Path(a.input).stem
+    sp, jp = od / f"{stem}_shadow.png", od / f"{stem}_anchor.json"
+    Image.fromarray(rgba, "RGBA").save(sp)
+    off = [l - pad, t - pad]  # shadow's top-left relative to the sprite's top-left, in pixels
+    nx, ny = ax / w, ay / h
+    anchor = dict(
+        sprite=Path(a.input).name, size=[w, h], pixel=[ax, ay], normalized=[round(nx, 4), round(ny, 4)],
+        base_row=int(ay) - 1, base_span=[x0, x1],
+        shadow=dict(file=sp.name, size=[r - l, b - t], offset=off, style=a.style, shape=a.shape,
+                    draw="below the sprite, at sprite top-left + offset"),
+        engines=dict(
+            phaser=dict(setOrigin=[round(nx, 4), round(ny, 4)], note="y down; place the sprite at its feet"),
+            godot=dict(centered=True, offset=[round(w / 2 - ax, 2), round(h / 2 - ay, 2)],
+                       note="Sprite2D offset in pixels, y down; node position = feet"),
+            unity=dict(pivot=[round(nx, 4), round(1 - ny, 4)], pivot_pixels=[ax, h - ay],
+                       note="Sprite Editor custom pivot, y up from bottom-left")))
+    jp.write_text(json.dumps(anchor, indent=2), encoding="utf-8")
+    out(dict(ok=True, shadow=str(sp), anchor=str(jp), pixel=[ax, ay], normalized=anchor["normalized"],
+             shadow_offset=off, shadow_size=[r - l, b - t]))
+
+
 def _nm_shift(f, dy, dx):
     """f moved by (dy, dx) with edge values repeated."""
     h, w = f.shape
@@ -5122,6 +5199,24 @@ def main(argv=None):
     c.add_argument("--fail", type=float, default=SIL_FAIL, help="fail below this raw IoU")
     c.add_argument("--tol", type=float, default=60, help="border-colour key tolerance (sum of RGB differences)")
     c.set_defaults(fn=cmd_overlap)
+    c = sub.add_parser("shadow", help="drop-shadow sprite + feet anchor JSON (Phaser, Godot, Unity) for a 2D prop")
+    c.add_argument("input", help="the sprite (alpha, or a flat background)")
+    c.add_argument("outdir")
+    c.add_argument("--name", help="output stem (default: the input's)")
+    c.add_argument("--guide", help="take the silhouette from this guide render instead (e.g. the clay or depth pass)")
+    c.add_argument("--style", choices=["soft", "pixel"], default="soft", help="blurred alpha, or one flat alpha")
+    c.add_argument("--shape", choices=["ellipse", "cast"], default="ellipse",
+                   help="contact ellipse under the base, or the silhouette laid flat behind it")
+    c.add_argument("--base", type=float, default=0.15, help="share of the height that counts as the base")
+    c.add_argument("--width", type=float, default=1.1, help="ellipse width as a multiple of the base width")
+    c.add_argument("--squash", type=float, default=0.3, help="ellipse height / width, or the cast's flattening")
+    c.add_argument("--shear", type=float, default=0.6, help="cast: sideways lean per unit of height")
+    c.add_argument("--offset", type=lambda v: [int(x) for x in v.split(",")], default=[0, 0], help="dx,dy in pixels")
+    c.add_argument("--blur", type=float, default=1.5)
+    c.add_argument("--opacity", type=float, default=0.45)
+    c.add_argument("--color", type=lambda v: [int(x) for x in v.split(",")], default=[0, 0, 0], help="r,g,b")
+    c.add_argument("--tol", type=float, default=60, help="border-colour key tolerance when there is no alpha")
+    c.set_defaults(fn=cmd_shadow)
     c = sub.add_parser("normals", help="normal map for 2D lights from a sprite, sheet or GIF")
     c.add_argument("input", help="a sprite, a sheet (with --frame-size) or an animated GIF/APNG")
     c.add_argument("outdir")
