@@ -388,6 +388,26 @@ class TestPadDirs(Base):
         code, res = self.run_pxw("dirs", self.quad(), "q3", "--grid", "2x2", "--names", "a,b")
         self.assertEqual(code, 1)
 
+    def test_dirs_6x4_sheet(self):
+        from PIL import ImageDraw
+        im = Image.new("RGBA", (192, 192), (0, 0, 0, 0))
+        d = ImageDraw.Draw(im)
+        for i in range(24):
+            x, y = (i % 6) * 32, (i // 6) * 48
+            d.rectangle((x + 10, y + 6, x + 21, y + 40 + (i % 6 == 1)), fill=(40, 120, 60, 255))
+        im.save(self.dir / "sheet.png")
+        code, res = self.run_pxw("dirs", "sheet.png", "s", "--grid", "6x4")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(len(res["frames"]), 24)
+        self.assertEqual(res["cell"], [32, 48])
+        self.assertEqual(res["walk_baselines"]["down"], [40, 41, 40])
+        self.assertIn("up_hurt", res["cells"])
+        d.rectangle((32 * 5 + 20, 48 * 3 + 10, 32 * 6 - 1, 48 * 3 + 20), fill=(40, 120, 60, 255))
+        im.save(self.dir / "sheet2.png")
+        code, res = self.run_pxw("dirs", "sheet2.png", "s2", "--grid", "6x4")
+        self.assertEqual(code, 1)
+        self.assertEqual(res["failed"], ["up_hurt"])
+
 
 class TestMake(Base):
     def test_gate_fails_over_budget_and_writes_the_report(self):
