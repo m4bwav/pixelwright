@@ -118,6 +118,9 @@ lit from straight above; every surface mark has a cause. Replacing approved art:
   out/<id>.png out --relit` (sheets: `--frame-size WxH`; GIFs: frames side by side) writes `<id>_n.png`; check the
   relit strip. Unity URP 2D: Sprite Editor Secondary Textures, name `_NormalMap`. Godot 4: a CanvasTexture's
   normal texture. Both use green up; `--green-down` only for DirectX-style engines. Dark paint reads as low.
+- Rotating a sprite or a part: `pxw.py rotate in.png out.png --deg 30` (RotSprite, no new colours). Tilemaps:
+  `pxw.py tileset map.png out --cell 8 --flip` (tiles.png + tilemap.json). Ramp recolour and shading,
+  `--dither fs` (stills only), thick outlines: [recipe](references/recipe.md#commands).
 - Retro console limits (Game Boy, NES): `pxw.py fit out/<id>.png --target gb|nes [--flip]` counts unique 8x8
   tiles and colours per tile or attribute area and fails when over; lock to `--palette gameboy` first.
 - Editing an existing sprite with an image-edit model (Klein, Qwen-Edit): `pxw.py pad in.png p.png` puts it on

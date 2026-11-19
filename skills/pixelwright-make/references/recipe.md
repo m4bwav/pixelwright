@@ -28,15 +28,30 @@ Each step is also a command, for a quick try or a step the recipe does not cover
 ```
 pxw.py snap <in> <out> [--scale S] [--offset X,Y] [--max 64]
 pxw.py bg <in> <out> [--colour auto|R,G,B] [--tol 40] [--holes N]
-pxw.py palette <in> <out> (--palette P | --colours N) [--dither bayer4] [--dither-space linear] [--max-step 0.12] [--gpl pal.gpl]
-pxw.py clean <in> <out> [--alpha 128] [--orphans] [--thin] [--corners] [--outline auto|selective|R,G,B] [--light top-left]
-pxw.py swap <in.png|frames/> <out.png|out/> (--map map.json | --from a.gpl --to b.gpl)
+pxw.py palette <in> <out> (--palette P | --colours N) [--dither bayer4|fs] [--dither-strength 0.5] [--dither-space linear] [--max-step 0.12] [--gpl pal.gpl] [--sort luma|hue|sat|val]
+pxw.py clean <in> <out> [--alpha 128] [--orphans] [--thin] [--corners] [--outline auto|selective|R,G,B] [--light top-left] [--outline-width N] [--outline-shape diamond|square|circle] [--inside]
+pxw.py swap <in.png|frames/> <out.png|out/> (--map map.json | --from a.gpl --to b.gpl | --ramp ramp.hex | --step +1|-1 [--mask m.png] [--palette P])
+pxw.py rotate <in> <out> --deg D [--pivot X,Y] [--method rotsprite|nearest]
+pxw.py tileset <in> <outdir> [--cell 8] [--flip] [--columns 16]
 pxw.py crop <in> <out> [--pad N] [--size pow2|WxH] [--anchor bottom|centre]
 pxw.py tile <in> <out> [--band N]
 pxw.py palettes
 pxw.py overlap <guide.png> <repaint.png>... [--warn 0.85] [--fail 0.70] [--tol 60]
 pxw.py shadow <sprite.png> <outdir> [--guide g.png] [--style soft|pixel] [--shape ellipse|cast] [--opacity 0.45]
 ```
+
+Harvest pa20 (2026-11-19; ideas from Pixelorama and Aseprite's MIT sources, written fresh). Palette files also
+read JASC `.pal` (Lospec, Pixelorama). `--dither fs` is Floyd-Steinberg (serpentine, clear pixels take no error,
+`--dither-strength` scales it): it tracks tone better than Bayer but its pattern is irregular and changes from
+frame to frame, so stills and backgrounds only, never animated frames. `--sort` orders the `.gpl` and the reported
+palette (default luma, dark to light). `swap --ramp` maps each colour by lightness rank onto a dark-to-light ramp
+(gradient map); `swap --step +1|-1 --mask` moves the masked pixels one step along their palette ramp (nearest hue
+and chroma at a lighter or darker L), so shading stays on-palette. `rotate` defaults to RotSprite (Scale2x three
+times, rotate at 8x, sample): no new colours and fewer orphan pixels than nearest (2 against 6 on a 30 degree
+diagonal). `tileset` keeps each distinct cell once (`--flip` reuses flipped copies) and writes `tiles.png` and
+`tilemap.json` (`map`: per cell row-major `[tile, flipX, flipY]`). `clean --outline-width N` grows an outline band
+outside the sprite (the canvas clips it: pad first) in the kernel `--outline-shape`; `--inside` puts it on the
+sprite's own edge pixels (selective needs `--inside`). Without them the 1 px edge outline is unchanged.
 
 `overlap` is the silhouette gate for a repaint over a guide render (SpriteCast's fit-back check, github.com/
 Sunghwan0112/spritecast, MIT; tested 2026-11-17). The guide's silhouette is its alpha; a repaint without

@@ -95,6 +95,18 @@ SEO "best AI pixel art" lists, Kling and Pixa marketing pages, OnWorks mirrors, 
 
 Newest first. Sub-ids from the creation pass: R-S (subject), R-F (tooling), R-P (practice), R-T (testing).
 
+### R-20261119-1 · 2026-11-19 · Pixel-art editor techniques from Aseprite and Pixelorama (technique harvest pa20)
+- Sources: Pixelorama (github.com/Orama-Interactive/Pixelorama, MIT: rotation shaders, GradientMap shader,
+  Palette.gd sort, onion skin), Aseprite (github.com/aseprite/aseprite: the MIT-licensed parts only, src/render
+  error_diffusion and rotation, docs/ase-file-specs.md for frameTags direction and repeat; the editor's EULA parts
+  gave ideas only), Piskel (onion-skin colours). Every line in pxw.py is written fresh; nothing copied from GPL code.
+- Measured on drawn fixtures (technique-harvest ai-docs/tests/pa20): RotSprite at 30 degrees left 2 orphan pixels
+  against nearest's 6; Floyd-Steinberg on a 4-colour grey ramp gave mean tonal error 6.4 against Bayer4's 13.3 and
+  fewer orphans, but an irregular, frame-unstable pattern (stills only). A 64-cell map from 6 tiles with random
+  flips dedupes to 24 tiles without flips, 6 with. A standard JASC .pal crashed load_palette (header read as hex).
+- Adopted in 0.23.0 (C-20261119-1). Not adopted this round: octree quantise, cleanEdge, OmniScale, smear rotxel,
+  HSV posterize, C-array export, .ase reader, iso/hex masks.
+
 ### R-20261025-1 · 2026-10-25 · Six books: three on pixel art, image processing, two on rendering
 - Track: subject and practice. Magnitude 0.3 (bugs fixed, new opt-in steps; no claim reversed).
 - Azzi, Pixel Logic: the most exact of the pixel books: staircase and anti-aliasing amounts, banding, outlines by

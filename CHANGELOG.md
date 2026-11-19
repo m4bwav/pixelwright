@@ -2,7 +2,22 @@
 
 Every change to [README.md](README.md) and its companions, newest first, each with the reason. Reasons cite findings in [RESEARCH.md](RESEARCH.md) (`R-`), lessons in [LEARNINGS.md](LEARNINGS.md) (`L-`), and test runs in [TESTS.md](TESTS.md) (`T-`). State in `evergreen.json`. Protocol: MAINTENANCE.md.
 
-Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
+Entry shape: `### C-20261119-1 · 2026-11-19 · 0.23.0: RotSprite rotate, FS dither, ramps, palette sort, tilesets, sheet tags, thick outlines, onion skin
+- because: user request (technique harvest pa20), R-20261119-1
+- files: pxw.py (load_palette JASC fix; new `rotate` and `tileset` commands; `palette --dither fs
+  --dither-strength --sort`; `swap --ramp`, `swap --step --mask --palette`; `clean --outline-width --outline-shape
+  --inside`; `anim --extrude --tag --sort`; review page canvas player with frameTags playback and an onion-skin
+  toggle), tests/test_make.py (TestPa20, 10 tests), skills/pixelwright-make/SKILL.md (Hand-offs),
+  references/recipe.md (Commands), pixelwright-animate references/model-effects.md and brief.md (review-extra),
+  RESEARCH.md, plugin.json, pxw.py VERSION
+- Credits: Pixelorama (MIT), Aseprite's MIT-licensed render code and file spec, Piskel; ideas only, no code copied.
+  JASC `.pal` files no longer crash (the `JASC-PAL` header was parsed as a hex colour). Output changes: `palette`
+  now reports and writes its `--gpl` dark to light (`--sort luma`, the default; was the found order). `anim` sheets
+  and JSON are identical at `--extrude 0` without `--tag`. Every other existing output is byte-identical; the 1 px
+  outline path is unchanged without the new flags. fx_rotate inside `anim` briefs keeps its 4x supersample (not
+  switched to RotSprite, so existing sheets stay reproducible).
+
+### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
 ### C-20261118-3 · 2026-11-18 · 0.22.0: `pxw.py shadow` (drop shadow + feet anchor) and the colour-match note
 - because: user request (technique harvest D2 SpriteCast, owed shadow/anchor export and colour match)

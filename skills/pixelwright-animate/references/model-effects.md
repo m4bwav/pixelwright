@@ -20,7 +20,11 @@ One grid for every frame (detected over all frames pooled; soft art has none, so
 `--scale`: measure one art pixel on a zoomed frame), the key cleared and its spill removed, one palette for all
 frames with up to 6 extra colours for small far-off accents (embers), key-tinted greys made neutral with
 `--neutral-greys`, frames that touch the ground pinned to one x, then frames, `<name>_sheet.png` + `.json`
-(rects, durations), a `.hex` palette and a contact sheet. `--palette` maps several effects to one game palette so
+(rects, durations), a `.hex` palette and a contact sheet. `--extrude N` pads every sheet frame with N copies of its
+edge pixels (no bleeding under filtering; the JSON rects point inside the padding); `--tag
+name:from-to[:forward|reverse|pingpong|pingpong_reverse[:repeat]]` (repeatable) writes Aseprite-style
+`meta.frameTags`, which Phaser, Godot and Unity importers read; pingpong turns without repeating its end frames.
+`--sort` orders the `.hex` (default luma). `--palette` maps several effects to one game palette so
 they belong together. The JSON prints colours and wobble before and after. Hit feel (hit-stop, flash, shake) is
 game-juice's job.
 
