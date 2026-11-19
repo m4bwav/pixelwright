@@ -54,7 +54,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.23.0"
+VERSION = "0.24.0"
 
 try:
     import numpy as np
@@ -281,8 +281,15 @@ def fx_sparks(s, f, k, t, i):
         age = i - born
         if age < 0 or age >= life:
             continue
-        x = sx + vx * age
-        y = sy + vy * age + t.get("gravity", 0.45) * age * age
+        if "floor" in t:  # step-integrated so a spark reflects off the floor (idea from patch-gg/pixelfx, MIT)
+            x, y, g, fl, b = sx, sy, t.get("gravity", 0.45), t["floor"], t.get("bounce", 0.45)
+            for _ in range(age):
+                x, y, vy = x + vx, y + vy + g, vy + 2 * g
+                if y > fl:
+                    y, vy, vx = fl, -vy * b, vx * 0.7
+        else:
+            x = sx + vx * age
+            y = sy + vy * age + t.get("gravity", 0.45) * age * age
         xi, yi = int(round(x)), int(round(y))
         c = cols[min(len(cols) - 1, int(age * len(cols) / life))]
         for px, py, a in ((xi, yi, 1.0), (int(round(x - vx * 0.5)), int(round(y - vy * 0.5)), 0.5)):
