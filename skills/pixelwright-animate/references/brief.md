@@ -65,4 +65,7 @@ A region without `alpha` and without `select` is cut to the still's opaque pixel
 else (Keep, Redo, Drop); `info` shows text and images with a note field and no buttons (context, not a
 decision). `"display": "full"` shows the item's images at their own resolution, smoothly scaled to the page width,
 for paintings and illustrations (the default is the sprite's 3x pixel zoom) (L-052). `heading` starts a new heading
-above the item. Image paths are relative to the batch folder.
+above the item. Image paths are relative to the batch folder. `"sheet_json": "x/name_sheet.json"` (an `anim`
+sheet) adds a canvas player that plays its `frameTags` (direction, repeat); every animation section has one too.
+Its onion-skin box draws the previous frame red and the next blue at 0.3 alpha under the current one, which shows
+jitter and pops at a glance.

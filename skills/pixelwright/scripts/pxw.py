@@ -54,7 +54,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.22.0"
+VERSION = "0.23.0"
 
 try:
     import numpy as np
@@ -3266,16 +3266,19 @@ def cmd_anim(a):
     od = Path(a.outdir)
     (od / "frames").mkdir(parents=True, exist_ok=True)
     h, w = outs[0].shape[:2]
-    sheet = np.zeros((h, w * len(outs), 4), np.uint8)
     for i, f in enumerate(outs):
         save_u8(f, str(od / "frames" / f"{i:02d}.png"))
-        sheet[:, i * w:(i + 1) * w] = f
+    sheet, rects = extrude_sheet(outs, a.extrude)
     name = a.name or Path(a.inputs[0]).stem
     save_u8(sheet, str(od / f"{name}_sheet.png"))
-    (od / f"{name}_palette.hex").write_text("\n".join(_hex(c) for c in sorted(pal, key=lambda c: oklab(c)[0])) + "\n")
+    (od / f"{name}_palette.hex").write_text("\n".join(_hex(c) for c in sort_palette(pal, a.sort)) + "\n")
     meta = dict(image=f"{name}_sheet.png", frame_size=[w, h], ground_row=ground,
-                frames=[dict(x=i * w, y=0, w=w, h=h, duration=d) for i, d in enumerate(durs)],
+                frames=[dict(r, duration=d) for r, d in zip(rects, durs)],
                 palette=[_hex(c) for c in pal])
+    if a.extrude:
+        meta["extrude"] = a.extrude
+    if a.tag:
+        meta["meta"] = {"frameTags": [parse_tag(t, len(outs)) for t in a.tag]}
     (od / f"{name}_sheet.json").write_text(json.dumps(meta, indent=1))
     contact_sheet(outs, min(8, len(outs)), a.zoom).save(od / f"{name}_contact.png")
     out(dict(ok=True, out=str(od), frames=len(outs), scale=round(s, 3), offset=[round(ox, 2), round(oy, 2)],
@@ -3802,7 +3805,10 @@ def load_palette(spec, root=".", ordered=False):
     if not p.is_file():
         fail(f"palette not found: {spec} (built-in: {', '.join(sorted(PALETTES))})")
     cols = []
-    for line in p.read_text(encoding="utf-8", errors="replace").splitlines():
+    lines = p.read_text(encoding="utf-8", errors="replace").splitlines()
+    if lines and lines[0].strip().upper() == "JASC-PAL":  # JASC (Paint Shop Pro, Lospec, Pixelorama): header,
+        lines = lines[3:]  # version and count lines, then "R G B" rows
+    for line in lines:
         line = line.strip()
         if not line or line.startswith((";", "GIMP", "Name:", "Columns:")) or (line[0] == "#" and not
                                                                                _is_hex(line.split()[0][1:])):
@@ -4016,7 +4022,37 @@ def _nearest(rgb, plab, k=1):
     return idx
 
 
-def quantise(a, pal, dither=None, space="srgb", max_step=None):
+def _fs_dither(a, pal, plab, strength=1.0, max_step=None):
+    """Floyd-Steinberg error diffusion (serpentine scan) to the nearest palette colour in OKLab. Clear pixels neither
+    take nor pass error. strength scales the error passed on (0 = no dither). Irregular and unstable from frame to
+    frame, so for stills and backgrounds, never animated frames."""
+    h, w = a.shape[:2]
+    buf = a[..., :3].astype(np.float64)
+    op = a[..., 3] > 0
+    idx = np.zeros((h, w), np.int64)
+    pl = pal.astype(np.float64)
+    for y in range(h):
+        xs = range(w) if y % 2 == 0 else range(w - 1, -1, -1)
+        d = 1 if y % 2 == 0 else -1
+        for x in xs:
+            if not op[y, x]:
+                continue
+            c = np.clip(buf[y, x], 0, 255)
+            k = int(np.argmin(((plab - oklab(c)) ** 2).sum(1)))
+            if max_step is not None:
+                b = int(np.argmin(((plab - oklab(a[y, x, :3])) ** 2).sum(1)))
+                if abs(plab[k, 0] - plab[b, 0]) > max_step:
+                    k = b
+            idx[y, x] = k
+            e = (c - pl[k]) * strength
+            for dy, dx, wt in ((0, d, 7), (1, -d, 3), (1, 0, 5), (1, d, 1)):
+                yy, xx = y + dy, x + dx
+                if 0 <= yy < h and 0 <= xx < w and op[yy, xx]:
+                    buf[yy, xx] += e * wt / 16
+    return idx.reshape(-1)
+
+
+def quantise(a, pal, dither=None, space="srgb", max_step=None, strength=1.0):
     """Every opaque pixel to its nearest palette colour in OKLab. Ordered (Bayer) dithering nudges each pixel by its
     matrix cell before the match, so flats stay flat and gradients get a regular pattern. space "linear" instead
     mixes each pixel's two nearest colours in the share that keeps its light (an sRGB nudge turns mid grey 75% white
@@ -4027,10 +4063,12 @@ def quantise(a, pal, dither=None, space="srgb", max_step=None):
     flat, plab = rgb.reshape(-1, 3), oklab(pal)
     if not dither:
         idx = _nearest(flat, plab)[:, 0]
+    elif dither == "fs":
+        idx = _fs_dither(a, pal, plab, strength, max_step)
     else:
         n = int(str(dither).replace("bayer", "") or 4)
         if n not in BAYER:
-            fail(f"dither must be bayer2, bayer4 or bayer8, not {dither}")
+            fail(f"dither must be bayer2, bayer4, bayer8 or fs, not {dither}")
         m = np.tile((np.array(BAYER[n], np.float64) + 0.5) / (n * n), (h // n + 1, w // n + 1))[:h, :w].reshape(-1)
         if space == "linear" and len(pal) > 1:
             two = _nearest(flat, plab, 2)
@@ -4166,9 +4204,46 @@ def fix_corners(a, colour=None):
     return b, n
 
 
-def outline(a, mode, pal, light="top-left"):
+def _kernel(r, shape):
+    """Offsets within radius r: diamond (4-neighbour steps), square (8-neighbour) or circle (Euclidean)."""
+    rng = range(-r, r + 1)
+    test = {"diamond": lambda y, x: abs(y) + abs(x) <= r, "square": lambda y, x: True,
+            "circle": lambda y, x: y * y + x * x <= r * r + r * 0.5}[shape]
+    return [(y, x) for y in rng for x in rng if (y or x) and test(y, x)]
+
+
+def outline_band(a, width=1, shape="diamond", inside=False):
+    """Mask of a thick outline: grown outward from the opaque shape (clear pixels within width), or with inside the
+    sprite's own pixels within width of the clear area. The canvas clips an outward band; pad first if needed."""
+    op = a[..., 3] > 0
+    grown = np.zeros_like(op)
+    src = ~op if inside else op
+    for dy, dx in _kernel(width, shape):
+        grown |= _shift(src, dy, dx, inside)  # inside: beyond the canvas counts as clear
+    return (grown & op) if inside else (grown & ~op)
+
+
+def outline(a, mode, pal, light="top-left", width=None, shape="diamond", inside=False):
     """Outline the sprite's edge pixels. A colour: that colour. auto: the darkest palette colour. selective: each
-    edge pixel becomes a darker palette shade of its own colour, less dark on the sides facing the light."""
+    edge pixel becomes a darker palette shade of its own colour, less dark on the sides facing the light.
+    width/shape/inside: a thick band instead (outside the sprite unless inside); selective needs inside."""
+    if width or inside or shape != "diamond":
+        band = outline_band(a, width or 1, shape, inside)
+        b = a.copy()
+        if mode == "selective":
+            if not inside:
+                fail("a selective outline recolours the sprite's own pixels: add --inside")
+            for y, x in zip(*np.nonzero(band)):
+                lab = oklab(a[y, x, :3])
+                darker = oklab(pal)[:, 0] < lab[0] - 0.03
+                if darker.any():
+                    d = ((oklab(pal) - (lab - np.array([0.22, 0, 0]))) ** 2).sum(1) + np.where(darker, 0, 1e9)
+                    b[y, x, :3] = pal[int(np.argmin(d))]
+            return b, int(band.sum())
+        col = parse_rgb(mode) if mode != "auto" else pal[int(np.argmin(oklab(pal)[:, 0]))]
+        b[band, :3] = col
+        b[band, 3] = 255
+        return b, int(band.sum())
     op, sides = _edge(a)
     edge = np.zeros_like(op)
     for m in sides.values():
@@ -4400,8 +4475,9 @@ def cmd_palette(a):
         pal = median_cut(px, a.colours)
     else:
         pal = load_palette(a.palette)
-    q = quantise(img, pal, a.dither, a.dither_space, a.max_step)
+    q = quantise(img, pal, a.dither, a.dither_space, a.max_step, a.dither_strength)
     save_u8(q, a.out)
+    pal = sort_palette(pal, a.sort)
     if a.gpl:
         write_gpl(pal, a.gpl, Path(a.out).stem)
     out(dict(ok=True, out=a.out, palette=[_hex(c) for c in pal], used=int(len(opaque_colours(q))),
@@ -4417,7 +4493,8 @@ def cmd_clean(a):
     if a.thin:
         img, info["doubles_thinned"] = thin_outline(img)
     if a.outline:
-        img, info["outlined"] = outline(img, a.outline, opaque_colours(img), a.light)
+        img, info["outlined"] = outline(img, a.outline, opaque_colours(img), a.light, a.outline_width,
+                                        a.outline_shape, a.inside)
     if a.corners:
         img, info["corners_fixed"] = fix_corners(img)
     save_u8(img, a.out)
@@ -4427,6 +4504,8 @@ def cmd_clean(a):
 def cmd_swap(a):
     """Recolour by an exact colour map: enemy tiers, team colours, night tiles. Every opaque colour must be mapped."""
     need_deps()
+    if a.ramp or a.step:
+        return _swap_shade(a)
     if a.map:
         raw = json.loads(Path(a.map).read_text(encoding="utf-8"))
         pairs = [(parse_rgb(k), parse_rgb(v)) for k, v in raw.items()]
@@ -4457,6 +4536,37 @@ def cmd_swap(a):
     ok = not unmapped
     out(dict(ok=ok, out=res, mapped=len(pairs), unmapped=sorted(unmapped),
              note="two colours map to one: those parts merge" if merged else None), 0 if ok else 1)
+
+
+def _swap_shade(a):
+    """swap --ramp: gradient map onto an ordered ramp; swap --step N [--mask]: N ramp steps lighter or darker,
+    snapped to the palette (the image's own colours, or --palette)."""
+    src = Path(a.input)
+    files = sorted(src.glob("*.png")) if src.is_dir() else [src]
+    ramp = load_palette(a.ramp, ordered=True) if a.ramp else None
+    res, changed = [], 0
+    for fp in files:
+        img = load_u8(fp)
+        if ramp is not None:
+            o = gradient_map(img, ramp)
+        else:
+            pal = load_palette(a.palette) if a.palette else opaque_colours(img)
+            sel = img[..., 3] > 0
+            if a.mask:
+                m = load_u8(a.mask)
+                if m.shape[:2] != img.shape[:2]:
+                    fail(f"mask is {m.shape[1]}x{m.shape[0]}, image {img.shape[1]}x{img.shape[0]}")
+                sel &= (m[..., 3] > 0) & (m[..., :3].max(-1) > 127)
+            o = img.copy()
+            for c in opaque_colours(img).tolist():
+                hit = sel & (img[..., :3] == c).all(-1)
+                if hit.any():
+                    o[hit, :3] = ramp_step(pal, np.array(c, np.uint8), a.step)
+        changed += int((o != img).any(-1).sum())
+        dest = Path(a.out) / fp.name if src.is_dir() else Path(a.out)
+        save_u8(o, dest)
+        res.append(dest.as_posix())
+    out(dict(ok=True, out=res, mode="ramp" if ramp is not None else f"step {a.step:+d}", changed_pixels=changed))
 
 
 def cmd_crop(a):
@@ -4524,6 +4634,197 @@ def cmd_palettes(a):
              files="any .hex, .txt or .gpl file, or from:<png>[,<png>...] for every colour of reference sprites"))
 
 
+# ---- palette order, ramps, rotation, tilesets (technique harvest pa20; ideas from Pixelorama and Aseprite, MIT,
+# written fresh here) ----
+
+def sort_palette(pal, by="luma"):
+    """Palette rows in a readable order: luma (OKLab lightness, dark to light), hue (greys first, then hue angle,
+    each hue dark to light), sat (OKLab chroma) or val (HSV value, the brightest channel)."""
+    pal = np.asarray(pal)
+    if not len(pal):
+        return pal
+    lab = oklab(pal)
+    chroma = np.hypot(lab[:, 1], lab[:, 2])
+    if by == "luma":
+        order = np.argsort(lab[:, 0], kind="stable")
+    elif by == "hue":
+        hue = np.where(chroma < 0.03, -1.0, np.round(np.degrees(np.arctan2(lab[:, 2], lab[:, 1])) % 360 / 30))
+        order = np.lexsort((lab[:, 0], hue))
+    elif by == "sat":
+        order = np.lexsort((lab[:, 0], chroma))
+    elif by == "val":
+        order = np.lexsort((lab[:, 0], pal.max(1)))
+    else:
+        fail(f"sort must be luma, hue, sat or val, not {by}")
+    return pal[order]
+
+
+def ramp_step(pal, rgb, n):
+    """The palette colour n steps lighter (n > 0) or darker along rgb's ramp: each step is the colour, at least a
+    little lighter (darker), nearest in hue and chroma. No such colour: rgb stays."""
+    plab = oklab(pal)
+    cur = np.asarray(rgb)
+    for _ in range(abs(n)):
+        lab = oklab(cur)
+        dl = plab[:, 0] - lab[0]
+        ok = dl > 0.02 if n > 0 else dl < -0.02
+        if not ok.any():
+            break
+        cost = 3 * np.hypot(plab[:, 1] - lab[1], plab[:, 2] - lab[2]) + np.abs(dl) + np.where(ok, 0, 1e9)
+        cur = pal[int(np.argmin(cost))]
+    return cur
+
+
+def gradient_map(img, ramp):
+    """Each opaque colour to the ramp entry at its lightness rank: the darkest colour to ramp[0], the lightest to
+    ramp[-1], the rest spread between (ramp in file order, dark to light)."""
+    cols = opaque_colours(img)
+    o = img.copy()
+    if not len(cols):
+        return o
+    order = np.argsort(oklab(cols)[:, 0], kind="stable")
+    op = img[..., 3] > 0
+    n = len(cols)
+    for rank, i in enumerate(order):
+        j = int(round(rank * (len(ramp) - 1) / max(1, n - 1)))
+        o[op & (img[..., :3] == cols[i]).all(-1), :3] = ramp[j]
+    return o
+
+
+def scale2x(a):
+    """Scale2x (EPX): each pixel to 2x2, a corner taking a neighbour's colour where two edges agree, so diagonals
+    stay sharp lines instead of stairs of blocks. Exact colours only; nothing new is mixed."""
+    h, w = a.shape[:2]
+    p = np.pad(a, ((1, 1), (1, 1), (0, 0)), mode="edge")
+    k = _key(p)
+    B, D, F, H = p[:-2, 1:-1], p[1:-1, :-2], p[1:-1, 2:], p[2:, 1:-1]
+    kB, kD, kF, kH = k[:-2, 1:-1], k[1:-1, :-2], k[1:-1, 2:], k[2:, 1:-1]
+    c = (kB != kH) & (kD != kF)
+    o = np.zeros((2 * h, 2 * w, a.shape[2]), a.dtype)
+    o[0::2, 0::2] = np.where((c & (kD == kB))[..., None], D, a)
+    o[0::2, 1::2] = np.where((c & (kB == kF))[..., None], F, a)
+    o[1::2, 0::2] = np.where((c & (kD == kH))[..., None], D, a)
+    o[1::2, 1::2] = np.where((c & (kH == kF))[..., None], F, a)
+    return o
+
+
+def rotate_sprite(a, deg, pivot=None, method="rotsprite"):
+    """Rotate pixel art by deg about pivot (x, y; default the centre) on the same canvas. rotsprite: Scale2x three
+    times, nearest-neighbour rotate at 8x, sample each output pixel's centre (the RotSprite idea); nearest:
+    nearest-neighbour only. Both keep the palette exact."""
+    h, w = a.shape[:2]
+    up = 8 if method == "rotsprite" else 1
+    src = scale2x(scale2x(scale2x(a))) if up == 8 else a
+    px, py = pivot if pivot else ((w - 1) / 2, (h - 1) / 2)
+    th = np.deg2rad(deg)
+    oy, ox = np.mgrid[0:h, 0:w].astype(np.float64)
+    dy, dx = oy - py, ox - px
+    sy = np.cos(th) * dy - np.sin(th) * dx + py
+    sx = np.sin(th) * dy + np.cos(th) * dx + px
+    if up > 1:
+        iy, ix = np.floor((sy + 0.5) * up).astype(int), np.floor((sx + 0.5) * up).astype(int)
+    else:
+        iy, ix = np.rint(sy).astype(int), np.rint(sx).astype(int)
+    H, W = src.shape[:2]
+    ok = (iy >= 0) & (iy < H) & (ix >= 0) & (ix < W)
+    o = np.zeros_like(a)
+    o[ok] = src[iy[ok], ix[ok]]
+    return o
+
+
+def cmd_rotate(a):
+    need_deps()
+    img = load_u8(a.input)
+    piv = [float(v) for v in a.pivot.split(",")] if a.pivot else None
+    r = rotate_sprite(img, a.deg, piv, a.method)
+    save_u8(r, a.out)
+    old = set(map(tuple, opaque_colours(img).tolist()))
+    new = sum(tuple(c) not in old for c in opaque_colours(r).tolist())
+    out(dict(ok=new == 0, out=a.out, method=a.method, deg=a.deg, new_colours=new,
+             opaque_before=int((img[..., 3] > 0).sum()), opaque_after=int((r[..., 3] > 0).sum())), 0 if new == 0 else 1)
+
+
+def cmd_tileset(a):
+    """Cut an image into cells, keep each distinct cell once (flips of a kept cell reuse it with --flip), write
+    tiles.png and tilemap.json (per cell, row-major: tile index, flipX, flipY)."""
+    need_deps()
+    img = load_u8(a.input)
+    img[img[..., 3] == 0] = 0
+    h, w = img.shape[:2]
+    c = a.cell
+    if h % c or w % c:
+        out(dict(ok=False, error=f"size {w}x{h} is not a multiple of the {c} px cell"), 1)
+    key = _key(img)
+    seen, tiles, cells = {}, [], []
+    for y in range(0, h, c):
+        for x in range(0, w, c):
+            k = key[y:y + c, x:x + c]
+            forms = [(k, 0, 0)] + ([(k[:, ::-1], 1, 0), (k[::-1], 0, 1), (k[::-1, ::-1], 1, 1)] if a.flip else [])
+            hit = next(((seen[f.tobytes()], fx, fy) for f, fx, fy in forms if f.tobytes() in seen), None)
+            if hit is None:
+                seen[np.ascontiguousarray(k).tobytes()] = len(tiles)
+                tiles.append(img[y:y + c, x:x + c])
+                hit = (len(tiles) - 1, 0, 0)
+            cells.append(list(hit))
+    cols = max(1, min(a.columns, len(tiles)))
+    rows = -(-len(tiles) // cols)
+    sheet = np.zeros((rows * c, cols * c, 4), np.uint8)
+    for i, t in enumerate(tiles):
+        sheet[(i // cols) * c:(i // cols + 1) * c, (i % cols) * c:(i % cols + 1) * c] = t
+    od = Path(a.outdir)
+    save_u8(sheet, str(od / "tiles.png"))
+    meta = dict(image="tiles.png", cell=c, columns=cols, tiles=len(tiles), width=w // c, height=h // c,
+                flip=bool(a.flip), map=cells)
+    (od / "tilemap.json").write_text(json.dumps(meta, separators=(",", ":")), encoding="utf-8")
+    out(dict(ok=True, out=od.as_posix(), cells=len(cells), tiles=len(tiles), flip=bool(a.flip)))
+
+
+TAG_DIRS = ("forward", "reverse", "pingpong", "pingpong_reverse")
+
+
+def parse_tag(text, n):
+    """name:from-to[:direction[:repeat]] to an Aseprite-style frameTags entry."""
+    parts = text.split(":")
+    if len(parts) < 2 or "-" not in parts[1]:
+        fail(f"tag must be name:from-to[:direction[:repeat]], not {text}")
+    lo, hi = (int(v) for v in parts[1].split("-"))
+    d = parts[2] if len(parts) > 2 else "forward"
+    if d not in TAG_DIRS or not 0 <= lo <= hi < n:
+        fail(f"tag {text}: frames 0-{n - 1}, direction one of {', '.join(TAG_DIRS)}")
+    t = {"name": parts[0], "from": lo, "to": hi, "direction": d}
+    if len(parts) > 3:
+        t["repeat"] = str(int(parts[3]))  # Aseprite writes repeat as a string
+    return t
+
+
+def tag_sequence(tags, n):
+    """Frame order a player shows for frameTags (the review page plays the same rule): pingpong turns at the ends
+    without repeating them; repeat N plays the tag N times; no tags plays 0..n-1."""
+    if not tags:
+        return list(range(n))
+    seq = []
+    for t in tags:
+        f = list(range(t["from"], t["to"] + 1))
+        d = t.get("direction", "forward")
+        if d in ("reverse", "pingpong_reverse"):
+            f = f[::-1]
+        if d.startswith("pingpong") and len(f) > 1:
+            f = f + f[-2:0:-1]
+        seq += f * max(1, int(t.get("repeat", 1) or 1))
+    return seq
+
+
+def extrude_sheet(frames, n):
+    """Frames side by side, each padded by n copies of its own edge pixels (stops neighbours bleeding in under
+    filtering or mipmaps). Returns the sheet and each frame's rect."""
+    h, w = frames[0].shape[:2]
+    cw = w + 2 * n
+    sheet = np.zeros((h + 2 * n, cw * len(frames), 4), np.uint8)
+    for i, f in enumerate(frames):
+        sheet[:, i * cw:(i + 1) * cw] = np.pad(f, ((n, n), (n, n), (0, 0)), mode="edge") if n else f
+    return sheet, [dict(x=i * cw + n, y=n, w=w, h=h) for i in range(len(frames))]
+
+
 # ---- review page ----
 
 def review_items(root, decided):
@@ -4553,6 +4854,7 @@ def review_items(root, decided):
             items.append(dict(key=key, title=rid, subtitle=f"{name} ({frames} frames)"
                               + (f", take {take}" if take else ""), text=[motion], kind="anim",
                               images=[f"{folder}/{sheet}.preview.png", f"{folder}/{contact}"],
+                              player=dict(src=f"{folder}/{sheet}.png", n=frames),
                               gate=(f"gates {'PASS' if g['pass'] else 'FAIL'}: rest frame identical "
                                     f"{g['rest_frame_identical']}, outside-mask changes {g['changed_outside_mask']}, "
                                     f"new colours {g['new_colours']}, peak changed "
@@ -4593,6 +4895,10 @@ def review_page(root, extraPath, picksPath, links=()):
             yes = "Approve" if it.get("kind") == "approve" else "Keep"
             body = (f'{imgs}<p class=gate>{html.escape(it.get("gate", ""))}</p><div class=btns>'
                     f'<button data-v=keep>{yes}</button><button data-v=redo>Redo</button><button data-v=drop>Drop</button>')
+        pl = it.get("player") or ({"json": it["sheet_json"]} if it.get("sheet_json") else None)
+        if pl:  # canvas player: plays frameTags (direction, repeat) and draws onion skins on request
+            body = (f'<div class=player data-p="{html.escape(json.dumps(pl))}"><canvas></canvas><label>'
+                    f'<input type=checkbox class=onion> onion skin (previous red, next blue)</label></div>') + body
         rows.append(f"""<section class=item data-key="{html.escape(it['key'])}">
 <h2>{html.escape(it['title'])} <span>{html.escape(it.get('subtitle', ''))}</span></h2>{texts}
 {body}<input class=note placeholder="note (what to change)"></div></section>""")
@@ -4617,6 +4923,7 @@ button.on{{background:#4a7;border-color:#4a7;color:#000}}
 .note{{flex:1;min-width:200px;background:#111;color:#eee;border:1px solid #555;padding:6px}}
 #status{{position:sticky;top:0;background:#1b1b22;padding:6px 0;color:#9c9}}
 .links a{{color:#9cf;margin-right:14px}}
+.player canvas{{image-rendering:pixelated;background:#22222a;display:block;margin:6px 0}} .player label{{font-size:13px;color:#aaa}}
 </style></head><body>
 {linksHtml}<p>Previews show the still (left) and the animation (right) at 4x, pausing on the rest frame. Click for each item;
 Redo takes a note. Every click saves. Say "done" in the chat when finished.</p>
@@ -4643,6 +4950,47 @@ document.querySelectorAll(".item").forEach(sec => {{
   sec.querySelector(".note").onchange = e => {{
     const s = state[sec.dataset.key] = state[sec.dataset.key] || {{}}; s.note = e.target.value; save(); }};
 }});
+// sheet player: same order as pxw.py tag_sequence; onion skin tints frame i-1 red and i+1 blue at 0.3 alpha
+function tagSeq(tags, n) {{
+  if (!tags || !tags.length) return [...Array(n).keys()];
+  const out = [];
+  for (const t of tags) {{
+    let f = []; for (let i = t.from; i <= t.to; i++) f.push(i);
+    const d = t.direction || "forward";
+    if (d === "reverse" || d === "pingpong_reverse") f.reverse();
+    if (d.startsWith("pingpong") && f.length > 1) f = f.concat(f.slice(1, -1).reverse());
+    for (let r = 0; r < Math.max(1, parseInt(t.repeat || 1) || 1); r++) out.push(...f);
+  }}
+  return out;
+}}
+function tinted(img, r, rgb) {{
+  const c = document.createElement("canvas"); c.width = r.w; c.height = r.h;
+  const g = c.getContext("2d"); g.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+  g.globalCompositeOperation = "source-atop"; g.fillStyle = rgb; g.fillRect(0, 0, r.w, r.h); return c;
+}}
+async function player(div) {{
+  const p = JSON.parse(div.dataset.p); let meta = null, src = p.src;
+  if (p.json) {{ meta = await (await fetch(p.json)).json(); src = p.json.replace(/[^/]*$/, "") + meta.image; }}
+  const img = new Image(); img.src = src; await img.decode();
+  const rects = meta ? meta.frames : [...Array(p.n).keys()].map(i => ({{x: i * img.width / p.n, y: 0, w: img.width / p.n, h: img.height}}));
+  const tags = meta && meta.meta && meta.meta.frameTags, seq = tagSeq(tags, rects.length), z = 4;
+  const cv = div.querySelector("canvas"), g = cv.getContext("2d"), onion = div.querySelector(".onion");
+  cv.width = rects[0].w * z; cv.height = rects[0].h * z; g.imageSmoothingEnabled = false;
+  let k = 0;
+  const step = () => {{
+    const i = seq[k % seq.length], r = rects[i]; g.clearRect(0, 0, cv.width, cv.height);
+    if (onion.checked) {{
+      g.globalAlpha = 0.3;
+      if (i > 0) g.drawImage(tinted(img, rects[i - 1], "#f33"), 0, 0, cv.width, cv.height);
+      if (i < rects.length - 1) g.drawImage(tinted(img, rects[i + 1], "#39f"), 0, 0, cv.width, cv.height);
+      g.globalAlpha = 1;
+    }}
+    g.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, cv.width, cv.height);
+    k++; setTimeout(step, r.duration || 100);
+  }};
+  step();
+}}
+document.querySelectorAll(".player").forEach(d => player(d).catch(e => d.append(" player: " + e.message)));
 fetch("picks.json", {{cache: "no-store"}}).then(r => r.ok ? r.json() : null).catch(() => null).then(d => {{
   state = (d && d.items) || {{}}; document.querySelectorAll(".item").forEach(paint);
   status(d ? "loaded saved picks" : "click to pick; every click saves");
@@ -5016,7 +5364,9 @@ def main(argv=None):
     c.add_argument("out")
     c.add_argument("--palette")
     c.add_argument("--colours", type=int)
-    c.add_argument("--dither", choices=["bayer2", "bayer4", "bayer8"])
+    c.add_argument("--dither", choices=["bayer2", "bayer4", "bayer8", "fs"], help="fs: Floyd-Steinberg, stills only")
+    c.add_argument("--dither-strength", type=float, default=1.0, help="with fs: share of the error passed on, 0..1")
+    c.add_argument("--sort", default="luma", choices=["luma", "hue", "sat", "val"], help="order of --gpl and the reported palette")
     c.add_argument("--dither-space", default="srgb", choices=["srgb", "linear"])
     c.add_argument("--max-step", type=float, help="no dither between colours further apart in OKLab lightness")
     c.add_argument("--gpl")
@@ -5030,6 +5380,9 @@ def main(argv=None):
     c.add_argument("--outline", help="auto, selective or R,G,B")
     c.add_argument("--light", default="top-left", choices=["top-left", "top-right", "top", "none"])
     c.add_argument("--corners", action="store_true", help="pixel-perfect lines in the darkest colour")
+    c.add_argument("--outline-width", type=int, help="thick band of N px grown outside the sprite (default: 1 px on its edge)")
+    c.add_argument("--outline-shape", default="diamond", choices=["diamond", "square", "circle"])
+    c.add_argument("--inside", action="store_true", help="band on the sprite's own edge pixels (inline)")
     c.set_defaults(fn=cmd_clean)
     c = sub.add_parser("swap")
     c.add_argument("input", help="a PNG, or a folder of PNGs (frames)")
@@ -5037,6 +5390,10 @@ def main(argv=None):
     c.add_argument("--map", help="JSON object: each hex colour to its replacement")
     c.add_argument("--from", dest="src", help="palette file, index to index with --to")
     c.add_argument("--to", dest="dst")
+    c.add_argument("--ramp", help="palette file, dark to light: each colour to the entry at its lightness rank")
+    c.add_argument("--step", type=int, help="+N lighter or -N darker along each colour's palette ramp")
+    c.add_argument("--mask", help="with --step: only pixels white in this PNG")
+    c.add_argument("--palette", help="with --step: ramps from this palette (default: the image's own colours)")
     c.set_defaults(fn=cmd_swap)
     c = sub.add_parser("crop")
     c.add_argument("input")
@@ -5096,6 +5453,20 @@ def main(argv=None):
     c.add_argument("--bg", help="hex background (default: the top-left pixel)")
     c.add_argument("--tol", type=int, default=120)
     c.set_defaults(fn=cmd_font)
+    c = sub.add_parser("rotate", help="rotate pixel art without new colours (RotSprite or nearest)")
+    c.add_argument("input")
+    c.add_argument("out")
+    c.add_argument("--deg", type=float, required=True)
+    c.add_argument("--pivot", help="X,Y (default: the centre)")
+    c.add_argument("--method", default="rotsprite", choices=["rotsprite", "nearest"])
+    c.set_defaults(fn=cmd_rotate)
+    c = sub.add_parser("tileset", help="dedupe cells (flip-aware) to tiles.png + tilemap.json")
+    c.add_argument("input")
+    c.add_argument("outdir")
+    c.add_argument("--cell", type=int, default=8)
+    c.add_argument("--flip", action="store_true")
+    c.add_argument("--columns", type=int, default=16)
+    c.set_defaults(fn=cmd_tileset)
     c = sub.add_parser("palettes")
     c.set_defaults(fn=cmd_palettes)
     c = sub.add_parser("frames")
@@ -5181,6 +5552,10 @@ def main(argv=None):
     c.add_argument("--sheet", help="RxC: the one input is a grid sheet (a model's 4x4); cut it at the gutters")
     c.add_argument("--sheet-cut", default="gutter", choices=["gutter", "equal"], help="equal: skip gutter search")
     c.add_argument("--zoom", type=int, default=3)
+    c.add_argument("--extrude", type=int, default=0, help="pad each sheet frame with N copies of its edge pixels")
+    c.add_argument("--tag", action="append", help="name:from-to[:forward|reverse|pingpong|pingpong_reverse[:repeat]]; "
+                   "repeatable, written as meta.frameTags")
+    c.add_argument("--sort", default="luma", choices=["luma", "hue", "sat", "val"], help="order of the .hex palette")
     c.add_argument("--slots", help="CxR: the input is one i2v clip of a C x R character sheet; one loop per slot")
     c.add_argument("--align-feet", action="store_true", help="with --slots: pin each slot's foot row and centre")
     c.add_argument("--find-loop", action="store_true", help="with --slots: keep the window with the smallest wrap jump")

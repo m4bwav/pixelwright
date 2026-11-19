@@ -798,5 +798,169 @@ class ShadowTest(unittest.TestCase):
         self.assertFalse(res["ok"])
 
 
+class TestPa20(Base):
+    """Technique harvest pa20: JASC palettes, RotSprite, FS dither, ramps, palette sort, tilesets, sheet tags,
+    thick outlines, onion skin."""
+
+    def test_jasc_pal_header_is_skipped(self):
+        (self.dir / "t.pal").write_text("JASC-PAL\n0100\n3\n255 0 0\n0 255 0\n0 0 255\n", encoding="utf-8")
+        pal = pxw.load_palette(str(self.dir / "t.pal"), ordered=True)
+        self.assertEqual(pal.tolist(), [[255, 0, 0], [0, 255, 0], [0, 0, 255]])
+
+    def diag(self):
+        a = np.zeros((24, 24, 4), np.uint8)
+        yy, xx = np.mgrid[:24, :24]
+        a[(abs(xx - yy) <= 2) & (xx > 3) & (xx < 20)] = [200, 200, 220, 255]
+        a[(abs(xx - yy) == 3) & (xx > 2) & (xx < 21)] = INK + [255]
+        return a
+
+    @staticmethod
+    def orphans(a):
+        k = pxw._key(a)
+        p = np.pad(k, 1, constant_values=-1)
+        same = sum((p[1 + dy:p.shape[0] - 1 + dy, 1 + dx:p.shape[1] - 1 + dx] == k) for dy, dx in pxw.N4)
+        return int(((same == 0) & (a[..., 3] > 0)).sum())
+
+    def test_scale2x_keeps_colours_and_doubles(self):
+        a = self.diag()
+        b = pxw.scale2x(a)
+        self.assertEqual(b.shape, (48, 48, 4))
+        self.assertEqual(len(pxw.opaque_colours(b)), len(pxw.opaque_colours(a)))
+        self.assertTrue((pxw.scale2x(np.full((3, 3, 4), 7, np.uint8)) == 7).all())
+
+    def test_rotsprite_leaves_fewer_orphans_than_nearest(self):
+        a = self.diag()
+        save(a, self.dir / "d.png")
+        code, res = self.run_pxw("rotate", "d.png", "r.png", "--deg", "30")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["new_colours"], 0)
+        near = pxw.rotate_sprite(a, 30, method="nearest")
+        self.assertLess(self.orphans(self.load("r.png")), self.orphans(near))
+        self.assertTrue((pxw.rotate_sprite(a, 0) == a).all())
+
+    def test_fs_dither_stays_in_palette_and_strength_zero_is_plain(self):
+        g = np.zeros((8, 32, 4), np.uint8)
+        g[..., :3] = np.linspace(0, 255, 32)[None, :, None].astype(np.uint8)
+        g[..., 3] = 255
+        g[0, 0, 3] = 0
+        pal = np.array([[0, 0, 0], [128, 128, 128], [255, 255, 255]], np.uint8)
+        fs = pxw.quantise(g, pal, "fs")
+        self.assertTrue(set(map(tuple, pxw.opaque_colours(fs).tolist())) <= set(map(tuple, pal.tolist())))
+        self.assertEqual(fs[0, 0, 3], 0)
+        self.assertFalse((fs == pxw.quantise(g, pal)).all())
+        self.assertTrue((pxw.quantise(g, pal, "fs", strength=0) == pxw.quantise(g, pal)).all())
+        # mean tone tracks the gradient better than plain nearest
+        err = lambda q: abs(q[1:, :, 0].astype(float).mean(0) - g[1:, :, 0].mean(0)).mean()
+        self.assertLess(err(fs), err(pxw.quantise(g, pal)))
+
+    def test_swap_ramp_and_step(self):
+        (self.dir / "ramp.hex").write_text("101010\n505050\n909090\nd0d0d0\nffffff\n", encoding="utf-8")
+        code, res = self.run_pxw("swap", "potion.png", "g.png", "--ramp", "ramp.hex")
+        self.assertEqual(code, 0, res)
+        g = self.load("g.png")
+        self.assertEqual(tuple(g[g[..., 3] > 0][:, :3][np.argmin(pxw.oklab(g[g[..., 3] > 0][:, :3])[:, 0])]),
+                         (16, 16, 16))
+        self.assertTrue((g[..., 3] == self.sprite[..., 3]).all())
+        mask = np.zeros_like(self.sprite)
+        mask[8:16] = 255
+        save(mask, self.dir / "m.png")
+        pal = np.array([INK, [100, 20, 30], RED, PINK, GLASS, CORK], np.uint8)
+        (self.dir / "p.hex").write_text("\n".join(pxw._hex(c) for c in pal), encoding="utf-8")
+        code, res = self.run_pxw("swap", "potion.png", "s.png", "--step", "-1", "--mask", "m.png", "--palette", "p.hex")
+        s = self.load("s.png")
+        red = (self.sprite[..., :3] == RED).all(-1)
+        self.assertTrue((s[8:][red[8:]][:, :3] == [100, 20, 30]).all())
+        self.assertTrue((s[:8] == self.sprite[:8]).all())
+        self.assertEqual(pxw.ramp_step(pal, np.array(RED, np.uint8), 1).tolist(), PINK)
+
+    def test_palette_sort(self):
+        pal = np.array([[255, 255, 255], [255, 0, 0], [0, 0, 0], [0, 0, 255]], np.uint8)
+        self.assertEqual(pxw.sort_palette(pal, "luma")[0].tolist(), [0, 0, 0])
+        hue = pxw.sort_palette(pal, "hue").tolist()
+        self.assertEqual(hue[:2], [[0, 0, 0], [255, 255, 255]])  # greys first
+        self.assertEqual(pxw.sort_palette(pal, "sat")[-1].tolist() in ([255, 0, 0], [0, 0, 255]), True)
+        code, res = self.run_pxw("palette", "potion.png", "q.png", "--palette", "pico-8", "--gpl", "q.gpl")
+        labs = pxw.oklab(np.array([pxw.parse_rgb(h) for h in res["palette"]]))[:, 0]
+        self.assertTrue((np.diff(labs) >= 0).all())
+
+    def test_tileset_dedupes_with_flips(self):
+        rng = np.random.default_rng(3)
+        base = [rng.integers(0, 255, (8, 8, 4)).astype(np.uint8) for _ in range(4)]
+        for b in base:
+            b[..., 3] = 255
+        img = np.zeros((32, 32, 4), np.uint8)
+        for i in range(16):
+            t = base[i % 4]
+            t = t[:, ::-1] if i % 3 == 1 else t[::-1] if i % 3 == 2 else t
+            img[(i // 4) * 8:(i // 4 + 1) * 8, (i % 4) * 8:(i % 4 + 1) * 8] = t
+        save(img, self.dir / "map.png")
+        code, res = self.run_pxw("tileset", "map.png", "ts", "--cell", "8", "--flip")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["tiles"], 4)
+        m = json.loads((self.dir / "ts" / "tilemap.json").read_text())
+        tiles = self.load("ts/tiles.png")
+        for i, (t, fx, fy) in enumerate(m["map"]):  # rebuild the map from tiles + flags
+            tile = tiles[(t // m["columns"]) * 8:(t // m["columns"] + 1) * 8, (t % m["columns"]) * 8:(t % m["columns"] + 1) * 8]
+            tile = tile[:, ::-1] if fx else tile
+            tile = tile[::-1] if fy else tile
+            self.assertTrue((tile == img[(i // 4) * 8:(i // 4 + 1) * 8, (i % 4) * 8:(i % 4 + 1) * 8]).all())
+        code, res = self.run_pxw("tileset", "map.png", "ts2", "--cell", "8")
+        self.assertGreater(res["tiles"], 4)
+
+    def test_tags_extrude_and_sequence(self):
+        self.assertEqual(pxw.tag_sequence([pxw.parse_tag("idle:0-3:pingpong", 4)], 4), [0, 1, 2, 3, 2, 1])
+        self.assertEqual(pxw.tag_sequence([pxw.parse_tag("a:1-2:reverse:2", 4)], 4), [2, 1, 2, 1])
+        self.assertEqual(pxw.tag_sequence([pxw.parse_tag("b:0-2:pingpong_reverse", 3)], 3), [2, 1, 0, 1])
+        self.assertEqual(pxw.tag_sequence([], 3), [0, 1, 2])
+        f = [np.full((4, 4, 4), v, np.uint8) for v in (10, 200)]
+        sheet, rects = pxw.extrude_sheet(f, 2)
+        self.assertEqual(sheet.shape, (8, 16, 4))
+        self.assertEqual(rects[1], dict(x=10, y=2, w=4, h=4))
+        self.assertTrue((sheet[:, 8:] == 200).all() and (sheet[:, :8] == 10).all())
+        frames = []
+        for i in range(4):
+            a = np.zeros((16, 16, 4), np.uint8)
+            a[..., :3] = [255, 0, 255]
+            a[..., 3] = 255
+            a[4:12, 4 + i % 2:12 + i % 2] = RED + [255]
+            save(a, self.dir / f"f{i}.png")
+            frames.append(f"f{i}.png")
+        code, res = self.run_pxw("anim", *frames, "an", "--scale", "1", "--extrude", "1", "--tag", "loop:0-3:pingpong:2",
+                                 "--name", "x")
+        self.assertEqual(code, 0, res)
+        meta = json.loads((self.dir / "an" / "x_sheet.json").read_text())
+        self.assertEqual(meta["meta"]["frameTags"][0], {"name": "loop", "from": 0, "to": 3, "direction": "pingpong",
+                                                        "repeat": "2"})
+        self.assertEqual(meta["frames"][1]["x"], 19)
+        self.assertEqual(self.load("an/x_sheet.png").shape[:2], (18, 72))
+
+    def test_thick_outline_shapes(self):
+        a = np.zeros((16, 20, 4), np.uint8)
+        a[4:12, 4:16] = RED + [255]
+        n = {s: int(pxw.outline_band(a, 2, s).sum()) for s in ("square", "circle", "diamond")}
+        self.assertEqual(n["square"], 96)
+        self.assertLess(n["diamond"], n["square"])
+        self.assertEqual(int(pxw.outline_band(a, 2, "square", inside=True).sum()), 64)
+        save(a, self.dir / "b.png")
+        code, res = self.run_pxw("clean", "b.png", "o.png", "--outline", "0,0,0", "--outline-width", "2")
+        o = self.load("o.png")
+        self.assertEqual(res["outlined"], n["diamond"])
+        self.assertTrue((o[4:12, 4:16, :3] == RED).all())  # outside band leaves the sprite alone
+        self.assertEqual(tuple(o[2, 8]), (0, 0, 0, 255))
+        code, res = self.run_pxw("clean", "potion.png", "p.png", "--outline", "auto")
+        self.assertEqual(code, 0)  # default 1 px path unchanged
+
+    def test_review_page_has_onion_and_tag_player(self):
+        (self.dir / "review-extra.json").write_text(json.dumps([dict(key="k", title="t", sheet_json="an/x_sheet.json",
+                                                                     images=[])]), encoding="utf-8")
+        r = subprocess.run([sys.executable, str(PXW), "review", str(self.dir), "--print-page"], capture_output=True,
+                           text=True)
+        self.assertIn("class=player", r.stdout)
+        self.assertIn("onion", r.stdout)
+        self.assertIn("globalAlpha = 0.3", r.stdout)
+        self.assertIn("pingpong", r.stdout)
+        self.assertIn("an/x_sheet.json", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
