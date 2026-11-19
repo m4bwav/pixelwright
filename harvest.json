@@ -58,6 +58,16 @@
       "sub": "blender",
       "weight": "low",
       "keep": "3D-to-pixel render pipelines only"
+    },
+    {
+      "kind": "github",
+      "query": "comfyui pixel art",
+      "keep": "top 10 by stars; new entries and their owners' repos become harvest targets"
+    },
+    {
+      "kind": "github",
+      "url": "https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved",
+      "keep": "comfyui-top10 harvest seed O10; new nodes, releases and the owner's (Kosinkadink) other repos"
     }
   ]
 }
