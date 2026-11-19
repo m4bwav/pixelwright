@@ -38,7 +38,7 @@ One JSON file per sprite. Full schema and an example: [references/brief.md](refe
 
 Pick effects from [references/effects.md](references/effects.md); each track has a region and a per-frame
 `curve` (0 to 1). Timing defaults: 12 fps, 8 to 12 frames for a use animation, holds by repeating curve values;
-see [references/timing-and-gates.md](references/timing-and-gates.md).
+see [references/timing-and-gates.md](references/timing-and-gates.md). Lava or marquee lights: `cycle` (ramp shift).
 
 ```
 pxw.py frames <brief.json> <outdir> --root <folder the brief's paths are relative to>

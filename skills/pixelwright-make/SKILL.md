@@ -37,6 +37,8 @@ thousands of colours. Then `pxw.py snap <render.png> snapped.png` alone and read
 - A soft grid from an image-edit model (lattice under ~50% aligned) can read as scale 1 although the layout is a
   known 4x: pass `--scale 4 --offset 0,0` rather than trusting auto (boogu walk sheets, 4/4 missed).
 - `uniform_blocks` far under 1 on a clean upscale means the offset is wrong; give `--offset`.
+- `grid: "elastic"` means a coherence under 0.7 made snap walk each cell edge to its nearest strong boundary
+  (jittered or drifting upscales); `--elastic off` (recipe `snap.elastic`) keeps one uniform grid, `on` forces it.
 
 ## Step 2: write the recipe and make
 
@@ -120,7 +122,11 @@ lit from straight above; every surface mark has a cause. Replacing approved art:
   normal texture. Both use green up; `--green-down` only for DirectX-style engines. Dark paint reads as low.
 - Rotating a sprite or a part: `pxw.py rotate in.png out.png --deg 30` (RotSprite, no new colours). Tilemaps:
   `pxw.py tileset map.png out --cell 8 --flip` (tiles.png + tilemap.json). Ramp recolour and shading,
-  `--dither fs` (stills only), thick outlines: [recipe](references/recipe.md#commands).
+  `--dither fs` or `atkinson` (quieter lights and darks; stills only), thick outlines: [recipe](references/recipe.md#commands).
+- Pseudo-3D turnarounds (cars, crates, trees seen from above): `pxw.py stack slices.png sheet.png --angles 16
+  [--method rotsprite] [--gif t.gif]` draws the slices (a vertical strip, bottom first, or a folder) turned and
+  shifted 1 px up per layer. The slices must come from the user or a voxel export (MagicaVoxel); one AI still
+  cannot give them.
 - Retro console limits (Game Boy, NES): `pxw.py fit out/<id>.png --target gb|nes [--flip]` counts unique 8x8
   tiles and colours per tile or attribute area and fails when over; lock to `--palette gameboy` first.
 - Editing an existing sprite with an image-edit model (Klein, Qwen-Edit): `pxw.py pad in.png p.png` puts it on

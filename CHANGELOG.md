@@ -2,7 +2,26 @@
 
 Every change to [README.md](README.md) and its companions, newest first, each with the reason. Reasons cite findings in [RESEARCH.md](RESEARCH.md) (`R-`), lessons in [LEARNINGS.md](LEARNINGS.md) (`L-`), and test runs in [TESTS.md](TESTS.md) (`T-`). State in `evergreen.json`. Protocol: MAINTENANCE.md.
 
-Entry shape: `### C-20261119-2 · 2026-11-19 · 0.24.0: sparks bounce off a floor; pixelfx hand-off
+Entry shape: `### C-20261119-3 · 2026-11-19 · 0.25.0: elastic grid snap, Atkinson dither, sprite stack, colour cycle
+- because: user request (technique harvest pa20, p7, p14, p16)
+- files: pxw.py (`_cut_profile`, `_walk_cuts`, `snap_grid(elastic=)`, `snap --elastic auto|on|off`, recipe
+  `snap.elastic`; `DIFFUSION` kernel table behind `_fs_dither`, `--dither atkinson`; new `stack` command
+  (`stack_sprite`, `_slices`); anim effect `cycle` (fx_cycle)), tests/test_make.py (TestElastic jitter, drift and
+  CLI; TestStack; test_atkinson_dither_is_quieter_than_fs), tests/test_pxw.py
+  (test_cycle_steps_colours_along_the_ramp_inside_the_region), pixelwright-make SKILL.md (snap checks, Hand-offs)
+  and references/recipe.md, pixelwright-animate SKILL.md and references/effects.md (`cycle` row), plugin.json,
+  pxw.py VERSION
+- Credits: elastic cut walk adapted from Sprite Fusion Pixel Snapper by Hugo Duprez (MIT),
+  https://github.com/Hugo-Dz/spritefusion-pixel-snapper (perfectPixel by theamusing, MIT, was compared and not
+  adopted). Atkinson error-diffusion option inspired by sedthh/pyxelate (MIT), https://github.com/sedthh/pyxelate.
+  Sprite stack and colour cycle: ideas from Pixel-Composer by Tanasart (MIT); no code copied from any of them.
+- Output change: `snap` and `make` now walk each cell edge (grid "elastic") when either axis coherence is under 0.7
+  and the scale is over 2; such images (jittered or drifting upscales) snap differently than in 0.24.0, recovering
+  the native size where the uniform grid lost cells. `--elastic off` (recipe `"elastic": "off"`) restores the 0.24.0
+  output. The snap JSON gains `grid` (and `cut_widths` when elastic). FS dither output is byte-identical (same taps
+  and divisor, now from a table). Every other output is unchanged.
+
+### C-20261119-2 · 2026-11-19 · 0.24.0: sparks bounce off a floor; pixelfx hand-off
 - because: user request (technique harvest pa20, p5)
 - files: pxw.py (fx_sparks `floor` and `bounce` keys), tests/test_pxw.py (test_sparks_floor_bounce_optional),
   pixelwright-animate references/effects.md (sparks row), SKILL.md (Fallback: standalone fire, explosion and pickup

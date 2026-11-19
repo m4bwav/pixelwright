@@ -11,7 +11,7 @@ current folder). Steps run in this order and each is optional.
 |---|---|---|
 | `id` | the input's file name | output names `<id>.png`, `.x4.png`, `.gpl`, `.make.json` |
 | `input` | required | the render, PixelLab frame or drawing |
-| `snap` | `{"scale": "auto"}` | `{"scale": 5.35, "offset": [3, 3]}` to force; `false` skips (native art) |
+| `snap` | `{"scale": "auto"}` | `{"scale": 5.35, "offset": [3, 3]}` to force; `false` skips (native art); `"elastic"` is auto, on or off (walks drifting cell edges; auto when coherence < 0.7) |
 | `background` | `"auto"` | the most common border colour, flood-filled from the border within `tol` 40 (OKLab x 255); `"R,G,B"`, `{"colour": ..., "tol": N, "holes": N}`, or `"none"`. `holes` also clears enclosed patches of the background of N+ pixels (inside a ring or a handle, between an arm and the body; off by default, since a window that shows the sky may be meant). Skipped when the border is already transparent |
 | `fog` | none | `{"colour": "R,G,B", "amount": 0.4}`: blend toward the air colour before the palette step, which locks the result again; a far-layer or background variant. Start around 0.4 and inspect the result at native size. A high amount such as 0.8 with a sparse palette such as PICO-8 can collapse every opaque pixel to one colour; the gates still pass because the budget is only a maximum. Lower the amount or choose a palette with more steps near the air colour |
 | `palette` | none | `"pico-8"`, a `.hex`/`.txt`/`.gpl` file, `"from:a.png,b.png"`, an integer N, or `{"name": ...}` / `{"colours": N}` |
@@ -26,12 +26,13 @@ current folder). Steps run in this order and each is optional.
 Each step is also a command, for a quick try or a step the recipe does not cover:
 
 ```
-pxw.py snap <in> <out> [--scale S] [--offset X,Y] [--max 64]
+pxw.py snap <in> <out> [--scale S] [--offset X,Y] [--max 64] [--elastic auto|on|off]
 pxw.py bg <in> <out> [--colour auto|R,G,B] [--tol 40] [--holes N]
-pxw.py palette <in> <out> (--palette P | --colours N) [--dither bayer4|fs] [--dither-strength 0.5] [--dither-space linear] [--max-step 0.12] [--gpl pal.gpl] [--sort luma|hue|sat|val]
+pxw.py palette <in> <out> (--palette P | --colours N) [--dither bayer4|fs|atkinson] [--dither-strength 0.5] [--dither-space linear] [--max-step 0.12] [--gpl pal.gpl] [--sort luma|hue|sat|val]
 pxw.py clean <in> <out> [--alpha 128] [--orphans] [--thin] [--corners] [--outline auto|selective|R,G,B] [--light top-left] [--outline-width N] [--outline-shape diamond|square|circle] [--inside]
 pxw.py swap <in.png|frames/> <out.png|out/> (--map map.json | --from a.gpl --to b.gpl | --ramp ramp.hex | --step +1|-1 [--mask m.png] [--palette P])
 pxw.py rotate <in> <out> --deg D [--pivot X,Y] [--method rotsprite|nearest]
+pxw.py stack <slices.png|dir> <out> [--angles 16] [--shift 0,-1] [--method nearest|rotsprite] [--count N] [--gif G] [--ms 80]
 pxw.py tileset <in> <outdir> [--cell 8] [--flip] [--columns 16]
 pxw.py crop <in> <out> [--pad N] [--size pow2|WxH] [--anchor bottom|centre]
 pxw.py tile <in> <out> [--band N]
@@ -41,7 +42,8 @@ pxw.py shadow <sprite.png> <outdir> [--guide g.png] [--style soft|pixel] [--shap
 ```
 
 Harvest pa20 (2026-11-19; ideas from Pixelorama and Aseprite's MIT sources, written fresh). Palette files also
-read JASC `.pal` (Lospec, Pixelorama). `--dither fs` is Floyd-Steinberg (serpentine, clear pixels take no error,
+read JASC `.pal` (Lospec, Pixelorama). `--dither atkinson` (after sedthh/pyxelate, MIT) passes on 6/8 of the error: a third of FS's speckle on gradients and
+cleaner lights and darks, at about twice FS's tone error. `--dither fs` is Floyd-Steinberg (serpentine, clear pixels take no error,
 `--dither-strength` scales it): it tracks tone better than Bayer but its pattern is irregular and changes from
 frame to frame, so stills and backgrounds only, never animated frames. `--sort` orders the `.gpl` and the reported
 palette (default luma, dark to light). `swap --ramp` maps each colour by lightness rank onto a dark-to-light ramp
