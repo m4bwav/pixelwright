@@ -2,7 +2,16 @@
 
 Every change to [README.md](README.md) and its companions, newest first, each with the reason. Reasons cite findings in [RESEARCH.md](RESEARCH.md) (`R-`), lessons in [LEARNINGS.md](LEARNINGS.md) (`L-`), and test runs in [TESTS.md](TESTS.md) (`T-`). State in `evergreen.json`. Protocol: MAINTENANCE.md.
 
-Entry shape: `### C-20261119-1 · 2026-11-19 · 0.23.0: RotSprite rotate, FS dither, ramps, palette sort, tilesets, sheet tags, thick outlines, onion skin
+Entry shape: `### C-20261119-2 · 2026-11-19 · 0.24.0: sparks bounce off a floor; pixelfx hand-off
+- because: user request (technique harvest pa20, p5)
+- files: pxw.py (fx_sparks `floor` and `bounce` keys), tests/test_pxw.py (test_sparks_floor_bounce_optional),
+  pixelwright-animate references/effects.md (sparks row), SKILL.md (Fallback: standalone fire, explosion and pickup
+  sprites go to patch-gg/pixelfx, then pxw make and gate), plugin.json, pxw.py VERSION
+- Credits: patch-gg/pixelfx (MIT) for the particle sim idea (ground bounce with restitution); no code copied.
+  With `floor` set, sparks are step-integrated and reflect (vy * -bounce, vx * 0.7). Without it the closed form
+  runs unchanged, so existing sheets stay byte-identical.
+
+### C-20261119-1 · 2026-11-19 · 0.23.0: RotSprite rotate, FS dither, ramps, palette sort, tilesets, sheet tags, thick outlines, onion skin
 - because: user request (technique harvest pa20), R-20261119-1
 - files: pxw.py (load_palette JASC fix; new `rotate` and `tileset` commands; `palette --dither fs
   --dither-strength --sort`; `swap --ramp`, `swap --step --mask --palette`; `clean --outline-width --outline-shape

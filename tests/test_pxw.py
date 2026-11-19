@@ -120,6 +120,20 @@ class TestFrames(Base):
         self.assertEqual(g["use"]["changed_outside_mask"], 0)
         self.assertTrue(g["use"]["pass"], g["use"])
 
+    def test_sparks_floor_bounce_optional(self):
+        spark = {"effect": "sparks", "region": "sky", "source": [14, 10, 16, 11], "bornFrames": [0],
+                 "colours": [[255, 240, 200]], "count": 6, "vy": [-1.0, -0.5]}
+        def run(extra):
+            anim = {"frames": 6, "focal": "lamp", "tracks": [
+                {"effect": "pulse", "region": "lamp", "hot": [255, 240, 200], "curve": [0, 1, 1, 1, 1, 0]},
+                dict(spark, **extra)]}
+            s = sw.Sprite(brief(use=anim), str(self.dir))
+            return sw.build_frames(s, anim)
+        plain, again = run({}), run({})
+        self.assertTrue(all((a == b).all() for a, b in zip(plain, again)))
+        bounced = run({"floor": 13, "bounce": 0.5})
+        self.assertFalse(all((a == b).all() for a, b in zip(plain, bounced)))
+
     def test_one_pixel_outside_mask_counts(self):
         s = sw.Sprite(brief(use=PULSE), str(self.dir))
         frames = sw.build_frames(s, PULSE)
