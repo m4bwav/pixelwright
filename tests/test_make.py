@@ -853,6 +853,21 @@ class TestPa20(Base):
         err = lambda q: abs(q[1:, :, 0].astype(float).mean(0) - g[1:, :, 0].mean(0)).mean()
         self.assertLess(err(fs), err(pxw.quantise(g, pal)))
 
+    def test_atkinson_dither_is_quieter_than_fs(self):
+        g = np.zeros((16, 64, 4), np.uint8)
+        g[..., :3] = np.linspace(0, 255, 64)[None, :, None].astype(np.uint8)
+        g[..., 3] = 255
+        pal = np.array([[0, 0, 0], [64, 64, 64], [128, 128, 128], [192, 192, 192], [255, 255, 255]], np.uint8)
+        at, fs = pxw.quantise(g, pal, "atkinson"), pxw.quantise(g, pal, "fs")
+        self.assertTrue(set(map(tuple, pxw.opaque_colours(at).tolist())) <= set(map(tuple, pal.tolist())))
+        self.assertFalse((at == fs).all())
+        lone = lambda q: sum(int(all((q[y, x, 0] != q[y + dy, x + dx, 0]) for dy, dx in pxw.N4))
+                             for y in range(1, 15) for x in range(1, 63))
+        self.assertLess(lone(at), lone(fs))
+        save(g, self.dir / "g.png")
+        code, res = self.run_pxw("palette", "g.png", "a.png", "--palette", "pico-8", "--dither", "atkinson")
+        self.assertEqual(code, 0, res)
+
     def test_swap_ramp_and_step(self):
         (self.dir / "ramp.hex").write_text("101010\n505050\n909090\nd0d0d0\nffffff\n", encoding="utf-8")
         code, res = self.run_pxw("swap", "potion.png", "g.png", "--ramp", "ramp.hex")
@@ -960,6 +975,74 @@ class TestPa20(Base):
         self.assertIn("globalAlpha = 0.3", r.stdout)
         self.assertIn("pingpong", r.stdout)
         self.assertIn("an/x_sheet.json", r.stdout)
+
+
+def _drifting_upscale(kind, n=32, seed=7):
+    """A 32x32 sprite on 16 colours, upscaled with cells of varying width: random 7-9 px (jitter) or 8 +- 0.9
+    on a slow sine (drift). A uniform grid cannot fit either."""
+    rng = np.random.default_rng(seed)
+    pal = rng.integers(0, 256, (16, 3)).astype(np.uint8)
+    f = np.kron(rng.random((n // 4, n // 4)), np.ones((4, 4))) + rng.random((n, n)) * 0.35
+    gt = np.dstack([pal[(f * 37).astype(int) % 16], np.full((n, n), 255, np.uint8)])
+    if kind == "jitter":
+        wx, wy = rng.integers(7, 10, n), rng.integers(7, 10, n)
+    else:
+        wx = wy = np.diff(np.round(np.cumsum(np.r_[0, 8 + 0.9 * np.sin(np.arange(n) / 5)]))).astype(int)
+    cx, cy = np.r_[0, np.cumsum(wx)], np.r_[0, np.cumsum(wy)]
+    xi = np.searchsorted(cx, np.arange(cx[-1]), side="right") - 1
+    yi = np.searchsorted(cy, np.arange(cy[-1]), side="right") - 1
+    return gt, gt[yi][:, xi]
+
+
+class TestElastic(Base):
+    def check(self, kind):
+        gt, big = _drifting_upscale(kind, seed=4)
+        out, info = pxw.snap_grid(big)
+        self.assertEqual(info["grid"], "elastic")  # auto: the uniform fit is weak
+        self.assertEqual(info["native"], [32, 32])
+        match = (np.abs(out[..., :3].astype(int) - gt[..., :3]).max(-1) <= 24).mean()
+        self.assertGreaterEqual(match, 0.98)
+        off, oi = pxw.snap_grid(big, elastic=False)
+        self.assertEqual(oi["grid"], "uniform")
+        self.assertTrue(oi["native"] != [32, 32] or
+                        (np.abs(off[..., :3].astype(int) - gt[..., :3]).max(-1) <= 24).mean() < match)
+
+    def test_jitter(self):
+        self.check("jitter")
+
+    def test_drift(self):
+        self.check("drift")
+
+    def test_uniform_grid_stays_uniform_and_cli_flag(self):
+        save(upscale(self.sprite, 4), self.dir / "big.png")
+        code, res = self.run_pxw("snap", "big.png", "s.png")
+        self.assertEqual((code, res["grid"]), (0, "uniform"))
+        code, res = self.run_pxw("snap", "big.png", "e.png", "--elastic", "on")
+        self.assertEqual((code, res["grid"], res["native"]), (0, "elastic", [16, 16]))
+        self.assertTrue(np.array_equal(self.load("e.png"), self.load("s.png")))
+
+
+class TestStack(Base):
+    def test_stack_turns_slices_without_new_colours(self):
+        sl = np.zeros((4 * 8, 8, 4), np.uint8)
+        cols = [[200, 40, 40], [40, 200, 40], [40, 40, 200], [230, 230, 60]]
+        for z in range(4):
+            sl[z * 8 + 2:z * 8 + 6, 1:7] = cols[z] + [255]
+        save(sl, self.dir / "slices.png")
+        code, res = self.run_pxw("stack", "slices.png", "sheet.png", "--angles", 8, "--gif", "t.gif")
+        self.assertEqual(code, 0, res)
+        self.assertEqual((res["slices"], res["new_colours"]), (4, 0))
+        fw, fh = res["frame"]
+        self.assertEqual((fw, fh), (12, 15))  # ceil(hypot(8, 8)) wide, + 3 layers of 1 px up
+        sheet = self.load("sheet.png")
+        self.assertEqual(sheet.shape[:2], (fh, fw * 8))
+        f0, f2 = sheet[:, :fw], sheet[:, 2 * fw:3 * fw]
+        # the top slice is drawn last and highest; a quarter turn makes the long bar stand upright
+        top = np.argwhere((f0[..., :3] == cols[3]).all(-1))
+        self.assertEqual(top[:, 0].min(), 2 + 2)
+        bar = np.argwhere((f2[..., :3] == cols[3]).all(-1))
+        self.assertGreater(np.ptp(bar[:, 0]), np.ptp(bar[:, 1]))
+        self.assertTrue((self.dir / "t.gif").exists())
 
 
 if __name__ == "__main__":

@@ -393,6 +393,29 @@ class TestEffects(Base):
             self.assertTrue((f[~cloth] == a[~cloth]).all())
             self.assertTrue((f[..., :3][cloth].astype(int) <= a[..., :3][cloth].astype(int)).all())
 
+    def test_cycle_steps_colours_along_the_ramp_inside_the_region(self):
+        ramp = [[20, 40, 90], [30, 70, 140], [50, 110, 190], [110, 170, 230]]
+        a = np.zeros((8, 16, 4), dtype=np.uint8)
+        a[:, :] = [90, 140, 60, 255]
+        for x in range(16):
+            a[2:6, x] = ramp[x % 4] + [255]
+        Image.fromarray(a, "RGBA").save(self.dir / "pool.png")
+        b = {"id": "pool", "still": "pool.png", "regions": {"water": {"rects": [[2, 2, 14, 6]]}}}
+        s = sw.Sprite(b, str(self.dir))
+        t = {"effect": "cycle", "region": "water", "ramp": "auto", "curve": [0, 0.25, 0.5, 1]}
+        frames = sw.build_frames(s, {"frames": 4, "tracks": [t]})
+        m = s.regions["water"]
+        self.assertTrue((frames[0] == a).all())
+        self.assertTrue((frames[3] == a).all())  # k = 1: every colour back home
+        for x in range(2, 14):
+            self.assertEqual(frames[1][3, x, :3].tolist(), ramp[(x + 1) % 4])
+            self.assertEqual(frames[2][3, x, :3].tolist(), ramp[(x + 2) % 4])
+        for f in frames:
+            self.assertTrue((f[~m] == a[~m]).all())
+        pp = dict(t, ramp=ramp, steps=4, pingpong=True, curve=[0.5])
+        f = sw.build_frames(s, {"frames": 1, "tracks": [pp]})[0]
+        self.assertEqual(f[3, 3, :3].tolist(), ramp[1])  # index 3 + 2 bounces back to 1
+
     def test_loop_seam_gate(self):
         anim = {"frames": 4, "rest": "none", "noticeable": {"share": 0, "luma": 0},
                 "tracks": [{"effect": "scroll", "region": "belt", "period": 4, "curve": [0, 0.25, 0.5, 0.75]}]}

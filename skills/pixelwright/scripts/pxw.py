@@ -8,7 +8,8 @@ still's own palette plus the brief's declared extra colours, so a frame can neve
 
 Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, which prints argparse's usage text):
   make    <recipe.json> <outdir> [--root DIR] [--no-aw]      the whole make pipeline from one recipe, then gates
-  snap    <in.png> <out.png> [--scale S] [--offset X,Y]      detect the pixel grid; one pixel per block (mode)
+  snap    <in.png> <out.png> [--scale S] [--offset X,Y] [--elastic auto|on|off]  detect the pixel grid; one
+                                                             pixel per block (mode); elastic walks drifting grids
   bg      <in.png> <out.png> [--colour auto|R,G,B] [--tol 40] [--holes N]  background cleared from the border
                                                              (and enclosed patches of N+ pixels)
   palette <in.png> <out.png> (--palette P | --colours N) [--dither bayer4] [--dither-space linear] [--max-step L]
@@ -17,6 +18,8 @@ Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, wh
   swap    <in> <out> (--map map.json | --from a.gpl --to b.gpl)  recolour variants; every colour must be mapped
   crop    <in.png> <out.png> [--pad 0] [--size pow2|WxH] [--anchor bottom|centre]
   tile    <in.png> <out.png> [--band N]                     make a tile wrap, with no new colours
+  stack   <slices.png|dir> <out.png> [--angles 16] [--shift 0,-1] [--method nearest|rotsprite] [--gif G]
+                                                             sprite stack: slices to a sheet of turned angles
   palettes                                                   built-in palette names
   frames  <brief.json> <outdir> [--root DIR] [--only NAME]   sheets, frames, previews, contact sheets, gates
   grid    <image> <out.png> [--zoom 8] [--step 8]            zoomed still with coordinates, for writing regions
@@ -54,7 +57,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.24.0"
+VERSION = "0.25.0"
 
 try:
     import numpy as np
@@ -579,6 +582,32 @@ def fx_bands(s, f, k, t, i):
     tint = np.asarray(t.get("tint", [1.0, 1.0, 1.0]), dtype=np.float32)
     rgb = f[..., :3][m]
     f[..., :3][m] = s.palette_for(t["region"]).snap(np.clip(rgb * (1 + t.get("gain", -0.2) * w * tint), 0, 255))
+
+
+def fx_cycle(s, f, k, t, i):
+    """Colour cycling along a ramp (lava, waterfalls, marquee lights): every region pixel that holds a ramp colour
+    steps round(k * steps) places along the ramp, wrapping (or bouncing with "pingpong"). ramp is a list of RGB
+    colours or "auto" (the region's own colours, dark to light). Colours never leave the ramp, so no snap; pixels
+    outside the ramp or the region stay put. Idea from Pixel-Composer's palette shift by Tanasart (MIT)."""
+    m = s.regions[t["region"]]
+    ramp = t.get("ramp", "auto")
+    if ramp == "auto":
+        cols = np.unique(s.still[..., :3][m & (s.still[..., 3] > 0)].reshape(-1, 3), axis=0)
+        ramp = cols[np.argsort(cols.astype(np.float64) @ np.array([0.299, 0.587, 0.114]), kind="stable")]
+    ramp = np.asarray(ramp, dtype=np.int32).reshape(-1, 3)
+    n = len(ramp)
+    if n < 2:
+        return
+    shift = int(round(k * t.get("steps", n)))
+    src = np.round(s.still[..., :3]).astype(np.int32)
+    for j, c in enumerate(ramp):
+        sel = m & (src == c).all(-1)
+        if t.get("pingpong"):
+            q = (j + shift) % (2 * n - 2)
+            q = q if q < n else 2 * n - 2 - q
+        else:
+            q = (j + shift) % n
+        f[..., :3][sel] = ramp[q]
 
 
 def fx_scroll(s, f, k, t, i):
@@ -1934,6 +1963,7 @@ EFFECTS = {"pulse": fx_pulse, "spill": fx_spill, "darken": fx_darken, "glint": f
            "dust": fx_dust, "rotate": fx_rotate, "shift": fx_shift, "scroll": fx_scroll, "fill": fx_fill,
            "puffs": fx_puffs, "buildup": fx_buildup, "assemble": fx_assemble, "external": fx_external,
            "arc": fx_arc, "drone": fx_drone, "cart": fx_cart, "bend": fx_bend, "brighten": fx_brighten, "bands": fx_bands,
+           "cycle": fx_cycle,
            "model_rotate": fx_model_rotate, "site": fx_site}
 
 
@@ -3904,9 +3934,49 @@ def _blocks(n, s, o):
     return res
 
 
-def snap_grid(a, scale=None, offset=None, smax=64):
+def _cut_profile(a, axis):
+    """Luma change across each pixel boundary along one axis (1: columns, 0: rows); index i is the edge just
+    before pixel i, so a peak is a cut position itself (a centred difference would put it one pixel off)."""
+    g = a[..., :3].astype(np.float64) @ np.array([0.299, 0.587, 0.114])
+    p = np.zeros(g.shape[axis])
+    p[1:] = np.abs(np.diff(g, axis=axis)).sum(axis=1 - axis)
+    return p
+
+
+def _walk_cuts(p, step, reach=0.35, floor=0.5, start=0, end=None):
+    """Cell edges walked one at a time: each lands on the strongest boundary within reach * step of the previous
+    edge plus one step, or on the nominal place when that boundary is weaker than floor x the mean. Edges may
+    therefore drift and vary cell by cell (a jittered or slowly stretching upscale). A last cell under half a step
+    joins its neighbour. start and end bound the walk (the uniform grid's first and last edge). Adapted from Sprite Fusion Pixel Snapper by Hugo Duprez (MIT)."""
+    n = len(p) if end is None else end
+    win, bar = max(step * reach, 2.0), p.mean() * floor
+    cuts, cur = [start], float(start)
+    while True:
+        want = cur + step
+        if want >= n:
+            break
+        lo, hi = max(int(want - win), int(cur) + 1), min(int(want + win), n)
+        if hi <= lo:
+            cur = want
+            continue
+        j = lo + int(np.argmax(p[lo:hi]))
+        if p[j] > bar:
+            cur = float(j)
+            cuts.append(j)
+        else:
+            cur = want
+            cuts.append(int(want))
+    cuts = sorted(set(cuts)) + [n]
+    if len(cuts) > 2 and cuts[-1] - cuts[-2] < step / 2:
+        del cuts[-2]
+    return [(float(c0), float(c1)) for c0, c1 in zip(cuts, cuts[1:])]
+
+
+def snap_grid(a, scale=None, offset=None, smax=64, elastic=None):
     """One pixel per block: the most common colour (5 bits a channel, alpha above or below half) in the block's
-    inner 60%, averaged inside that winning bin. Never a plain average, which makes blend colours."""
+    inner 60%, averaged inside that winning bin. Never a plain average, which makes blend colours. elastic: True
+    walks every cell edge to the strongest boundary near its place (_walk_cuts), False keeps one uniform grid, None
+    (auto) walks when the detected grid is weak (either axis coherence under 0.7) and the scale is over 2."""
     h, w = a.shape[:2]
     if scale:
         sx = sy = float(scale)
@@ -3923,7 +3993,14 @@ def snap_grid(a, scale=None, offset=None, smax=64):
             oy = oy if cy and cy >= 0.5 else ox
     if sx <= 1 and sy <= 1:
         return a.copy(), dict(scale=[1, 1], offset=[0, 0], native=[w, h], uniform_blocks=1.0, detected=not scale)
-    xs, ys = _blocks(w, sx, ox), _blocks(h, sy, oy)
+    if elastic is None:
+        elastic = cx is not None and cy is not None and min(cx, cy) < 0.7 and min(sx, sy) > 2
+    if elastic:
+        ux, uy = _blocks(w, sx, ox), _blocks(h, sy, oy)
+        xs = _walk_cuts(_cut_profile(a, 1), sx, start=max(0, int(round(ux[0][0]))), end=min(w, int(round(ux[-1][1]))))
+        ys = _walk_cuts(_cut_profile(a, 0), sy, start=max(0, int(round(uy[0][0]))), end=min(h, int(round(uy[-1][1]))))
+    else:
+        xs, ys = _blocks(w, sx, ox), _blocks(h, sy, oy)
     o = np.zeros((len(ys), len(xs), 4), np.uint8)
     uniform = 0
     for j, (y0, y1) in enumerate(ys):
@@ -3941,7 +4018,10 @@ def snap_grid(a, scale=None, offset=None, smax=64):
     rnd = lambda v: round(v, 3)
     return o, dict(scale=[rnd(sx), rnd(sy)], offset=[rnd(ox), rnd(oy)], native=[len(xs), len(ys)],
                    uniform_blocks=round(uniform / max(1, len(xs) * len(ys)), 3), detected=not scale,
-                   coherence=[None if cx is None else rnd(cx), None if cy is None else rnd(cy)])
+                   coherence=[None if cx is None else rnd(cx), None if cy is None else rnd(cy)],
+                   grid="elastic" if elastic else "uniform",
+                   **({"cut_widths": [int(min(e - b for b, e in xs + ys)), int(max(e - b for b, e in xs + ys))]}
+                      if elastic else {}))
 
 
 def _flood(near, seeds):
@@ -4029,15 +4109,24 @@ def _nearest(rgb, plab, k=1):
     return idx
 
 
-def _fs_dither(a, pal, plab, strength=1.0, max_step=None):
-    """Floyd-Steinberg error diffusion (serpentine scan) to the nearest palette colour in OKLab. Clear pixels neither
-    take nor pass error. strength scales the error passed on (0 = no dither). Irregular and unstable from frame to
+DIFFUSION = {  # ((dy, dx forward, weight), ...), divisor; dx flips on the serpentine's leftward rows
+    "fs": (((0, 1, 7), (1, -1, 3), (1, 0, 5), (1, 1, 1)), 16),
+    # Atkinson passes on 6/8 of the error: less speckle in lights and darks, a little more tone error.
+    # Option inspired by sedthh/pyxelate (MIT).
+    "atkinson": (((0, 1, 1), (0, 2, 1), (1, -1, 1), (1, 0, 1), (1, 1, 1), (2, 0, 1)), 8),
+}
+
+
+def _fs_dither(a, pal, plab, strength=1.0, max_step=None, kernel="fs"):
+    """Error diffusion (serpentine scan; Floyd-Steinberg, or Atkinson with kernel="atkinson") to the nearest
+    palette colour in OKLab. Clear pixels neither take nor pass error. strength scales the error passed on (0 = no dither). Irregular and unstable from frame to
     frame, so for stills and backgrounds, never animated frames."""
     h, w = a.shape[:2]
     buf = a[..., :3].astype(np.float64)
     op = a[..., 3] > 0
     idx = np.zeros((h, w), np.int64)
     pl = pal.astype(np.float64)
+    taps, den = DIFFUSION[kernel]
     for y in range(h):
         xs = range(w) if y % 2 == 0 else range(w - 1, -1, -1)
         d = 1 if y % 2 == 0 else -1
@@ -4052,10 +4141,10 @@ def _fs_dither(a, pal, plab, strength=1.0, max_step=None):
                     k = b
             idx[y, x] = k
             e = (c - pl[k]) * strength
-            for dy, dx, wt in ((0, d, 7), (1, -d, 3), (1, 0, 5), (1, d, 1)):
-                yy, xx = y + dy, x + dx
+            for dy, dx, wt in taps:
+                yy, xx = y + dy, x + dx * d
                 if 0 <= yy < h and 0 <= xx < w and op[yy, xx]:
-                    buf[yy, xx] += e * wt / 16
+                    buf[yy, xx] += e * wt / den
     return idx.reshape(-1)
 
 
@@ -4070,12 +4159,12 @@ def quantise(a, pal, dither=None, space="srgb", max_step=None, strength=1.0):
     flat, plab = rgb.reshape(-1, 3), oklab(pal)
     if not dither:
         idx = _nearest(flat, plab)[:, 0]
-    elif dither == "fs":
-        idx = _fs_dither(a, pal, plab, strength, max_step)
+    elif dither in DIFFUSION:
+        idx = _fs_dither(a, pal, plab, strength, max_step, dither)
     else:
         n = int(str(dither).replace("bayer", "") or 4)
         if n not in BAYER:
-            fail(f"dither must be bayer2, bayer4, bayer8 or fs, not {dither}")
+            fail(f"dither must be bayer2, bayer4, bayer8, fs or atkinson, not {dither}")
         m = np.tile((np.array(BAYER[n], np.float64) + 0.5) / (n * n), (h // n + 1, w // n + 1))[:h, :w].reshape(-1)
         if space == "linear" and len(pal) > 1:
             two = _nearest(flat, plab, 2)
@@ -4350,7 +4439,8 @@ def run_make(rec, root, outdir, use_aw=True):
     sn = rec.get("snap", {"scale": "auto"})
     if sn is not False:
         sc = sn.get("scale", "auto")
-        a, steps["snap"] = snap_grid(a, None if sc == "auto" else sc, sn.get("offset"), sn.get("max", 64))
+        a, steps["snap"] = snap_grid(a, None if sc == "auto" else sc, sn.get("offset"), sn.get("max", 64),
+                                   ELASTIC[sn.get("elastic", "auto")])
     bg = rec.get("background", "auto")
     if bg not in (False, None, "none"):
         a, steps["background"] = remove_background(a, bg if isinstance(bg, str) else bg.get("colour", "auto"),
@@ -4455,10 +4545,13 @@ def cmd_make(a):
     out(dict(ok=all(r["ok"] for r in res), sprites=res), 0 if all(r["ok"] for r in res) else 1)
 
 
+ELASTIC = {"auto": None, "on": True, "off": False, None: None, True: True, False: False}
+
+
 def cmd_snap(a):
     need_deps()
     off = [float(v) for v in a.offset.split(",")] if a.offset else None
-    img, info = snap_grid(load_u8(a.input), a.scale, off, a.max)
+    img, info = snap_grid(load_u8(a.input), a.scale, off, a.max, ELASTIC[a.elastic])
     save_u8(img, a.out)
     out(dict(ok=True, out=a.out, **info))
 
@@ -4749,6 +4842,67 @@ def cmd_rotate(a):
     new = sum(tuple(c) not in old for c in opaque_colours(r).tolist())
     out(dict(ok=new == 0, out=a.out, method=a.method, deg=a.deg, new_colours=new,
              opaque_before=int((img[..., 3] > 0).sum()), opaque_after=int((r[..., 3] > 0).sum())), 0 if new == 0 else 1)
+
+
+def _slices(path, count=None):
+    """Slices bottom first: the PNGs of a folder by name, or a vertical strip of equal tiles (square unless
+    count says how many)."""
+    p = Path(path)
+    if p.is_dir():
+        files = sorted(q for q in p.iterdir() if q.suffix.lower() == ".png")
+        if not files:
+            fail(f"no PNG slices in {path}")
+        sl = [load_u8(q) for q in files]
+        if len({x.shape for x in sl}) > 1:
+            fail("slices differ in size", sizes=sorted({f"{x.shape[1]}x{x.shape[0]}" for x in sl}))
+        return sl
+    img = load_u8(p)
+    h, w = img.shape[:2]
+    n = count or h // w
+    if n < 1 or h % n:
+        fail(f"a {w}x{h} strip does not split into {n} equal slices; pass --count")
+    th = h // n
+    return [img[i * th:(i + 1) * th] for i in range(n)]
+
+
+def stack_sprite(slices, deg, shift=(0, -1), method="nearest"):
+    """Sprite stacking: every slice turned by deg about its centre on a canvas wide enough for any angle, then
+    drawn bottom up, each layer moved by shift (x, y) from the one under it. Pseudo-3D from authored layers with no
+    renderer; colours stay the slices' own. Idea from Pixel-Composer's sprite stack by Tanasart (MIT)."""
+    h, w = slices[0].shape[:2]
+    c = int(math.ceil(math.hypot(w, h)))
+    L, (dx, dy) = len(slices), shift
+    o = np.zeros((c + (L - 1) * abs(dy), c + (L - 1) * abs(dx), 4), np.uint8)
+    bx, by = (L - 1) * max(0, -dx), (L - 1) * max(0, -dy)
+    for z, sl in enumerate(slices):
+        pad = np.zeros((c, c, 4), np.uint8)
+        y0, x0 = (c - h) // 2, (c - w) // 2
+        pad[y0:y0 + h, x0:x0 + w] = sl
+        r = rotate_sprite(pad, deg, method=method) if deg % 360 else pad
+        oy, ox = by + z * dy, bx + z * dx
+        on = r[..., 3] > 0
+        o[oy:oy + c, ox:ox + c][on] = r[on]
+    return o
+
+
+def cmd_stack(a):
+    need_deps()
+    from PIL import Image
+    sl = _slices(a.input, a.count)
+    shift = [int(v) for v in a.shift.split(",")]
+    frames = [stack_sprite(sl, i * 360.0 / a.angles, shift, a.method) for i in range(a.angles)]
+    sheet = np.concatenate(frames, axis=1)
+    save_u8(sheet, a.out)
+    if a.gif:
+        ims = [Image.fromarray(f, "RGBA") for f in frames]
+        ims[0].save(a.gif, save_all=True, append_images=ims[1:], duration=a.ms, loop=0, disposal=2)
+    old = set()
+    for x in sl:
+        old |= set(map(tuple, opaque_colours(x).tolist()))
+    new = sum(tuple(c) not in old for c in opaque_colours(sheet).tolist())
+    fh, fw = frames[0].shape[:2]
+    out(dict(ok=new == 0, out=a.out, gif=a.gif, slices=len(sl), angles=a.angles, method=a.method, shift=shift,
+             frame=[fw, fh], new_colours=new), 0 if new == 0 else 1)
 
 
 def cmd_tileset(a):
@@ -5358,6 +5512,8 @@ def main(argv=None):
     c.add_argument("--scale", type=float)
     c.add_argument("--offset", help="X,Y of the first block edge, with --scale")
     c.add_argument("--max", type=int, default=64)
+    c.add_argument("--elastic", default="auto", choices=["auto", "on", "off"],
+                   help="walk each cell edge to the nearest strong boundary (auto: when either axis coherence < 0.7)")
     c.set_defaults(fn=cmd_snap)
     c = sub.add_parser("bg")
     c.add_argument("input")
@@ -5371,8 +5527,9 @@ def main(argv=None):
     c.add_argument("out")
     c.add_argument("--palette")
     c.add_argument("--colours", type=int)
-    c.add_argument("--dither", choices=["bayer2", "bayer4", "bayer8", "fs"], help="fs: Floyd-Steinberg, stills only")
-    c.add_argument("--dither-strength", type=float, default=1.0, help="with fs: share of the error passed on, 0..1")
+    c.add_argument("--dither", choices=["bayer2", "bayer4", "bayer8", "fs", "atkinson"],
+                   help="fs: Floyd-Steinberg; atkinson: quieter lights and darks; both stills only")
+    c.add_argument("--dither-strength", type=float, default=1.0, help="with fs or atkinson: share of the error passed on, 0..1")
     c.add_argument("--sort", default="luma", choices=["luma", "hue", "sat", "val"], help="order of --gpl and the reported palette")
     c.add_argument("--dither-space", default="srgb", choices=["srgb", "linear"])
     c.add_argument("--max-step", type=float, help="no dither between colours further apart in OKLab lightness")
@@ -5467,6 +5624,16 @@ def main(argv=None):
     c.add_argument("--pivot", help="X,Y (default: the centre)")
     c.add_argument("--method", default="rotsprite", choices=["rotsprite", "nearest"])
     c.set_defaults(fn=cmd_rotate)
+    c = sub.add_parser("stack", help="sprite stack: slices (bottom first) to a sheet of N turned angles")
+    c.add_argument("input", help="a vertical strip of equal slices, or a folder of slice PNGs")
+    c.add_argument("out")
+    c.add_argument("--angles", type=int, default=16)
+    c.add_argument("--shift", default="0,-1", help="X,Y each layer moves from the one under it")
+    c.add_argument("--method", default="nearest", choices=["nearest", "rotsprite"])
+    c.add_argument("--count", type=int, help="slices in the strip (default: square slices)")
+    c.add_argument("--gif", help="also write a turning GIF here")
+    c.add_argument("--ms", type=int, default=80, help="GIF frame time")
+    c.set_defaults(fn=cmd_stack)
     c = sub.add_parser("tileset", help="dedupe cells (flip-aware) to tiles.png + tilemap.json")
     c.add_argument("input")
     c.add_argument("outdir")
