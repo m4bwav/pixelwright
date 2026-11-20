@@ -102,7 +102,9 @@ Read `<id>.x4.png` before a human sees it, then critique with artwright-pixel (s
 clusters, outlines, light, in that order). Typical repairs: a detail lost in the snap (an eye, a highlight) means
 the render's detail is finer than the grid: render with bigger shapes or choose a larger native size; a muddy
 palette means too few colours for the value range: first share ramp ends between materials (one highlight for two
-greens, skin and wood meeting in one shadow), then raise the budget by 2 to 4 rather than dithering. One fix at a
+greens, skin and wood meeting in one shadow), then raise the budget by 2 to 4 rather than dithering. A new
+material ramp: `pxw.py ramp --base HEX` (lightens by hue, not white); a palette whose lights look chalky:
+`pxw.py ramp --check ramp.hex`. One fix at a
 time, then `make` again.
 
 Craft rules (after claude-pxl, MIT): no outline at 16 px and under; shine is a lighter tone, white only for metal

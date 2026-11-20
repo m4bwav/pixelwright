@@ -6,6 +6,12 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-093 · 2026-11-19 · A light ramp step cannot keep a strong red's or blue's chroma
+- Trigger: first `hue_ramp` builds of red and blue bases were chalky (top chroma 0.09 under 0.19) because sRGB
+  holds little red or blue chroma near OKLab L 0.85, even leaning toward yellow.
+- Rule: cap the peak chroma to what the top step can hold (top = 0.9 of peak), or lower `--top`; never let the
+  gamut clip only the top step. Check any hand ramp with `pxw.py ramp --check`.
+
 ### L-092 · 2026-11-14 · Natural construction: never a rise or scan line; scaffold only where a builder would use one
 - Trigger: five Place strips for odd shapes (field, stump, tower, open camp) were made with a home-made rise (the still revealed bottom-up behind a 2 px work front) instead of `assemble`'s natural site recipe. The owner read it as "futuristic construction with a laser line"; the redo then put a scaffold round a tree stump ("a stump is grown and then cut").
 - Hypothesis: a reveal line is `buildup`'s sci-fi weld seam in disguise; and a scaffold is a builder's tool, so it only reads where a builder would climb.

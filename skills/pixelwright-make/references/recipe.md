@@ -31,6 +31,7 @@ pxw.py bg <in> <out> [--colour auto|R,G,B] [--tol 40] [--holes N]
 pxw.py palette <in> <out> (--palette P | --colours N) [--dither bayer4|fs|atkinson] [--dither-strength 0.5] [--dither-space linear] [--max-step 0.12] [--gpl pal.gpl] [--sort luma|hue|sat|val]
 pxw.py clean <in> <out> [--alpha 128] [--orphans] [--thin] [--corners] [--outline auto|selective|R,G,B] [--light top-left] [--outline-width N] [--outline-shape diamond|square|circle] [--inside]
 pxw.py swap <in.png|frames/> <out.png|out/> (--map map.json | --from a.gpl --to b.gpl | --ramp ramp.hex | --step +1|-1 [--mask m.png] [--palette P])
+pxw.py ramp (--base HEX [--steps 5] [--shift 25] [--top 0.85] [--gpl g.gpl] | --check ramp.hex [--ratio 0.8])
 pxw.py rotate <in> <out> --deg D [--pivot X,Y] [--method rotsprite|nearest]
 pxw.py stack <slices.png|dir> <out> [--angles 16] [--shift 0,-1] [--method nearest|rotsprite] [--count N] [--gif G] [--ms 80]
 pxw.py tileset <in> <outdir> [--cell 8] [--flip] [--columns 16]
@@ -54,6 +55,13 @@ diagonal). `tileset` keeps each distinct cell once (`--flip` reuses flipped copi
 `tilemap.json` (`map`: per cell row-major `[tile, flipX, flipY]`). `clean --outline-width N` grows an outline band
 outside the sprite (the canvas clips it: pad first) in the kernel `--outline-shape`; `--inside` puts it on the
 sprite's own edge pixels (selective needs `--inside`). Without them the 1 px edge outline is unchanged.
+
+`ramp --base` builds a dark-to-light ramp that lightens by hue, not by white: lights lean toward yellow and darks
+toward blue-violet (up to `--shift` degrees in OKLab), chroma peaks on the mid-light step and the top keeps 0.9 of
+it (Pickard et al., *Color & Light*, pp. 46-48, 101-102). Strong reds and blues lose chroma at a high top: lower
+`--top`. `ramp --check` (file order, dark to light) prints each step's OKLab chroma and exits 1 with
+`ramp_chalky` when the top step has under `--ratio` of the chroma below it: lights washed toward white. A white
+glint is a separate specular colour, not a ramp step. Opt-in: no recipe or `make` output changes.
 
 `overlap` is the silhouette gate for a repaint over a guide render (SpriteCast's fit-back check, github.com/
 Sunghwan0112/spritecast, MIT; tested 2026-11-17). The guide's silhouette is its alpha; a repaint without

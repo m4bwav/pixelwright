@@ -57,7 +57,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.25.0"
+VERSION = "0.26.0"
 
 try:
     import numpy as np
@@ -3814,6 +3814,81 @@ def oklab(rgb):
                            [-0.0040720468, 0.4505937099, -0.8086757660]])
 
 
+def oklab_to_rgb(lab):
+    """OKLab (..., 3) back to sRGB 0-255 floats (unclipped; check the gamut before rounding)."""
+    lms = np.asarray(lab, dtype=np.float64) @ np.linalg.inv(np.array(
+        [[0.2104542553, 1.9779984951, 0.0259040371], [0.7936177850, -2.4285922050, 0.7827717662],
+         [-0.0040720468, 0.4505937099, -0.8086757660]]))
+    c = (lms ** 3) @ np.linalg.inv(np.array(
+        [[0.4122214708, 0.2119034982, 0.0883024619], [0.5363325363, 0.6806995451, 0.2817188376],
+         [0.0514459929, 0.1073969566, 0.6299787005]]))
+    c = np.where(c <= 0.0031308, 12.92 * c, 1.055 * np.abs(c) ** (1 / 2.4) * np.sign(c) - 0.055)
+    return c * 255.0
+
+
+LIGHT_HUE, DARK_HUE = 100.0, 285.0  # OKLab hue angles of yellow and blue-violet: where lights and darks lean
+
+
+def _lean(h, target, amount):
+    d = (target - h + 180.0) % 360.0 - 180.0
+    return h + np.clip(d, -amount, amount)
+
+
+def hue_ramp(base, steps=5, shift=25.0, lo=0.25, hi=0.85):
+    """A ramp dark to light around base: lightness spaced from lo to hi, lights lean toward yellow and darks toward
+    blue-violet by up to shift degrees (lighten by hue, not by white), and chroma peaks on the mid-light step and
+    falls toward both ends, never to grey, so the light end stays coloured (Pickard, Color & Light pp. 46-48,
+    101-102). Each step keeps its hue and lightness and drops chroma only as far as the sRGB gamut needs."""
+    L0, a0, b0 = oklab(np.array(base, np.float64))
+    C0, h0 = float(np.hypot(a0, b0)), float(np.degrees(np.arctan2(b0, a0)) % 360)
+    peak = max(1, steps - 2)
+    def fit(L, h, C):  # largest chroma up to C that stays inside sRGB at this lightness and hue
+        for _ in range(60):
+            rgb = oklab_to_rgb([L, C * np.cos(np.radians(h)), C * np.sin(np.radians(h))])
+            if (rgb >= -0.5).all() and (rgb <= 255.5).all():
+                return C, rgb
+            C *= 0.95
+        return C, rgb
+
+    hues = []
+    for i in range(steps):
+        t = i / max(1, steps - 1)
+        hues.append(_lean(h0, LIGHT_HUE, shift * (2 * t - 1)) if t >= 0.5 else _lean(h0, DARK_HUE, shift * (1 - 2 * t)))
+    # cap the peak so the top step can still hold 0.9 of it: a pale top that loses its colour is the chalky fault
+    C0 = min(C0, fit(hi, hues[-1], C0)[0] / 0.9)
+    out_ = []
+    for i in range(steps):
+        L = lo + (hi - lo) * i / max(1, steps - 1)
+        _, rgb = fit(L, hues[i], C0 * (0.9 if i > peak else 1.0 - 0.45 * (peak - i) / peak))
+        out_.append(np.clip(np.round(rgb), 0, 255).astype(np.uint8))
+    return np.array(out_, np.uint8)
+
+
+def ramp_report(ramp, ratio=0.8):
+    """Chroma of each step of a dark-to-light ramp, and ramp_chalky when the top step's chroma is under ratio of the
+    step below it: the lightest colour washed toward white instead of peaking (Pickard pp. 101-102). A white glint
+    is a separate specular colour, not a ramp step."""
+    lab = oklab(np.asarray(ramp, np.float64))
+    ch = np.hypot(lab[:, 1], lab[:, 2])
+    chalky = bool(len(ch) >= 3 and ch[-2] > 0.03 and ch[-1] < ratio * ch[-2])
+    return dict(steps=[_hex(c) for c in ramp], lightness=[round(float(v), 3) for v in lab[:, 0]],
+                chroma=[round(float(v), 3) for v in ch], ramp_chalky=chalky)
+
+
+def cmd_ramp(a):
+    need_deps()
+    if bool(a.base) == bool(a.check):
+        out(dict(ok=False, error="give exactly one of --base and --check"), 2)
+    if a.check:
+        r = ramp_report(load_palette(a.check, ordered=True), a.ratio)
+        out(dict(ok=not r["ramp_chalky"], **r), 1 if r["ramp_chalky"] else 0)
+    ramp = hue_ramp(parse_rgb(a.base), a.steps, a.shift, hi=a.top)
+    if a.gpl:
+        write_gpl(ramp, a.gpl, Path(a.gpl).stem)
+    r = ramp_report(ramp, a.ratio)
+    out(dict(ok=True, gpl=a.gpl, **r))
+
+
 def _hex(c):
     return "%02x%02x%02x" % tuple(int(v) for v in c[:3])
 
@@ -5559,6 +5634,15 @@ def main(argv=None):
     c.add_argument("--mask", help="with --step: only pixels white in this PNG")
     c.add_argument("--palette", help="with --step: ramps from this palette (default: the image's own colours)")
     c.set_defaults(fn=cmd_swap)
+    c = sub.add_parser("ramp", help="hue-shifted colour ramp from a base colour, or check a ramp for chalky lights")
+    c.add_argument("--base", help="build: base colour hex or R,G,B")
+    c.add_argument("--check", help="check: palette file, dark to light")
+    c.add_argument("--steps", type=int, default=5)
+    c.add_argument("--shift", type=float, default=25.0, help="max hue lean in degrees: lights to yellow, darks to blue-violet")
+    c.add_argument("--ratio", type=float, default=0.8, help="ramp_chalky when the top step's chroma is under this share of the next")
+    c.add_argument("--top", type=float, default=0.85, help="OKLab lightness of the top step; lower keeps strong reds and blues more chromatic")
+    c.add_argument("--gpl", help="with --base: write the ramp as a GIMP palette")
+    c.set_defaults(fn=cmd_ramp)
     c = sub.add_parser("crop")
     c.add_argument("input")
     c.add_argument("out")

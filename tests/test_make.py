@@ -1045,5 +1045,30 @@ class TestStack(Base):
         self.assertTrue((self.dir / "t.gif").exists())
 
 
+class TestRamp(Base):
+    def test_hue_ramp_leans_and_is_not_chalky(self):
+        for base in ([190, 38, 51], [74, 154, 58], [42, 91, 215], [224, 192, 64]):
+            ramp = pxw.hue_ramp(base, 5)
+            lab = pxw.oklab(ramp.astype(float))
+            self.assertTrue((np.diff(lab[:, 0]) > 0).all(), base)  # dark to light
+            self.assertFalse(pxw.ramp_report(ramp)["ramp_chalky"], base)
+        ramp = pxw.hue_ramp([74, 154, 58], 5)  # green: lights lean toward yellow, darks toward blue
+        self.assertGreater(ramp[-1][0], ramp[-1][2])
+        self.assertGreater(ramp[0][2], ramp[0][0])
+
+    def test_check_flags_a_chalky_ramp_and_passes_a_good_one(self):
+        (self.dir / "chalky.hex").write_text("3a1020\n8a2030\nc84050\nf0d8dc\n", encoding="utf-8")
+        code, res = self.run_pxw("ramp", "--check", "chalky.hex")
+        self.assertEqual(code, 1, res)
+        self.assertTrue(res["ramp_chalky"])
+        code, res = self.run_pxw("ramp", "--base", "4a9a3a", "--steps", 4, "--gpl", "g.gpl")
+        self.assertEqual(code, 0, res)
+        (self.dir / "good.hex").write_text("\n".join(res["steps"]), encoding="utf-8")
+        code, res = self.run_pxw("ramp", "--check", "good.hex")
+        self.assertEqual(code, 0, res)
+        self.assertFalse(res["ramp_chalky"])
+        self.assertTrue((self.dir / "g.gpl").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

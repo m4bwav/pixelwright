@@ -2,7 +2,13 @@
 
 Every change to [README.md](README.md) and its companions, newest first, each with the reason. Reasons cite findings in [RESEARCH.md](RESEARCH.md) (`R-`), lessons in [LEARNINGS.md](LEARNINGS.md) (`L-`), and test runs in [TESTS.md](TESTS.md) (`T-`). State in `evergreen.json`. Protocol: MAINTENANCE.md.
 
-Entry shape: `### C-20261119-3 · 2026-11-19 · 0.25.0: elastic grid snap, Atkinson dither, sprite stack, colour cycle
+Entry shape: `### C-20261119-4 · 2026-11-19 · 0.26.0: hue-shifted ramps and the ramp_chalky check
+- because: book learnings round 6 (Pickard et al., Color & Light, 3dtotal 2021, pp. 46-48, 101-102), L-093
+- files: pxw.py (new `ramp` command: `hue_ramp`, `ramp_report`, `oklab_to_rgb`), tests/test_make.py (TestRamp),
+  pixelwright-make SKILL.md (Step 4) and references/recipe.md (Commands), plugin.json, pxw.py VERSION
+- Opt-in: a new command only; every existing command and recipe output is byte-identical.
+
+### C-20261119-3 · 2026-11-19 · 0.25.0: elastic grid snap, Atkinson dither, sprite stack, colour cycle
 - because: user request (technique harvest pa20, p7, p14, p16)
 - files: pxw.py (`_cut_profile`, `_walk_cuts`, `snap_grid(elastic=)`, `snap --elastic auto|on|off`, recipe
   `snap.elastic`; `DIFFUSION` kernel table behind `_fs_dither`, `--dither atkinson`; new `stack` command
