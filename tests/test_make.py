@@ -1070,5 +1070,76 @@ class TestRamp(Base):
         self.assertTrue((self.dir / "g.gpl").exists())
 
 
+def draw_fighter(sword=False, colour=(40, 90, 200)):
+    """A 10x20 standing figure: head, body, two legs with feet at the bottom row; with sword=True a blade raised on
+    the right widens the box without moving the feet."""
+    w = 16 if sword else 10
+    a = np.zeros((20, w, 4), np.uint8)
+    a[1:6, 3:7] = [230, 190, 150, 255]
+    a[6:14, 2:8] = list(colour) + [255]
+    a[14:20, 2:4] = INK + [255]
+    a[14:20, 6:8] = INK + [255]
+    if sword:
+        a[0:12, 12:14] = [200, 200, 210, 255]
+        a[8:10, 8:12] = [200, 200, 210, 255]
+    return a
+
+
+class TestActionInputs(Base):
+    def setUp(self):
+        super().setUp()
+        save(draw_fighter(), self.dir / "stance.png")
+        save(draw_fighter(sword=True), self.dir / "swing.png")
+
+    def test_stance_on_strip_loop_closed(self):
+        code, res = self.run_pxw("action-inputs", "stance.png", "out")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["size"], [1056, 608])
+        self.assertEqual(res["scale"], 16)  # 304 // 19 opaque rows
+        self.assertTrue(res["loop_closed"])
+        f, l = self.load("out/action_first.png"), self.load("out/action_last.png")
+        self.assertEqual(f.shape[:2], (608, 1056))
+        self.assertTrue((f == l).all())
+        g, k = res["ground_y"], res["scale"]
+        x0, y0, x1, y1 = res["boxes"][0]
+        self.assertEqual(y1, g)  # feet on the ground line
+        self.assertEqual((x0 + x1) / 2, 528)  # symmetric feet at the centre
+        self.assertEqual(f[g - k:g, x0:x0 + 2 * k, :3].reshape(-1, 3).tolist(), [INK] * (2 * k * k))  # whole-number scale
+        self.assertEqual(f[g - 1, x0 + 2 * k, :3].tolist(), f[g - 1, 0, :3].tolist())  # strip shows between the legs
+        bgc, flc = f[5, 5, :3].tolist(), f[g, 5, :3].tolist()
+        self.assertEqual(bgc, [255, 0, 255])
+        self.assertEqual(flc, [204, 0, 204])  # strip darker than the background, across the width
+        self.assertEqual(f[g, 1050, :3].tolist(), flc)
+        self.assertEqual(len(np.unique(f[..., :3].reshape(-1, 3), axis=0)), 5)  # bg, strip, 3 sprite colours: nothing new
+        side = json.loads((self.dir / "out" / "action_inputs.json").read_text())
+        self.assertIn("only the character moves", side["prompt"])
+
+    def test_end_pose_keeps_scale_ground_and_feet(self):
+        code, res = self.run_pxw("action-inputs", "stance.png", "out", "--last", "swing.png", "--size", "h3-768")
+        self.assertEqual(code, 0, res)
+        self.assertFalse(res["loop_closed"])
+        (a0, _, a1, ay), (b0, _, b1, by) = res["boxes"]
+        self.assertEqual(ay, by)
+        self.assertEqual(a0, b0)  # feet at the same x although the sword widens the box
+        self.assertGreater(b1, a1)
+        f, l = self.load("out/action_first.png"), self.load("out/action_last.png")
+        self.assertEqual(f.shape[:2], (768, 1344))
+        self.assertFalse((f == l).all())
+
+    def test_key_overlap_gate_and_sizes(self):
+        save(draw_fighter(colour=(250, 10, 240)), self.dir / "pink.png")
+        code, res = self.run_pxw("action-inputs", "pink.png", "out")
+        self.assertEqual(code, 1, res)
+        self.assertGreater(res["key_overlap"][0], 0.02)
+        code, res = self.run_pxw("action-inputs", "pink.png", "out", "--bg", "00ff00", "--size", "1000x600")
+        self.assertEqual(code, 0, res)
+        self.assertEqual(res["size"], [992, 576])
+        self.assertEqual(res["rounded_from"], [1000, 600])
+        code, res = self.run_pxw("action-inputs", "stance.png", "out", "--size", "h3-608-portrait")
+        self.assertEqual(res["size"], [608, 1056])
+        code, res = self.run_pxw("action-inputs", "stance.png", "out", "--size", "40x32")
+        self.assertEqual(code, 1, res)
+
+
 if __name__ == "__main__":
     unittest.main()

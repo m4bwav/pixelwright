@@ -156,7 +156,7 @@ A screen-space `rotate` is wrong for a wheel seen at an angle; with no pos pass,
 
 ## Fallback: motion code cannot fake
 
-Explosions, lightning, spells from a model's GIF: [references/model-effects.md](references/model-effects.md) (`pxw.py anim`, L-090; `--slots` cuts ten characters from one i2v clip). Standalone fire, explosion or pickup sprites (not tied to a still): simulate them in patch-gg/pixelfx (MIT), then `pxw.py` make and gate its sheet.
+Explosions, lightning, spells from a model's GIF: [references/model-effects.md](references/model-effects.md) (`pxw.py anim`, L-090; `--slots` cuts ten characters from one i2v clip; `action-inputs` builds first/last-frame stills on a floor strip for a character action). Standalone fire, explosion or pickup sprites (not tied to a still): simulate them in patch-gg/pixelfx (MIT), then `pxw.py` make and gate its sheet.
 A dome opening or an arm unfolding: ask the human first (it costs money), naming the sprite, the motion and the
 cost. PixelLab (REST `api.pixellab.ai/v2`, Bearer key from the `PIXELLAB_API_KEY` environment variable, never a
 file): `animate-with-text-v3` keeps the input as frame 1; `interpolation-v2` and `edit-animation-v2` suit a

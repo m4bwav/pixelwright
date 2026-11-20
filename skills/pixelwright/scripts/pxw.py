@@ -34,6 +34,9 @@ Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, wh
                                                              sleep loop: 4 frames of 1 px breathing + a "z"
   anim    <clip|frames> <outdir> --slots CxR [--align-feet] [--find-loop] [--slot-height 200]
                                                              i2v clip of a character sheet -> one loop per slot
+  action-inputs <stance.png> <outdir> [--last pose.png] [--size h3-608|WxH] [--fill 0.5] [--bg ff00ff]
+                                                             first/last-frame stills on a floor strip for a
+                                                             character action from an image-to-video model
   overlap <guide.png> <repaint.png>... [--warn 0.85] [--fail 0.70]  repaint silhouette IoU vs its guide
   normals <in> <outdir> [--frame-size WxH] [--relit] [--green-down]  normal map <name>_n.png for 2D lights
   font    <atlas.png> <out.ttf> --grid CxR --chars S [--px WxH] [--baseline N] [--mono]
@@ -57,7 +60,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.27.0"
+VERSION = "0.28.0"
 
 try:
     import numpy as np
@@ -5401,6 +5404,106 @@ def cmd_unpad(a):
              next="pxw.py palette / clean to lock colours"))
 
 
+VIDEO_SIZES = {  # image-to-video canvas presets (MiniMax H3 sizes; any model takes WxH)
+    "h3-480": (864, 480), "h3-608": (1056, 608), "h3-768": (1344, 768),
+    "h3-480-portrait": (480, 864), "h3-608-portrait": (608, 1056), "h3-768-portrait": (768, 1344),
+}
+
+
+def _sprite_cut(img):
+    """A sprite cropped to its opaque box, and the x of its feet in that crop: the mean column of the opaque
+    pixels in the bottom two rows (a raised sword or a tail does not move the feet the way a box centre would)."""
+    op = img[..., 3] >= 128
+    if not op.any():
+        return None, None
+    ys, xs = np.nonzero(op)
+    cut = img[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    fy, fx = np.nonzero(cut[..., 3][-2:] >= 128)
+    return cut, float(fx.mean())
+
+
+def cmd_action_inputs(a):
+    """Inputs for a character action rendered by an image-to-video model with first and last frames: the stance
+    (and an optional end pose) scaled by a whole number with nearest neighbour onto a flat canvas of the size the
+    model wants, feet on one ground line at one x, standing on a slightly darker floor strip that spans the
+    canvas. Same stance first and last closes the loop so clips chain; the strip keeps the camera from drifting.
+    Gate: no sprite colour near the background or the strip (the key would eat it later)."""
+    need_deps()
+    if a.size in VIDEO_SIZES:
+        W, H = VIDEO_SIZES[a.size]
+        rounded = None
+    else:
+        try:
+            W0, H0 = (int(v) for v in a.size.lower().split("x"))
+        except ValueError:
+            fail(f"--size must be WxH or one of {', '.join(VIDEO_SIZES)}, not {a.size!r}")
+        m = max(1, a.multiple)
+        W, H = W0 // m * m, H0 // m * m
+        rounded = [W0, H0] if (W, H) != (W0, H0) else None
+        if not W or not H:
+            fail(f"--size {a.size} is smaller than one {m} px step")
+    cuts = []
+    for path in [a.input] + ([a.last] if a.last else []):
+        cut, fx = _sprite_cut(load_u8(path))
+        if cut is None:
+            fail(f"{path} has no opaque pixels (alpha 128+)")
+        cuts.append((cut, fx))
+    hMax = max(c.shape[0] for c, _ in cuts)
+    ground = round(H * a.ground)
+    k = int(min(a.fill * H // hMax, ground // hMax,
+                min(0.8 * W // c.shape[1] for c, _ in cuts)))
+    if k < 1:
+        fail(f"sprite {cuts[0][0].shape[1]}x{hMax} does not fit a {W}x{H} canvas at --fill {a.fill}")
+    bg = np.array(parse_rgb(a.bg), np.float32)
+    floor = np.array(parse_rgb(a.floor), np.float32) if a.floor else np.floor(bg * a.shade)
+    sh = max(2, round(H * a.strip))
+    s0 = ground - sh // 3
+    s1 = min(H, s0 + sh)
+    cx = W / 2
+    near = []
+    outs = []
+    for i, (cut, fx) in enumerate(cuts):
+        h, w = cut.shape[:2]
+        can = np.empty((H, W, 4), np.float32)
+        can[..., :3], can[..., 3] = bg, 255
+        can[s0:s1, :, :3] = floor
+        x0 = int(round(cx - (fx + 0.5) * k))
+        y0 = ground - h * k
+        if x0 < 0 or x0 + w * k > W:
+            fail(f"pose {i + 1} runs off the canvas when its feet sit at the centre; lower --fill")
+        big = np.repeat(np.repeat(cut.astype(np.float32), k, 0), k, 1)
+        al = (big[..., 3:4] >= 128).astype(np.float32)
+        reg = can[y0:y0 + h * k, x0:x0 + w * k, :3]
+        can[y0:y0 + h * k, x0:x0 + w * k, :3] = big[..., :3] * al + reg * (1 - al)
+        px = cut[cut[..., 3] >= 128][:, :3].astype(np.float32)
+        hit = np.minimum(np.abs(px - bg).sum(-1), np.abs(px - floor).sum(-1)) <= a.tol
+        near.append(round(float(hit.mean()), 4))
+        outs.append(dict(can=can, box=[x0, y0, x0 + w * k, y0 + h * k]))
+    od = Path(a.outdir)
+    od.mkdir(parents=True, exist_ok=True)
+    first, last = od / f"{a.name}_first.png", od / f"{a.name}_last.png"
+    for path, o in ((first, outs[0]), (last, outs[-1])):
+        Image.fromarray(np.rint(o["can"][..., :3]).astype(np.uint8), "RGB").save(path)
+    hexs = lambda c: "".join(f"{int(v):02x}" for v in c)  # noqa: E731
+    overlap = max(near)
+    ok = overlap <= a.max_overlap
+    info = dict(size=[W, H], scale=k, ground_y=ground, feet_x=round(cx, 1), strip=[0, s0, W, s1],
+                bg=hexs(bg), floor=hexs(floor), boxes=[o["box"] for o in outs], loop_closed=len(cuts) == 1,
+                key_overlap=near, prompt=("The character stands on the darker floor strip and stays on the spot; "
+                                          "it starts and ends in the same stance. Nothing else in the frame; "
+                                          "only the character moves."))
+    if rounded:
+        info["rounded_from"] = rounded
+    side = od / f"{a.name}_inputs.json"
+    side.write_text(json.dumps(info, indent=2), encoding="utf-8")
+    res = dict(ok=ok, first=first.as_posix(), last=last.as_posix(), sidecar=side.as_posix(), **info,
+               next=f"render first/last-frame i2v, then pxw.py anim <clip> <outdir> --key {hexs(bg)}")
+    if not ok:
+        res["error"] = (f"{overlap:.0%} of a pose's pixels sit within {a.tol} of the background or strip colour; "
+                        "pick a --bg (and --floor) the character does not wear")
+    out(res, 0 if ok else 1)
+
+
 DIRS = {(0, 0): "NW", (0, 1): "N", (0, 2): "NE", (1, 0): "W", (1, 2): "E", (2, 0): "SW", (2, 1): "S", (2, 2): "SE"}
 
 
@@ -5733,6 +5836,22 @@ def main(argv=None):
     c.add_argument("--box", required=True)
     c.add_argument("--tol", type=int, default=40)
     c.set_defaults(fn=cmd_unpad)
+    c = sub.add_parser("action-inputs", help="first/last-frame stills on a floor strip for an i2v character action")
+    c.add_argument("input", help="the stance sprite (first frame, and last unless --last)")
+    c.add_argument("outdir")
+    c.add_argument("--last", help="a different end pose (default: the stance, so the loop closes)")
+    c.add_argument("--name", default="action")
+    c.add_argument("--size", default="h3-608", help=f"WxH or a preset: {', '.join(VIDEO_SIZES)}")
+    c.add_argument("--multiple", type=int, default=32, help="round a WxH size down to this step")
+    c.add_argument("--fill", type=float, default=0.5, help="largest sprite height as a share of canvas height")
+    c.add_argument("--ground", type=float, default=0.85, help="ground line as a share of canvas height")
+    c.add_argument("--strip", type=float, default=0.08, help="floor strip height as a share of canvas height")
+    c.add_argument("--bg", default="ff00ff", help="hex background (the key for pxw.py anim later)")
+    c.add_argument("--floor", help="hex strip colour (default: the background times --shade)")
+    c.add_argument("--shade", type=float, default=0.8)
+    c.add_argument("--tol", type=int, default=60, help="RGB distance (sum) counted as the key colour")
+    c.add_argument("--max-overlap", type=float, default=0.02)
+    c.set_defaults(fn=cmd_action_inputs)
     c = sub.add_parser("dirs", help="cut a 3x3 eight-direction ring, a 2x2 four-view sheet or a 6x4 walk/attack/hurt sheet into frames, gated")
     c.add_argument("input")
     c.add_argument("outdir")

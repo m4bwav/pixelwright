@@ -42,8 +42,21 @@ Untested here: tricks from u/FutureTechPilot's r/aigamedev post "Tricks for AI v
 (reddit.com/r/aigamedev/comments/1x8m8ly, MiniMax H3 in ComfyUI), reworded. Whole-sprite motion drifts more than
 an effect does, so treat each clip as a draft to clean with `pxw.py anim`.
 
+```
+pxw.py action-inputs stance.png out --name punch [--last end_pose.png] [--size h3-608|h3-768|WxH] [--fill 0.5]
+    [--bg ff00ff] [--floor HEX | --shade 0.8]
+```
+
+Builds both frames from one sprite: `<name>_first.png` and `<name>_last.png` at the model's size (H3 presets, or
+WxH rounded down to a multiple of 32), the sprite scaled by a whole number with nearest neighbour (largest pose
+at `--fill` of the height), feet on one ground line at the canvas centre (the mean column of the bottom two
+rows, so a raised weapon does not shift them), on a darker strip spanning the width. With no `--last` both files
+are the stance, so the loop closes. `<name>_inputs.json` keeps the scale, ground line, strip and boxes plus a
+prompt line to paste. Exit 1 when more than 2 % of a pose's pixels sit near the background or strip colour (the
+key would eat them later in `pxw.py anim --key`): pick another `--bg`.
+
 - Floor strip: paint a slightly darker strip under the feet in the start image and say the character stands on
-  it; the camera stops drifting and cropping.
+  it; the camera stops drifting and cropping (`action-inputs` draws it).
 - Stance as first and last frame (FL2VA): every clip starts and ends in the same idle pose, so the loop closes
   and clips chain. H3 forces the end frame and often overshoots, then snaps back in the last second: trim it.
 - On the spot: no travel inside the clip; the game moves the sprite for leaps, dives and slides.

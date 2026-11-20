@@ -2,7 +2,18 @@
 
 Every change to [README.md](README.md) and its companions, newest first, each with the reason. Reasons cite findings in [RESEARCH.md](RESEARCH.md) (`R-`), lessons in [LEARNINGS.md](LEARNINGS.md) (`L-`), and test runs in [TESTS.md](TESTS.md) (`T-`). State in `evergreen.json`. Protocol: MAINTENANCE.md.
 
-Entry shape: `### C-20261119-5 · 2026-11-19 · 0.27.0: cadence_mixed, contact and sound frames, Williams timing rules
+Entry shape: `### C-20261120-1 · 2026-11-20 · 0.28.0: action-inputs, first/last-frame stills on a floor strip
+- because: user request (technique harvest script backlog, verdict #18: r/aigamedev post 1x8m8ly by
+  u/FutureTechPilot; ideas only, written fresh from our notes)
+- files: pxw.py (new `action-inputs` command: `cmd_action_inputs`, `_sprite_cut`, `VIDEO_SIZES`),
+  tests/test_make.py (TestActionInputs, 3 tests), pixelwright-animate SKILL.md (model-effects pointer) and
+  references/model-effects.md (Character actions from a video model), plugin.json, pxw.py VERSION
+- Opt-in: a new command only; every existing output is byte-identical. From one stance sprite (and an optional
+  end pose) it writes the first and last frames at an H3 size or WxH (multiple of 32): whole-number nearest
+  scale, feet on one ground line at the centre, a darker floor strip across the width, a sidecar with the prompt
+  line, and a key-overlap gate (exit 1 when the sprite wears the background or strip colour).
+
+### C-20261119-5 · 2026-11-19 · 0.27.0: cadence_mixed, contact and sound frames, Williams timing rules
 - because: book learnings round 6 (Williams, The Animator's Survival Kit, expanded ed. 2009, pp. 79, 92-97, 109,
   294, 301), L-094
 - files: pxw.py (`_step_cadence`, `_cadence_mixed`, gates `cadence_mixed`, `contact_frame`/`sound_frame`),
