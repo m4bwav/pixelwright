@@ -57,6 +57,9 @@ Seeds make every run byte-identical; change `seed` for a different scatter.
 - **Use animations (a recoil, a press, a launch)**: anticipation first, a small move opposite to the action; the
   squash frame next to the stretch peak; a 1 px overshoot, then settle. A `shift` curve such as
   `[0, -0.3, 1, 1.15, 1, 1]` does it (Silber section 8.4; Azzi pp. 218, 223).
+- **Hits** (Williams pp. 92-97, 301): a just-touching contact frame before the squash sells the hit; a fast strike
+  is one elongated frame, not speed lines; a vanish leaves 2 to 3 trace pixels for a frame or two. A hanging or
+  chained part on `bend` whips: cushion each end, the tip lagging the root by a frame.
 - **Effect beats** (Dawe and Humphries, ch. 7): a flame is two nested teardrops, the inner one moving inside the
   outer, with a rare escaping ember; a laser is a bright core with a short build-up and a fade; a glow grows,
   holds and shrinks; an explosion is a flash frame, an expanding fireball, then smoke that outlives it.

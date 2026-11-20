@@ -57,7 +57,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.26.0"
+VERSION = "0.27.0"
 
 try:
     import numpy as np
@@ -2041,6 +2041,50 @@ def _detached_pixels(frame, still, least=12):
     return total
 
 
+def _step_cadence(changed):
+    """'ones' when every step between the first and last change changes, 'twos' when they alternate."""
+    idx = [j for j, c in enumerate(changed) if c]
+    if len(idx) < 2:
+        return None
+    gaps = set(np.diff(idx).tolist())
+    if gaps == {1} and len(idx) >= 3:
+        return "ones"
+    if gaps == {2}:
+        return "twos"
+    return None
+
+
+def _cadence_mixed(s, anim, frames):
+    """Pairs of tracks over the same area (boxes touch) where one moves on twos and the other on ones: reads as
+    strobe (Williams, The Animator's Survival Kit, p. 79). Each region is judged on its own pixels only."""
+    regs = []
+    for n_, t in enumerate(anim["tracks"]):
+        r = t.get("region")
+        if r in s.regions and s.regions[r].any():
+            regs.append((n_, s.regions[r]))
+    if len(regs) < 2 or len(frames) < 4:
+        return []
+    info = []
+    for n_, m in regs:
+        own = m.copy()
+        for k, o in regs:
+            if k != n_ and o is not m:
+                own &= ~o
+        if not own.any():
+            continue
+        ch = [bool(((frames[j] != frames[j + 1]).any(-1) & own).any()) for j in range(len(frames) - 1)]
+        ys, xs = np.nonzero(m)
+        info.append((n_, _step_cadence(ch), (ys.min() - 1, ys.max() + 1, xs.min() - 1, xs.max() + 1)))
+    out = []
+    for i, (a, ca, ba) in enumerate(info):
+        for b, cb, bb in info[i + 1:]:
+            if {ca, cb} != {"ones", "twos"}:
+                continue
+            if ba[0] <= bb[1] and bb[0] <= ba[1] and ba[2] <= bb[3] and bb[2] <= ba[3]:
+                out.append({"twos_track": a if ca == "twos" else b, "ones_track": b if ca == "twos" else a})
+    return out
+
+
 def gates(s, anim, frames, restIndex):
     still = np.round(s.still).astype(np.uint8)
     union = np.zeros((s.h, s.w), dtype=bool)
@@ -2146,6 +2190,17 @@ def gates(s, anim, frames, restIndex):
             uneven.append({"track": n_, "effect": t["effect"], "steps": st.tolist()})
     if uneven:
         res["cadence_uneven"] = uneven
+    mixed = _cadence_mixed(s, anim, frames)
+    if mixed:
+        res["cadence_mixed"] = mixed
+    # an impact names its contact frame; the hard-accent sound lands one frame later, on the bounce (Williams p. 294),
+    # unless the brief names its own sound_frame (a flash-synced hit: sound on the flash frame)
+    if "contact_frame" in anim:
+        cf = int(anim["contact_frame"])
+        res["contact_frame"] = cf
+        res["sound_frame"] = int(anim.get("sound_frame", cf + 1))
+        if not 0 <= res["sound_frame"] < len(frames):
+            res["sound_frame_out_of_range"] = True
     if restIndex is None and len(frames) > 2:
         # a loop has no rest frame; its seam (last to first) must be no bigger a jump than the largest step inside
         steps = [int((frames[j] != frames[j + 1]).any(-1).sum()) for j in range(len(frames) - 1)]

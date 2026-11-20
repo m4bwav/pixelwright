@@ -6,6 +6,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-094 · 2026-11-19 · Sound frame: contact + 1 for hits, the flash frame for flash-led events
+- Trigger: timing-and-gates said the sound lands on the flash frame; Williams (p. 294) puts a hard accent's sound
+  one frame after contact, on the bounce. Both hold: the flash is often the bounce frame.
+- Rule: gates.json states `contact_frame` and `sound_frame` separately and never forces them equal; the default
+  (contact + 1) applies only when the brief names `contact_frame`, and a brief sets `sound_frame` for flash-led events.
+- Scope: skill (pixelwright-animate)
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-19
+
 ### L-093 · 2026-11-19 · A light ramp step cannot keep a strong red's or blue's chroma
 - Trigger: first `hue_ramp` builds of red and blue bases were chalky (top chroma 0.09 under 0.19) because sRGB
   holds little red or blue chroma near OKLab L 0.85, even leaning toward yellow.

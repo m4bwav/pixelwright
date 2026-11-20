@@ -1288,6 +1288,35 @@ class TestRound2Gates(Base):
         s, frames = self.make(anim)
         self.assertEqual(sw.gates(s, anim, frames, None)["cadence_uneven"][0]["steps"], [1, 2])
 
+    def test_twos_beside_ones_is_cadence_mixed(self):
+        def anim(ca, cb, rb):
+            tr = lambda r, c: {"effect": "pulse", "region": r, "hot": [255, 240, 200], "strength": 1.0, "curve": c}
+            return {"frames": 8, "focal": "a", "tracks": [tr("a", ca), tr(rb, cb)]}
+        twos, ones = [0, 0, 1, 1, 0, 0, 1, 1], [0, 1, 0, 1, 0, 1, 0, 1]
+        extra = {"a": {"rects": [[5, 14, 8, 18]]}, "b": {"rects": [[8, 14, 11, 18]]},
+                 "far": {"rects": [[24, 2, 27, 5]]}}
+        x = anim(twos, ones, "b")
+        s, frames = self.make(x, extra)
+        g = sw.gates(s, x, frames, 0)
+        self.assertEqual(g["cadence_mixed"], [{"twos_track": 0, "ones_track": 1}])
+        for ca, rb in ((ones, "b"), (twos, "far")):
+            x = anim(ca, ones, rb)
+            s, frames = self.make(x, extra)
+            self.assertNotIn("cadence_mixed", sw.gates(s, x, frames, 0))
+
+    def test_contact_frame_puts_the_sound_one_frame_later(self):
+        x = json.loads(json.dumps(PULSE))
+        s, frames = self.make(x)
+        self.assertNotIn("sound_frame", sw.gates(s, x, frames, 0))
+        x["contact_frame"] = 2
+        g = sw.gates(s, x, frames, 0)
+        self.assertEqual((g["contact_frame"], g["sound_frame"]), (2, 3))
+        x["sound_frame"] = 2  # a flash-synced hit names its own frame
+        self.assertEqual(sw.gates(s, x, frames, 0)["sound_frame"], 2)
+        x.pop("sound_frame")
+        x["contact_frame"] = 5
+        self.assertTrue(sw.gates(s, x, frames, 0)["sound_frame_out_of_range"])
+
     def test_travelling_pixels_are_not_flicker(self):
         anim = {"frames": 3, "max_flicker_pixels": 0, "noticeable": {"share": 0},
                 "tracks": [{"effect": "pulse", "region": "sky", "hot": WARM}]}
