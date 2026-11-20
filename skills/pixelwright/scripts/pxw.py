@@ -12,6 +12,8 @@ Commands (each prints one JSON object; exit 1 on failure, 2 on a usage error, wh
                                                              pixel per block (mode); elastic walks drifting grids
   bg      <in.png> <out.png> [--colour auto|R,G,B] [--tol 40] [--holes N]  background cleared from the border
                                                              (and enclosed patches of N+ pixels)
+          [--key green|magenta|R,G,B [--ramp 35,90]]       chroma key instead: alpha from the key channel's excess,
+                                                             binary unless --ramp, spill clamped on kept pixels
   palette <in.png> <out.png> (--palette P | --colours N) [--dither bayer4] [--dither-space linear] [--max-step L]
           [--gpl OUT]                                        lock or extract colours
   clean   <in.png> <out.png> [--alpha 128] [--orphans] [--thin] [--corners] [--outline auto|selective|R,G,B]
@@ -60,7 +62,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.28.0"
+VERSION = "0.29.0"
 
 try:
     import numpy as np
@@ -4204,6 +4206,43 @@ def remove_background(a, colour="auto", tol=40, holes=0):
     return b, dict(colour=[int(v) for v in bg], cleared=int((seen & (a[..., 3] >= 128)).sum()), enclosed_cleared=inner)
 
 
+KEYS = {"green": (0, 255, 0), "magenta": (255, 0, 255), "blue": (0, 0, 255)}
+KEY_RAMP = (35.0, 90.0)
+
+
+def chroma_key(a, key="green", ramp=None):
+    """Chroma-key a render made on a saturated key colour (green, magenta, blue or R,G,B). The key's high channels
+    (green: G; magenta: R and B) against its low ones give each pixel an excess, min(high) - max(low): G - max(R,B)
+    on green, min(R,B) - G on magenta. Alpha comes from the excess against the ramp (lo, hi): opaque at or below lo,
+    clear at or above hi. Without ramp the cut is binary at the ramp's midpoint, so real pixel art keeps hard edges;
+    with ramp the alpha is soft in between (and a later alpha 128 step lands on the same silhouette). Then the spill
+    clamp: wherever a kept pixel's excess is positive, the high channels drop by the excess, so the key channel never
+    exceeds the others and no green or pink fringe survives. Keys every matching pixel, not only those touching the
+    border: render on a key the subject does not wear. Method from a harvested MIT web game's sprite pipeline."""
+    k = np.array(KEYS[key] if key in KEYS else parse_rgb(key), np.float64)
+    if k.max() - k.min() < 64:
+        raise ValueError(f"key {key} has no dominant channel; use a saturated colour such as green or magenta")
+    high = k >= (k.max() + k.min()) / 2
+    lo, hi = (float(v) for v in (ramp or KEY_RAMP))
+    if not 0 <= lo < hi:
+        raise ValueError("ramp needs 0 <= low < high")
+    rgb = a[..., :3].astype(np.float64)
+    ex = rgb[..., high].min(-1) - rgb[..., ~high].max(-1)
+    if ramp:
+        alpha = np.clip((hi - ex) / (hi - lo), 0, 1) * 255
+    else:
+        alpha = np.where(ex < (lo + hi) / 2, 255.0, 0.0)
+    alpha = np.round(alpha * a[..., 3] / 255.0)
+    spill = (ex > 0) & (alpha > 0)
+    rgb[spill] = np.where(high, rgb[spill] - ex[spill][:, None], rgb[spill])
+    b = np.dstack([np.clip(np.round(rgb), 0, 255), alpha]).astype(np.uint8)
+    b[alpha == 0] = 0
+    was = a[..., 3] >= 128
+    return b, dict(key=[int(v) for v in k], ramp=[lo, hi], soft=bool(ramp),
+                   cleared=int((was & (alpha == 0)).sum()), partial=int(((alpha > 0) & (alpha < 255)).sum()),
+                   despilled=int(spill.sum()))
+
+
 def median_cut(px, n):
     """Deterministic median cut: split the box with the widest channel range at that channel's mean value (a count
     median keeps halving a big flat area into twins) until n boxes, then merge colours that look the same."""
@@ -4575,7 +4614,9 @@ def run_make(rec, root, outdir, use_aw=True):
         a, steps["snap"] = snap_grid(a, None if sc == "auto" else sc, sn.get("offset"), sn.get("max", 64),
                                    ELASTIC[sn.get("elastic", "auto")])
     bg = rec.get("background", "auto")
-    if bg not in (False, None, "none"):
+    if isinstance(bg, dict) and bg.get("key"):
+        a, steps["background"] = chroma_key(a, bg["key"], bg.get("ramp"))
+    elif bg not in (False, None, "none"):
         a, steps["background"] = remove_background(a, bg if isinstance(bg, str) else bg.get("colour", "auto"),
                                                    40 if isinstance(bg, str) else bg.get("tol", 40),
                                                    0 if isinstance(bg, str) else int(bg.get("holes", 0)))
@@ -4691,6 +4732,20 @@ def cmd_snap(a):
 
 def cmd_bg(a):
     need_deps()
+    if a.key:
+        if a.colour != "auto" or a.holes:
+            out(dict(ok=False, error="--key replaces --colour and --holes; give one route"), 2)
+        try:
+            ramp = [float(v) for v in a.ramp.split(",")] if a.ramp else None
+            if ramp is not None and len(ramp) != 2:
+                raise ValueError("--ramp takes two numbers, LOW,HIGH")
+            img, info = chroma_key(load_u8(a.input), a.key, ramp)
+        except ValueError as e:
+            out(dict(ok=False, error=str(e)), 2)
+        save_u8(img, a.out)
+        out(dict(ok=True, out=a.out, **info))
+    if a.ramp:
+        out(dict(ok=False, error="--ramp needs --key"), 2)
     img, info = remove_background(load_u8(a.input), a.colour, a.tol, a.holes)
     save_u8(img, a.out)
     out(dict(ok=True, out=a.out, **info))
@@ -5754,6 +5809,8 @@ def main(argv=None):
     c.add_argument("--colour", default="auto")
     c.add_argument("--tol", type=float, default=40)
     c.add_argument("--holes", type=int, default=0, help="also clear enclosed background patches of N+ pixels")
+    c.add_argument("--key", help="chroma key: green, magenta, blue or R,G,B (keys every matching pixel, spill clamped)")
+    c.add_argument("--ramp", help="LOW,HIGH key-channel excess for a soft alpha ramp (default binary cut at 62.5)")
     c.set_defaults(fn=cmd_bg)
     c = sub.add_parser("palette")
     c.add_argument("input")

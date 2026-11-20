@@ -1141,5 +1141,98 @@ class TestActionInputs(Base):
         self.assertEqual(code, 1, res)
 
 
+def keyed_render(key):
+    """A 32x32 render on a key colour: a blob (disc plus a block) in brown, slate blue and ink by region, with a
+    2 px blended edge (the inner ring 30 % key, the outer ring 70 % key) as a renderer's antialiasing leaves it.
+    Returns the render and the source silhouette."""
+    yy, xx = np.mgrid[0:32, 0:32]
+    m = ((yy - 14) ** 2 + (xx - 13) ** 2 <= 64) | ((yy >= 16) & (yy < 27) & (xx >= 15) & (xx < 25))
+    col = np.where((xx < 14)[..., None], np.array(CORK, float), np.array([60, 70, 150], float))
+    col[yy > 22] = INK
+    k = np.array(key, float)
+    grow = np.zeros_like(m)
+    shrink = np.ones_like(m)
+    for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        r = np.roll(np.roll(m, dy, 0), dx, 1)
+        grow |= r
+        shrink &= r
+    inner, outer = m & ~shrink, grow & ~m
+    img = np.repeat(k[None, None], 32, 0).repeat(32, 1)
+    img[m] = col[m]
+    img[inner] = col[inner] * 0.7 + k * 0.3
+    img[outer] = col[outer] * 0.3 + k * 0.7
+    a = np.dstack([np.round(img), np.full((32, 32), 255.0)]).astype(np.uint8)
+    return a, m
+
+
+def within_one_px(got, m):
+    """True when got holds the source silhouette eroded by one pixel and stays inside it grown by one pixel."""
+    grow, shrink = m.copy(), m.copy()
+    for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)):
+        r = np.roll(np.roll(m, dy, 0), dx, 1)
+        grow |= r
+        shrink &= r
+    return bool((got <= grow).all() and (shrink <= got).all())
+
+
+class TestChromaKey(Base):
+    def check(self, b, m, key):
+        rgb = b[..., :3].astype(int)
+        kept = b[..., 3] > 0
+        if key == "green":
+            fringe = rgb[..., 1] > np.maximum(rgb[..., 0], rgb[..., 2])
+        else:
+            fringe = np.minimum(rgb[..., 0], rgb[..., 2]) > rgb[..., 1]
+        self.assertEqual(int((fringe & kept).sum()), 0, f"{key} fringe pixels survived")
+        self.assertTrue(within_one_px(b[..., 3] >= 128, m), "silhouette moved by more than 1 px")
+
+    def test_green_and_magenta_binary_and_ramp(self):
+        for key, rgb in (("green", [0, 255, 0]), ("magenta", [255, 0, 255])):
+            a, m = keyed_render(rgb)
+            for ramp in (None, (35, 90)):
+                b, info = pxw.chroma_key(a, key, ramp)
+                self.check(b, m, key)
+                self.assertEqual(b[0, 0, 3], 0)
+                self.assertGreater(info["despilled"], 0)
+                if ramp is None:
+                    self.assertEqual(set(np.unique(b[..., 3])) - {0, 255}, set())
+                else:
+                    self.assertGreater(info["partial"], 0)
+
+    def test_without_the_clamp_the_fringe_would_stay(self):
+        a, m = keyed_render([0, 255, 0])
+        rgb = a[..., :3].astype(int)
+        b, _ = pxw.chroma_key(a, "green")
+        green = (rgb[..., 1] > np.maximum(rgb[..., 0], rgb[..., 2])) & (b[..., 3] > 0)
+        self.assertGreater(int(green.sum()), 0, "fixture has no green-tinted kept pixels to clamp")
+
+    def test_custom_rgb_key_matches_the_named_one(self):
+        a, _ = keyed_render([0, 255, 0])
+        self.assertTrue(np.array_equal(pxw.chroma_key(a, "0,255,0")[0], pxw.chroma_key(a, "green")[0]))
+        with self.assertRaises(ValueError):
+            pxw.chroma_key(a, "128,128,128")
+
+    def test_cli_and_usage_errors(self):
+        a, m = keyed_render([255, 0, 255])
+        save(a, self.dir / "k.png")
+        code, res = self.run_pxw("bg", "k.png", "o.png", "--key", "magenta", "--ramp", "35,90")
+        self.assertEqual(code, 0, res)
+        self.assertTrue(res["soft"])
+        self.check(self.load("o.png"), m, "magenta")
+        self.assertEqual(self.run_pxw("bg", "k.png", "o.png", "--ramp", "35,90")[0], 2)
+        self.assertEqual(self.run_pxw("bg", "k.png", "o.png", "--key", "green", "--colour", "1,2,3")[0], 2)
+        self.assertEqual(self.run_pxw("bg", "k.png", "o.png", "--key", "green", "--ramp", "90,35")[0], 2)
+
+    def test_make_recipe_takes_a_key(self):
+        a, m = keyed_render([0, 255, 0])
+        save(a, self.dir / "k.png")
+        (self.dir / "r.json").write_text(json.dumps(dict(input="k.png", snap=False, background=dict(key="green"),
+                                                         palette=False)))
+        code, res = self.run_pxw("make", "r.json", "out", "--no-aw")
+        self.assertEqual(code, 0, res)
+        self.assertGreater(res["steps"]["background"]["despilled"], 0)
+        self.check(self.load("out/k.png"), m, "green")
+
+
 if __name__ == "__main__":
     unittest.main()
