@@ -27,6 +27,10 @@ Checked 2026-10-23. Sources are the `R-` entries in the plugin's RESEARCH.md.
 - A steady move needs a steady step: 8 px over 6 frames steps 1, 2, 1, 1, 2 and judders (Computer Graphics:
   Principles and Practice, section 18.2); 4 px over 8 frames stalls every other frame. Let the frame count divide
   the distance or the period. `cadence_uneven` reports it.
+- Keep one cadence over one area: a part on twos beside a region moving on ones strobes (Williams, The Animator's
+  Survival Kit, p. 79). Pixel art's 8 to 12 fps norm stands; only the mix is the fault. `cadence_mixed` reports it.
+- Walk beats at 12 fps: 4 frames a step brisk, 6 natural, 8 slow (Williams p. 109 gives 8, 12, 16 at 24 fps).
+- Too much action too fast: add frames and cushions, do not shrink the poses (Williams).
 
 ## Gates
 
@@ -68,6 +72,9 @@ The sheet name `<id>-<anim>-<N>f.png` is the contract; import and wiring are pro
   rest as engine layers, each behind a toggle: a screen flash (about 40% for 1 to 2 frames), shake (about 10 to 16
   game frames for an explosion: one slow wave and a quick tail; 4 to 8 high-frequency for melee), hit-stop measured
   in game frames (2 to 4 light, 6 to 10 heavy), debris rocks, a scorch decal that stays, embers, a smoke sheet held
-  about 1.5 to 2 s, and a short point light. The sound's attack lands on the flash frame. game-juice's juice-apply
+  about 1.5 to 2 s, and a short point light. Which frame takes the sound: on a hard contact (a hit, a slam, a landing) the sound lands one frame after contact,
+on the bounce (Williams p. 294); on a flash-led event (an explosion, a shot) its attack lands on the flash frame.
+Often the flash is the bounce frame and both agree. Name `contact_frame` in the animation and gates.json carries
+`sound_frame` = contact + 1; set `sound_frame` yourself for a flash-led event. game-juice's juice-apply
   writes these; pixelwright supplies the separate layer sheets.
 - An engine snapshot test must be deterministic: seeded particles, a fixed time, a fixed resolution (R-T4).

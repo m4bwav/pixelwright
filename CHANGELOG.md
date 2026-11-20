@@ -2,7 +2,18 @@
 
 Every change to [README.md](README.md) and its companions, newest first, each with the reason. Reasons cite findings in [RESEARCH.md](RESEARCH.md) (`R-`), lessons in [LEARNINGS.md](LEARNINGS.md) (`L-`), and test runs in [TESTS.md](TESTS.md) (`T-`). State in `evergreen.json`. Protocol: MAINTENANCE.md.
 
-Entry shape: `### C-20261119-4 · 2026-11-19 · 0.26.0: hue-shifted ramps and the ramp_chalky check
+Entry shape: `### C-20261119-5 · 2026-11-19 · 0.27.0: cadence_mixed, contact and sound frames, Williams timing rules
+- because: book learnings round 6 (Williams, The Animator's Survival Kit, expanded ed. 2009, pp. 79, 92-97, 109,
+  294, 301), L-094
+- files: pxw.py (`_step_cadence`, `_cadence_mixed`, gates `cadence_mixed`, `contact_frame`/`sound_frame`),
+  tests/test_pxw.py (two TestRound2Gates tests), pixelwright-animate SKILL.md (step 3 report-only numbers),
+  references/timing-and-gates.md (mixed cadence, walk beats, too-fast fix, which frame takes the sound) and
+  references/effects.md (hits), plugin.json, pxw.py VERSION
+- Report-only: sheets, frames and previews are byte-identical; gates.json gains `cadence_mixed` only when a region
+  on twos touches one on ones, and `contact_frame`/`sound_frame` only when the brief names `contact_frame`. The old
+  "sound on the flash frame" rule now applies to flash-led events; hard contacts take contact + 1 (L-094).
+
+### C-20261119-4 · 2026-11-19 · 0.26.0: hue-shifted ramps and the ramp_chalky check
 - because: book learnings round 6 (Pickard et al., Color & Light, 3dtotal 2021, pp. 46-48, 101-102), L-093
 - files: pxw.py (new `ramp` command: `hue_ramp`, `ramp_report`, `oklab_to_rgb`), tests/test_make.py (TestRamp),
   pixelwright-make SKILL.md (Step 4) and references/recipe.md (Commands), plugin.json, pxw.py VERSION
