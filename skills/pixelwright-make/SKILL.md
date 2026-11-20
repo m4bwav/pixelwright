@@ -71,6 +71,9 @@ Choosing:
   outline: `thin` first, and no new outline. `"corners": true` makes its lines pixel-perfect.
 - **Background with holes**: a ring, a handle or a gap between arm and body keeps the background colour inside;
   `{"background": {"holes": 4}}` clears those too (a window meant to show sky: leave it off).
+- **Render on a key colour** (green or magenta screen): `{"background": {"key": "green"}}` or `pxw.py bg in out
+  --key magenta` keys every pixel by the key channel's excess and clamps spill, so no green or pink fringe stays.
+  Binary by default (hard pixel-art edges); `"ramp": [35, 90]` / `--ramp 35,90` gives soft alpha for painted art.
 - **Far layers**: `"fog": {"colour": <the sky>, "amount": 0.4}` (middle) or 0.8 (far), with the palette step on.
 - **Orphans**: on for renders (they are noise). Off for hand-made art, where a lone pixel may be an eye or a glint.
 - **Tiles**: `"tile": true` (or `{"band": N}`) for a wrapping ground tile; the gate checks the seam.

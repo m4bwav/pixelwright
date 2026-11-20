@@ -12,7 +12,7 @@ current folder). Steps run in this order and each is optional.
 | `id` | the input's file name | output names `<id>.png`, `.x4.png`, `.gpl`, `.make.json` |
 | `input` | required | the render, PixelLab frame or drawing |
 | `snap` | `{"scale": "auto"}` | `{"scale": 5.35, "offset": [3, 3]}` to force; `false` skips (native art); `"elastic"` is auto, on or off (walks drifting cell edges; auto when coherence < 0.7) |
-| `background` | `"auto"` | the most common border colour, flood-filled from the border within `tol` 40 (OKLab x 255); `"R,G,B"`, `{"colour": ..., "tol": N, "holes": N}`, or `"none"`. `holes` also clears enclosed patches of the background of N+ pixels (inside a ring or a handle, between an arm and the body; off by default, since a window that shows the sky may be meant). Skipped when the border is already transparent |
+| `background` | `"auto"` | the most common border colour, flood-filled from the border within `tol` 40 (OKLab x 255); `"R,G,B"`, `{"colour": ..., "tol": N, "holes": N}`, `{"key": K, "ramp": [35, 90]}` (chroma key on green, magenta, blue or "R,G,B"; see bg below), or `"none"`. `holes` also clears enclosed patches of the background of N+ pixels (inside a ring or a handle, between an arm and the body; off by default, since a window that shows the sky may be meant). Skipped when the border is already transparent |
 | `fog` | none | `{"colour": "R,G,B", "amount": 0.4}`: blend toward the air colour before the palette step, which locks the result again; a far-layer or background variant. Start around 0.4 and inspect the result at native size. A high amount such as 0.8 with a sparse palette such as PICO-8 can collapse every opaque pixel to one colour; the gates still pass because the budget is only a maximum. Lower the amount or choose a palette with more steps near the air colour |
 | `palette` | none | `"pico-8"`, a `.hex`/`.txt`/`.gpl` file, `"from:a.png,b.png"`, an integer N, or `{"name": ...}` / `{"colours": N}` |
 | `dither` | none | `"bayer2"`, `"bayer4"` or `"bayer8"`, applied while quantising; or `{"pattern": "bayer4", "space": "linear", "max_step": 0.12}`: `linear` mixes each pixel's two nearest colours in the share that keeps its light (the default `srgb` nudge brightens: mid grey comes out 75% white on black and white instead of about 22%), `max_step` leaves pixels undithered where the pair differ by more than that OKLab lightness, so dither only joins neighbouring ramp steps |
@@ -28,6 +28,7 @@ Each step is also a command, for a quick try or a step the recipe does not cover
 ```
 pxw.py snap <in> <out> [--scale S] [--offset X,Y] [--max 64] [--elastic auto|on|off]
 pxw.py bg <in> <out> [--colour auto|R,G,B] [--tol 40] [--holes N]
+pxw.py bg <in> <out> --key green|magenta|blue|R,G,B [--ramp 35,90]
 pxw.py palette <in> <out> (--palette P | --colours N) [--dither bayer4|fs|atkinson] [--dither-strength 0.5] [--dither-space linear] [--max-step 0.12] [--gpl pal.gpl] [--sort luma|hue|sat|val]
 pxw.py clean <in> <out> [--alpha 128] [--orphans] [--thin] [--corners] [--outline auto|selective|R,G,B] [--light top-left] [--outline-width N] [--outline-shape diamond|square|circle] [--inside]
 pxw.py swap <in.png|frames/> <out.png|out/> (--map map.json | --from a.gpl --to b.gpl | --ramp ramp.hex | --step +1|-1 [--mask m.png] [--palette P])

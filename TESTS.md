@@ -15,6 +15,10 @@ Entry shape: `### T-YYYYMMDD-n · date · harness · env · passed/total`, then 
 
 ## Runs
 
+### T-20261120-1 · 2026-11-20 · unittest · Windows · test_make 75/75 (5 new TestChromaKey), test_pxw 89/89, check_skills ok
+- Mutation: with the spill clamp disabled, 3 of 5 chroma key tests fail (fringe pixels survive).
+- led to: C-20261120-2, L-095
+
 ### T-20261110-1 · 2026-11-10 · unittest · Windows · 82 animation tests (2 new Breathe) and make tests passed; breathe matched 9/9 real sleep strips
 
 ### T-20261106-1 · 2026-11-06 · action-1 only, claude -p with --plugin-dir, 3 runs, with arm only · Windows 11, Opus 5.5, Mark's full plugin set loaded (not isolated) · 1/3

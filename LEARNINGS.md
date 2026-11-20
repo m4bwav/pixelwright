@@ -6,6 +6,14 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-095 · 2026-11-20 · A distance key leaves a key-tinted fringe; key by channel excess and clamp the spill
+- Trigger: technique harvest of a web game's sprite pipeline (MIT): renders on green keep a 1 to 2 px blended
+  edge that a colour-distance flood fill either leaves green or eats into the silhouette.
+- Rule: for renders on a saturated key use `pxw.py bg --key`: alpha from min(key channels) - max(others), then
+  drop the key channels by that excess on kept pixels. Binary for pixel art; `--ramp` only for painted art.
+- Scope: skill (pixelwright-make)
+- Status: active · helpful 0 · harmful 0 · last_confirmed 2026-11-20
+
 ### L-094 · 2026-11-19 · Sound frame: contact + 1 for hits, the flash frame for flash-led events
 - Trigger: timing-and-gates said the sound lands on the flash frame; Williams (p. 294) puts a hard accent's sound
   one frame after contact, on the bounce. Both hold: the flash is often the bounce frame.

@@ -2,7 +2,21 @@
 
 Every change to [README.md](README.md) and its companions, newest first, each with the reason. Reasons cite findings in [RESEARCH.md](RESEARCH.md) (`R-`), lessons in [LEARNINGS.md](LEARNINGS.md) (`L-`), and test runs in [TESTS.md](TESTS.md) (`T-`). State in `evergreen.json`. Protocol: MAINTENANCE.md.
 
-Entry shape: `### C-20261120-1 · 2026-11-20 · 0.28.0: action-inputs, first/last-frame stills on a floor strip
+Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
+
+### C-20261120-2 · 2026-11-20 · 0.29.0: chroma key with spill clamp in `pxw.py bg`
+- because: user request (technique harvest, web games: adopt-partly verdict on github.com/Waleee7/peach-dash, MIT;
+  method written fresh from our notes, no code copied), L-095
+- files: pxw.py (`chroma_key`, `KEYS`, `bg --key/--ramp`, recipe `background: {"key", "ramp"}`),
+  tests/test_make.py (TestChromaKey, 5 tests on drawn fixtures), pixelwright-make SKILL.md and
+  references/recipe.md, plugin.json, pxw.py VERSION; CHANGELOG's entry-shape line restored (lost in 0.23.0)
+- Opt-in: without `--key` the border flood fill is unchanged and every output is byte-identical. With `--key`,
+  alpha comes from the key channel's excess over the others (G - max(R,B) on green, min(R,B) - G on magenta):
+  binary at the midpoint of 35..90 by default, soft between them with `--ramp`; kept pixels with a positive
+  excess have it subtracted from the key channels (spill clamp). Tests: no kept pixel where the key channel
+  exceeds the others, silhouette within 1 px of the source, on green and magenta, binary and ramp.
+
+### C-20261120-1 · 2026-11-20 · 0.28.0: action-inputs, first/last-frame stills on a floor strip
 - because: user request (technique harvest script backlog, verdict #18: r/aigamedev post 1x8m8ly by
   u/FutureTechPilot; ideas only, written fresh from our notes)
 - files: pxw.py (new `action-inputs` command: `cmd_action_inputs`, `_sprite_cut`, `VIDEO_SIZES`),
