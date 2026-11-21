@@ -6,6 +6,12 @@ Write an entry the moment a real signal happens: a user correction, the same err
 
 ## Active
 
+### L-096 · 2026-11-21 · A silhouette gate on loops must skip frames whose alpha never changes
+- Trigger: books round 7 (Blair p. 109): the run-cycle strobe check compares alpha masks of neighbouring frames;
+  every glow or pulse loop on a building keeps one alpha, so an IoU-only test would flag them all.
+- Rule: `cycle_same_silhouette` counts a pair only when the masks differ and still overlap above 0.97. Keep the
+  same skip for any future mask-based motion check.
+
 ### L-095 · 2026-11-20 · A distance key leaves a key-tinted fringe; key by channel excess and clamp the spill
 - Trigger: technique harvest of a web game's sprite pipeline (MIT): renders on green keep a 1 to 2 px blended
   edge that a colour-distance flood fill either leaves green or eats into the silhouette.

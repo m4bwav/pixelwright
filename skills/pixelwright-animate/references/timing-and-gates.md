@@ -31,6 +31,16 @@ Checked 2026-10-23. Sources are the `R-` entries in the plugin's RESEARCH.md.
   Survival Kit, p. 79). Pixel art's 8 to 12 fps norm stands; only the mix is the fault. `cadence_mixed` reports it.
 - Walk beats at 12 fps: 4 frames a step brisk, 6 natural, 8 slow (Williams p. 109 gives 8, 12, 16 at 24 fps).
 - Too much action too fast: add frames and cushions, do not shrink the poses (Williams).
+- In-betweens by intent (Thomas and Johnston, The Illusion of Life, p. 66, at 24 fps on twos; halve for 12 fps,
+  minimum 0) between two head or part positions: 0 a huge hit, 1 a thrown-object hit, 2 a twitch, 3 a dodge,
+  4 a crisp order, 5 a friendly call, 6 noticing, 7 trying to see, 8 searching, 9 pondering, 10 a slow stretch.
+  Fast use actions keep their spacing jumps; full in-betweens even the timing and kill the snap.
+- Moving hold: a held end pose lasts 4 to 8 frames at 12 fps; drift the furthest parts 1 px toward the extreme
+  over its last half, or let parts arrive one after another (Thomas and Johnston pp. 62-63; Blair, Cartoon
+  Animation, p. 144). `dead_hold` reports a run of more than 8 identical frames in a non-loop.
+- Run cycles of 6 frames or fewer: no two frames within 2 of each other (seam included) may share a silhouette,
+  or the cycle strobes or reads backwards; vary every foot position (Blair p. 109). `cycle_same_silhouette`
+  lists such pairs (alpha masks differ but overlap above 0.97; a glow loop with a fixed alpha is skipped).
 
 ## Gates
 
@@ -75,6 +85,8 @@ The sheet name `<id>-<anim>-<N>f.png` is the contract; import and wiring are pro
   about 1.5 to 2 s, and a short point light. Which frame takes the sound: on a hard contact (a hit, a slam, a landing) the sound lands one frame after contact,
 on the bounce (Williams p. 294); on a flash-led event (an explosion, a shot) its attack lands on the flash frame.
 Often the flash is the bounce frame and both agree. Name `contact_frame` in the animation and gates.json carries
-`sound_frame` = contact + 1; set `sound_frame` yourself for a flash-led event. game-juice's juice-apply
+`sound_frame` = contact + 1; set `sound_frame` yourself for a flash-led event. The visual accent leads the
+sound, never trails it (Blair p. 198: 2 to 3 frames at 24 fps, about 1 at 12); `sound_before_contact` flags a
+`sound_frame` set before `contact_frame`. game-juice's juice-apply
   writes these; pixelwright supplies the separate layer sheets.
 - An engine snapshot test must be deterministic: seeded particles, a fixed time, a fixed resolution (R-T4).
