@@ -4,6 +4,13 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261121-2 · 2026-11-21 · 0.31.0: rigid_shape_drift (report-only)
+- because: user request (books round 7, track 74: Thomas and Johnston, The Illusion of Life, PDF p. 466, Doorknob)
+- files: pxw.py (`_rigid_drift`, `gates`), tests/test_pxw.py (TestRound2Gates, 1 test), pixelwright-animate
+  references/brief.md (regions table) and references/timing-and-gates.md (Timing), plugin.json, pxw.py VERSION
+- A region marked `"rigid": true` used as a part: gates report the frames where no whole-pixel offset brings back
+  all its still pixels with the same bounding box. Key added only when it fires; sheets and pass unchanged.
+
 ### C-20261121-1 · 2026-11-21 · 0.30.0: dead_hold, cycle_same_silhouette, sound_before_contact; in-between ladder
 - because: user request (books round 7, track 65: Blair, Cartoon Animation pp. 109, 144, 198; Thomas and Johnston,
   The Illusion of Life pp. 62-63, 66), L-096

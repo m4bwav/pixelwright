@@ -41,6 +41,7 @@ Checked 2026-10-23. Sources are the `R-` entries in the plugin's RESEARCH.md.
 - Run cycles of 6 frames or fewer: no two frames within 2 of each other (seam included) may share a silhouette,
   or the cycle strobes or reads backwards; vary every foot position (Blair p. 109). `cycle_same_silhouette`
   lists such pairs (alpha masks differ but overlap above 0.97; a glow loop with a fixed alpha is skipped).
+- Rigid parts move but never change shape: a metal knob or lid keeps its outline, or it stops reading as metal; on an anchored prop size changes and 1 px jitter show more than on a moving one. Mark such a part `"rigid": true`; `rigid_shape_drift` (report-only) lists frames where no whole-pixel offset brings back every still pixel of the part with the same box. Parts on a rotate track are skipped. A minimal face on a prop reacts with one small region (a brow, lid or light) moved 1-2 px (Thomas and Johnston, PDF p. 466).
 
 ## Gates
 

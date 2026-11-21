@@ -40,6 +40,7 @@ Checked 2026-10-23 against `sw.py` 0.1.0 (`pxw.py` since 0.6.0).
 | `regions.<name>.model` | `{"frames": <render folder>, "part": <name>, "grow": 4}`: every still pixel the part covers in any ID frame of a 3D render, grown by `grow` (see effects.md, Model rotate) |
 | `regions.<name>.select` | keep only `warm`, `cool` or `bright` pixels of the area (lit parts) |
 | `regions.<name>.alpha` | the region may change alpha (transparent sky for particles, a part moving out) |
+| `regions.<name>.rigid` | the part is machinery (a doorknob, a lid): it moves by `shift` but never changes shape; gates report `rigid_shape_drift` (frames where its pixel count or box size changed); use no squash or bend on it |
 | `regions.<name>.exclude` | subtract other regions |
 | `animations.<name>` | `frames`, `tracks`, optional `focal` (region for the brightness measure), `fps`, `rest` (`first`, `last`, `none`) |
 | `take` | optional; review keys gain `-<take>` |

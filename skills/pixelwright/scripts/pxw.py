@@ -62,7 +62,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.30.0"
+VERSION = "0.31.0"
 
 try:
     import numpy as np
@@ -2090,6 +2090,46 @@ def _cadence_mixed(s, anim, frames):
     return out
 
 
+def _rigid_drift(s, anim, frames, still):
+    """Report-only: a part whose region sets "rigid": true (a doorknob, a metal lid) may move but never change shape
+    (Thomas and Johnston, The Illusion of Life, PDF p. 466). Per frame, find the whole-pixel offset where most of
+    the part's still pixels reappear exactly; the part drifts when fewer than all of them do, or the matched
+    bounding box changes size. Parts turned by a rotate track are skipped: pixel rotation reshapes by design."""
+    out = []
+    names = []
+    for t in anim["tracks"]:
+        p = t.get("part")
+        if p and s.brief["regions"].get(p, {}).get("rigid") and p not in names:
+            names.append(p)
+    for p in names:
+        if any(t.get("part") == p and t["effect"] in ("rotate", "model_rotate") for t in anim["tracks"]):
+            continue
+        reach = 2 + max([int(max(abs(v) for v in t["by"])) for t in anim["tracks"]
+                         if t.get("part") == p and "by" in t] or [2])
+        ys, xs = np.nonzero(s.regions[p] & (still[..., 3] > 0))
+        if not len(ys):
+            continue
+        ref = still[ys, xs]
+        bw, bh = int(np.ptp(xs)) + 1, int(np.ptp(ys)) + 1
+        bad = []
+        for j, f in enumerate(frames):
+            best, bestOk = -1, None
+            for dy in range(-reach, reach + 1):
+                for dx in range(-reach, reach + 1):
+                    nx, ny = xs + dx, ys + dy
+                    inb = (nx >= 0) & (nx < s.w) & (ny >= 0) & (ny < s.h)
+                    ok = np.zeros(len(xs), bool)
+                    ok[inb] = (f[ny[inb], nx[inb]] == ref[inb]).all(-1)
+                    if ok.sum() > best:
+                        best, bestOk = int(ok.sum()), ok
+            box = (int(np.ptp(xs[bestOk])) + 1, int(np.ptp(ys[bestOk])) + 1) if best > 0 else (0, 0)
+            if best < len(xs) or box != (bw, bh):
+                bad.append(j)
+        if bad:
+            out.append({"part": p, "frames": bad[:8], "pixels": int(len(xs))})
+    return out
+
+
 def gates(s, anim, frames, restIndex):
     still = np.round(s.still).astype(np.uint8)
     union = np.zeros((s.h, s.w), dtype=bool)
@@ -2229,6 +2269,9 @@ def gates(s, anim, frames, restIndex):
                 same.append([j, k])
         if same:
             res["cycle_same_silhouette"] = same
+    drift = _rigid_drift(s, anim, frames, still)
+    if drift:
+        res["rigid_shape_drift"] = drift
     if restIndex is None and len(frames) > 2:
         # a loop has no rest frame; its seam (last to first) must be no bigger a jump than the largest step inside
         steps = [int((frames[j] != frames[j + 1]).any(-1).sum()) for j in range(len(frames) - 1)]
