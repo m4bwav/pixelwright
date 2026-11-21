@@ -1351,6 +1351,20 @@ class TestRound2Gates(Base):
         glow = [self.still.copy() for _ in range(4)]
         self.assertNotIn("cycle_same_silhouette", sw.gates(s, x, glow, None))
 
+    def test_rigid_part_moves_without_reshaping(self):
+        x = {"frames": 3, "tracks": [{"effect": "shift", "part": "arm", "region": "armzone", "by": [0, -2],
+                                      "curve": [0, 0.5, 1]}]}
+        s, frames = self.make(x, {"arm": {"rects": [[14, 8, 17, 12]], "rigid": True}})
+        g = sw.gates(s, x, frames, 0)
+        self.assertNotIn("rigid_shape_drift", g)  # a whole-pixel move keeps count and box
+        squash = [f.copy() for f in frames]
+        squash[2][8:10, 14:17] = 0  # the arm loses its top rows: a squash
+        squash[2][11, 14:17] = 0
+        d = sw.gates(s, x, squash, 0)["rigid_shape_drift"]
+        self.assertEqual(d, [{"part": "arm", "frames": [2], "pixels": 12}])
+        s, frames = self.make(x)  # not marked rigid: never checked
+        self.assertNotIn("rigid_shape_drift", sw.gates(s, x, squash, 0))
+
     def test_travelling_pixels_are_not_flicker(self):
         anim = {"frames": 3, "max_flicker_pixels": 0, "noticeable": {"share": 0},
                 "tracks": [{"effect": "pulse", "region": "sky", "hot": WARM}]}

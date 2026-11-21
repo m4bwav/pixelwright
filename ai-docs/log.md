@@ -218,3 +218,4 @@ Added a README "Works with" section and a wiki Works-with page covering artwrigh
 
 ## [2026-11-14] update | README Works with: fractalwright (new public plugin), mirroring its own section
 - 2026-11-17: 0.20.0 adds `pxw.py anim --slots` (technique harvest D1) and `pxw.py overlap` (D2); verified on the real H3 sheet clip (9/10 clean, frog refused) and the D2 repaints (depth-only table 0.08 fails; barrel, crate pass).
+- 2026-11-21: 0.31.0 adds report-only `rigid_shape_drift` (regions marked rigid keep pixel count and box while moving; books round 7 track 74, Thomas and Johnston p. 466). test_pxw 93 OK, test_make 75 OK, check_skills ok.
