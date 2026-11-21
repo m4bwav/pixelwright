@@ -113,7 +113,7 @@ frames with no changed neighbour, excluding matched motion; `flicker_at` gives u
 with no frame index; an animation's `"max_flicker_pixels": 0` makes it a gate) and
 `cadence_uneven` (a linear `scroll` or `shift` whose whole-pixel steps differ, such as 1, 2, 1, 1, 2: let the frame
 count divide the period or distance, so each frame moves the same whole number of pixels). Fix both unless the
-blink is the point. Also reported: `cadence_mixed`, and `sound_frame` for a `contact_frame` (timing-and-gates.md).
+blink is the point. Also reported: `cadence_mixed`, `dead_hold`, `cycle_same_silhouette` and the sound frames (timing-and-gates.md).
 
 Also read `aw_pixel_frames` (artwright's frame-size, bounding-box and baseline checks). A gate that fails twice
 for the same sprite stops the work: report it with the gate JSON, do not loosen the threshold to pass.

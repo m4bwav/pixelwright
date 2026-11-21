@@ -4,6 +4,15 @@ Every change to [README.md](README.md) and its companions, newest first, each wi
 
 Entry shape: `### C-YYYYMMDD-n · date · one-line summary`, then `because:` (IDs or "user request"), `files:` (file and section), and a sentence on what changed. Cite section headings, not line numbers.
 
+### C-20261121-1 · 2026-11-21 · 0.30.0: dead_hold, cycle_same_silhouette, sound_before_contact; in-between ladder
+- because: user request (books round 7, track 65: Blair, Cartoon Animation pp. 109, 144, 198; Thomas and Johnston,
+  The Illusion of Life pp. 62-63, 66), L-096
+- files: pxw.py (`gates`), tests/test_pxw.py (TestRound2Gates, 3 tests), pixelwright-animate SKILL.md (step 3
+  reported numbers) and references/timing-and-gates.md (Timing; Engines sound note), plugin.json, pxw.py VERSION
+- Report-only keys added to gates.json only when they fire, so sheets and passing gates are unchanged: a run of
+  more than 8 identical frames in a non-loop, short loops whose neighbouring frames share a silhouette, and a
+  sound frame set before the contact frame. Timing gains the in-between-by-intent ladder and the moving hold.
+
 ### C-20261120-2 · 2026-11-20 · 0.29.0: chroma key with spill clamp in `pxw.py bg`
 - because: user request (technique harvest, web games: adopt-partly verdict on github.com/Waleee7/peach-dash, MIT;
   method written fresh from our notes, no code copied), L-095

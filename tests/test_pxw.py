@@ -1317,6 +1317,40 @@ class TestRound2Gates(Base):
         x["contact_frame"] = 5
         self.assertTrue(sw.gates(s, x, frames, 0)["sound_frame_out_of_range"])
 
+    def test_sound_before_contact_is_flagged(self):
+        x = json.loads(json.dumps(PULSE))
+        s, frames = self.make(x)
+        x["contact_frame"] = 2
+        self.assertNotIn("sound_before_contact", sw.gates(s, x, frames, 0))
+        x["sound_frame"] = 1
+        self.assertTrue(sw.gates(s, x, frames, 0)["sound_before_contact"])
+
+    def test_dead_hold_reports_long_identical_runs(self):
+        x = json.loads(json.dumps(PULSE))
+        s, frames = self.make(x)
+        lit = next(f for f in frames if (f != frames[0]).any())
+        other = lit.copy()
+        other[0, 0, 0] ^= 1  # a 1 px drift during the hold
+        held = [frames[0]] + [lit] * 9 + [frames[0]]
+        self.assertEqual(sw.gates(s, x, held, 0)["dead_hold"], 9)
+        drift = [frames[0]] + [lit] * 4 + [other] * 4 + [frames[0]]
+        self.assertNotIn("dead_hold", sw.gates(s, x, drift, 0))
+
+    def test_cycle_same_silhouette(self):
+        x = json.loads(json.dumps(PULSE))
+        s, _ = self.make(x)
+        def body(dx, foot):
+            f = np.zeros((s.h, s.w, 4), np.uint8)
+            f[4:20, 6 + dx:16 + dx] = [200, 80, 40, 255]
+            f[20, foot] = [200, 80, 40, 255]
+            return f
+        strobe = [body(0, 6), body(0, 8), body(0, 10), body(0, 12)]  # only a foot moves: masks nearly equal
+        self.assertTrue(sw.gates(s, x, strobe, None)["cycle_same_silhouette"])
+        varied = [body(0, 6), body(3, 9), body(6, 12), body(9, 15)]
+        self.assertNotIn("cycle_same_silhouette", sw.gates(s, x, varied, None))
+        glow = [self.still.copy() for _ in range(4)]
+        self.assertNotIn("cycle_same_silhouette", sw.gates(s, x, glow, None))
+
     def test_travelling_pixels_are_not_flicker(self):
         anim = {"frames": 3, "max_flicker_pixels": 0, "noticeable": {"share": 0},
                 "tracks": [{"effect": "pulse", "region": "sky", "hot": WARM}]}

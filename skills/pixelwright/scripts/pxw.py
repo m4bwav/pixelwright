@@ -62,7 +62,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.29.0"
+VERSION = "0.30.0"
 
 try:
     import numpy as np
@@ -2206,6 +2206,29 @@ def gates(s, anim, frames, restIndex):
         res["sound_frame"] = int(anim.get("sound_frame", cf + 1))
         if not 0 <= res["sound_frame"] < len(frames):
             res["sound_frame_out_of_range"] = True
+        if res["sound_frame"] < cf:  # the visual accent leads the sound, never trails it (Blair p. 198)
+            res["sound_before_contact"] = True
+    # a use animation that holds one frame for more than 8 frames (about 0.7 s at 12 fps) goes flat: drift the
+    # furthest parts 1 px toward the extreme during the hold (moving hold, Thomas and Johnston pp. 62-63; Blair p. 144)
+    if restIndex is not None:
+        run = best = 1
+        for j in range(1, len(frames)):
+            run = run + 1 if (frames[j] == frames[j - 1]).all() else 1
+            best = max(best, run)
+        if best > 8:
+            res["dead_hold"] = best
+    # a short moving loop (a run cycle) whose neighbouring frames share a silhouette strobes or reads backwards:
+    # vary every foot position (Blair p. 109). Report-only; frames whose alpha is unchanged (a glow) are skipped.
+    if restIndex is None and 3 <= len(frames) <= 6:
+        n = len(frames)
+        pairs = sorted({tuple(sorted((j, (j + d) % n))) for j in range(n) for d in (1, 2)} - {(j, j) for j in range(n)})
+        same = []
+        for j, k in pairs:
+            a, b = frames[j][..., 3] > 0, frames[k][..., 3] > 0
+            if not (a == b).all() and (a & b).sum() / max(1, (a | b).sum()) > 0.97:
+                same.append([j, k])
+        if same:
+            res["cycle_same_silhouette"] = same
     if restIndex is None and len(frames) > 2:
         # a loop has no rest frame; its seam (last to first) must be no bigger a jump than the largest step inside
         steps = [int((frames[j] != frames[j + 1]).any(-1).sum()) for j in range(len(frames) - 1)]
